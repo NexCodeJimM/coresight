@@ -3,91 +3,74 @@
 # Exit on any error
 set -e
 
-echo "Starting deployment..."
+# Set working directory
+WORKING_DIR="/root/coresight"
+cd $WORKING_DIR
+
+echo "Starting deployment from $WORKING_DIR..."
 
 # 1. Update system
 echo "Updating system packages..."
-sudo apt update && sudo apt upgrade -y
+apt update && apt upgrade -y
 
 # 2. Install required packages
 echo "Installing required packages..."
-sudo apt install -y curl git python3 python3-pip python3-venv
+apt install -y curl git python3 python3-pip python3-venv
 
 # 3. Install Node.js
 echo "Installing Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt install -y nodejs
 
 # 4. Install PM2
 echo "Installing PM2..."
-sudo npm install -g pm2
+npm install -g pm2
 
 # 5. Install InfluxDB
 echo "Installing InfluxDB..."
 wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.7.1-amd64.deb
-sudo dpkg -i influxdb2-2.7.1-amd64.deb
-sudo systemctl start influxdb
-sudo systemctl enable influxdb
+dpkg -i influxdb2-2.7.1-amd64.deb
+systemctl start influxdb
+systemctl enable influxdb
 
 # 6. Set up the backend
 echo "Setting up backend..."
-cd backend
+cd $WORKING_DIR/backend
 npm install --production
 cp .env.production .env
 
 # 7. Set up the Python agent
 echo "Setting up Python agent..."
-# Create directory structure
-AGENT_DIR="../coresight-agent"
-mkdir -p $AGENT_DIR
-cd $AGENT_DIR
-
-# Check Python3 installation
-if ! command -v python3 &> /dev/null; then
-    echo "Python3 is not installed. Installing..."
-    sudo apt install -y python3
-fi
-
-# Check pip installation
-if ! command -v pip3 &> /dev/null; then
-    echo "Pip3 is not installed. Installing..."
-    sudo apt install -y python3-pip
-fi
+cd $WORKING_DIR/coresight-agent
 
 # Create and activate virtual environment
 echo "Creating Python virtual environment..."
 python3 -m venv venv
-source venv/bin/activate || {
-    echo "Failed to create/activate virtual environment"
-    exit 1
-}
-
-# Verify Python path
-PYTHON_PATH=$(which python3)
-echo "Using Python at: $PYTHON_PATH"
+. venv/bin/activate
 
 # Install requirements
 echo "Installing Python requirements..."
-if [ -f requirements.txt ]; then
-    pip3 install -r requirements.txt
-else
-    echo "requirements.txt not found, installing basic requirements..."
-    pip3 install psutil requests netifaces
+pip3 install psutil requests netifaces
+
+# Create agent.py if it doesn't exist
+if [ ! -f agent.py ]; then
+    echo "Creating agent.py..."
+    cp ../agent.py .
 fi
 
 # 8. Create systemd service for the agent
 echo "Creating systemd service for agent..."
-PYTHON_VENV_PATH=$(which python3)
-sudo tee /etc/systemd/system/coresight-agent.service << EOF
+PYTHON_VENV_PATH="$WORKING_DIR/coresight-agent/venv/bin/python3"
+tee /etc/systemd/system/coresight-agent.service << EOF
 [Unit]
 Description=Coresight System Monitoring Agent
 After=network.target
 
 [Service]
 Type=simple
-User=$USER
-WorkingDirectory=$(pwd)
-Environment=PYTHONPATH=$(pwd)
+User=root
+WorkingDirectory=$WORKING_DIR/coresight-agent
+Environment=PYTHONPATH=$WORKING_DIR/coresight-agent
 ExecStart=$PYTHON_VENV_PATH agent.py
 Restart=always
 RestartSec=10
@@ -98,41 +81,32 @@ EOF
 
 # 9. Start services
 echo "Starting services..."
-cd ../backend
+cd $WORKING_DIR/backend
 pm2 start server.js --name coresight-backend
 pm2 save
 
 # Reload systemd and start agent
-sudo systemctl daemon-reload
-sudo systemctl start coresight-agent || {
-    echo "Failed to start coresight-agent. Checking logs..."
-    sudo journalctl -u coresight-agent -n 50
-}
-sudo systemctl enable coresight-agent
+systemctl daemon-reload
+systemctl start coresight-agent
+systemctl enable coresight-agent
 
 # 10. Configure firewall
 echo "Configuring firewall..."
-sudo ufw allow 22/tcp  # SSH
-sudo ufw allow 80/tcp  # HTTP
-sudo ufw allow 443/tcp # HTTPS
-sudo ufw allow 3000/tcp # Your app
-sudo ufw --force enable
+ufw allow 22/tcp  # SSH
+ufw allow 80/tcp  # HTTP
+ufw allow 443/tcp # HTTPS
+ufw allow 3000/tcp # Your app
+ufw --force enable
 
 echo "Deployment complete!"
 echo "Please configure InfluxDB at http://your-server-ip:8086"
 echo "Then access the dashboard at http://your-server-ip:3000"
 
-# Print status of all services
+# Print status
 echo "Checking service status..."
-echo "InfluxDB status:"
-sudo systemctl status influxdb --no-pager
-echo "Agent status:"
-sudo systemctl status coresight-agent --no-pager
-echo "Backend status:"
+echo "Python path: $PYTHON_VENV_PATH"
+echo "Current directory: $(pwd)"
+ls -la $WORKING_DIR/coresight-agent/venv/bin/
+systemctl status influxdb --no-pager
+systemctl status coresight-agent --no-pager
 pm2 status
-
-# Print Python environment info for debugging
-echo "Python environment information:"
-which python3
-python3 --version
-echo "Virtual environment path: $PYTHON_VENV_PATH"
