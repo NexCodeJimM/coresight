@@ -37,7 +37,7 @@ cp .env.production .env
 
 # 7. Set up the Python agent
 echo "Setting up Python agent..."
-cd ../coresight-agent
+cd ../coresight/coresight-agent
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -64,7 +64,7 @@ EOF
 
 # 9. Start services
 echo "Starting services..."
-cd ../backend
+cd ../coresight/backend
 pm2 start server.js --name coresight-backend
 pm2 save
 sudo systemctl start coresight-agent
