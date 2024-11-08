@@ -35,36 +35,49 @@ cd backend
 npm install --production
 cp .env.production .env
 
-# 7. Create agent directory if it doesn't exist
-echo "Creating agent directory..."
-mkdir -p ../coresight-agent
-
-# 8. Set up the Python agent
+# 7. Set up the Python agent
 echo "Setting up Python agent..."
-cd ../coresight-agent
-python3 -m venv venv
-source venv/bin/activate || {
-    echo "Failed to activate virtual environment"
-    exit 1
-}
+# Create directory structure
+AGENT_DIR="../coresight-agent"
+mkdir -p $AGENT_DIR
+cd $AGENT_DIR
 
-# Verify Python is available
-which python3 || {
-    echo "Python3 not found in path"
-    exit 1
-}
-
-# Install requirements
-if [ -f requirements.txt ]; then
-    pip install -r requirements.txt
-else
-    echo "Warning: requirements.txt not found"
-    # Install basic requirements
-    pip install psutil requests netifaces
+# Check Python3 installation
+if ! command -v python3 &> /dev/null; then
+    echo "Python3 is not installed. Installing..."
+    sudo apt install -y python3
 fi
 
-# 9. Create systemd service for the agent
+# Check pip installation
+if ! command -v pip3 &> /dev/null; then
+    echo "Pip3 is not installed. Installing..."
+    sudo apt install -y python3-pip
+fi
+
+# Create and activate virtual environment
+echo "Creating Python virtual environment..."
+python3 -m venv venv
+source venv/bin/activate || {
+    echo "Failed to create/activate virtual environment"
+    exit 1
+}
+
+# Verify Python path
+PYTHON_PATH=$(which python3)
+echo "Using Python at: $PYTHON_PATH"
+
+# Install requirements
+echo "Installing Python requirements..."
+if [ -f requirements.txt ]; then
+    pip3 install -r requirements.txt
+else
+    echo "requirements.txt not found, installing basic requirements..."
+    pip3 install psutil requests netifaces
+fi
+
+# 8. Create systemd service for the agent
 echo "Creating systemd service for agent..."
+PYTHON_VENV_PATH=$(which python3)
 sudo tee /etc/systemd/system/coresight-agent.service << EOF
 [Unit]
 Description=Coresight System Monitoring Agent
@@ -75,7 +88,7 @@ Type=simple
 User=$USER
 WorkingDirectory=$(pwd)
 Environment=PYTHONPATH=$(pwd)
-ExecStart=$(pwd)/venv/bin/python3 agent.py
+ExecStart=$PYTHON_VENV_PATH agent.py
 Restart=always
 RestartSec=10
 
@@ -83,7 +96,7 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# 10. Start services
+# 9. Start services
 echo "Starting services..."
 cd ../backend
 pm2 start server.js --name coresight-backend
@@ -91,10 +104,13 @@ pm2 save
 
 # Reload systemd and start agent
 sudo systemctl daemon-reload
-sudo systemctl start coresight-agent
+sudo systemctl start coresight-agent || {
+    echo "Failed to start coresight-agent. Checking logs..."
+    sudo journalctl -u coresight-agent -n 50
+}
 sudo systemctl enable coresight-agent
 
-# 11. Configure firewall
+# 10. Configure firewall
 echo "Configuring firewall..."
 sudo ufw allow 22/tcp  # SSH
 sudo ufw allow 80/tcp  # HTTP
@@ -106,8 +122,17 @@ echo "Deployment complete!"
 echo "Please configure InfluxDB at http://your-server-ip:8086"
 echo "Then access the dashboard at http://your-server-ip:3000"
 
-# Print status of services
+# Print status of all services
 echo "Checking service status..."
-systemctl status influxdb --no-pager
-systemctl status coresight-agent --no-pager
+echo "InfluxDB status:"
+sudo systemctl status influxdb --no-pager
+echo "Agent status:"
+sudo systemctl status coresight-agent --no-pager
+echo "Backend status:"
 pm2 status
+
+# Print Python environment info for debugging
+echo "Python environment information:"
+which python3
+python3 --version
+echo "Virtual environment path: $PYTHON_VENV_PATH"
