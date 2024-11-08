@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>System Metrics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      .metric-card {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .chart-container {
+        width: 400px;
+        height: 200px;
+        margin: 10px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <div id="error-message" style="color: red; padding: 20px"></div>
+      <div class="metric-card">
+        <h2>CPU Usage</h2>
+        <div class="chart-container">
+          <canvas id="cpuChart"></canvas>
+        </div>
+      </div>
+      <div class="metric-card">
+        <h2>Memory Usage</h2>
+        <div class="chart-container">
+          <canvas id="memoryChart"></canvas>
+        </div>
+      </div>
+      <div class="metric-card">
+        <h2>Disk Usage</h2>
+        <div class="chart-container">
+          <canvas id="diskChart"></canvas>
+        </div>
+      </div>
+      <div class="metric-card">
+        <h2>Network Traffic</h2>
+        <div class="chart-container">
+          <canvas id="networkChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const hostname = "Rons-MacBook-Pro.local";
+      const charts = {};
+
+      function initChart(ctx, label) {
+        return new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: label,
+                data: [],
+                borderColor: "rgb(75, 192, 192)",
+                tension: 0.1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
+
+      function updateCharts() {
+        const errorDiv = document.getElementById("error-message");
+        errorDiv.textContent = ""; // Clear previous errors
+
+        fetch(`http://YOUR_SERVER_IP:3000/api/metrics/${hostname}`)
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((err) => {
+                throw new Error(err.error || "Failed to fetch metrics");
+              });
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Received data:", data); // Add this for debugging
+            const { summary } = data;
+
+            // Update CPU Chart
+            charts.cpu.data.labels.push(new Date().toLocaleTimeString());
+            charts.cpu.data.datasets[0].data.push(summary.cpu.current_usage);
+            if (charts.cpu.data.labels.length > 10) {
+              charts.cpu.data.labels.shift();
+              charts.cpu.data.datasets[0].data.shift();
+            }
+            charts.cpu.update();
+
+            // Update Memory Chart
+            charts.memory.data.labels.push(new Date().toLocaleTimeString());
+            charts.memory.data.datasets[0].data.push(
+              summary.memory.percent_used
+            );
+            if (charts.memory.data.labels.length > 10) {
+              charts.memory.data.labels.shift();
+              charts.memory.data.datasets[0].data.shift();
+            }
+            charts.memory.update();
+
+            // Update Disk Chart
+            charts.disk.data.labels.push(new Date().toLocaleTimeString());
+            charts.disk.data.datasets[0].data.push(summary.disk.percent_used);
+            if (charts.disk.data.labels.length > 10) {
+              charts.disk.data.labels.shift();
+              charts.disk.data.datasets[0].data.shift();
+            }
+            charts.disk.update();
+
+            // Update Network Chart
+            charts.network.data.labels.push(new Date().toLocaleTimeString());
+            charts.network.data.datasets[0].data.push(
+              summary.network.bytes_sent_mb
+            );
+            if (charts.network.data.labels.length > 10) {
+              charts.network.data.labels.shift();
+              charts.network.data.datasets[0].data.shift();
+            }
+            charts.network.update();
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            errorDiv.textContent = `Error: ${error.message}`;
+          });
+      }
+
+      // Initialize charts
+      window.onload = () => {
+        charts.cpu = initChart(
+          document.getElementById("cpuChart").getContext("2d"),
+          "CPU %"
+        );
+        charts.memory = initChart(
+          document.getElementById("memoryChart").getContext("2d"),
+          "Memory %"
+        );
+        charts.disk = initChart(
+          document.getElementById("diskChart").getContext("2d"),
+          "Disk %"
+        );
+        charts.network = initChart(
+          document.getElementById("networkChart").getContext("2d"),
+          "Network MB/s"
+        );
+
+        // Update every 10 seconds
+        updateCharts();
+        setInterval(updateCharts, 10000);
+      };
+    </script>
+  </body>
+</html>
