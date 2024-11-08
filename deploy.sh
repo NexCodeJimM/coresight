@@ -43,10 +43,21 @@ cp .env.production .env
 echo "Setting up Python agent..."
 cd $WORKING_DIR/coresight-agent
 
-# Create and activate virtual environment
+# Remove existing venv if it exists
+rm -rf venv
+
+# Create and activate virtual environment with proper permissions
 echo "Creating Python virtual environment..."
 python3 -m venv venv
+chmod -R 755 venv/
+chmod -R root:root venv/
+
+# Activate virtual environment
 . venv/bin/activate
+
+# Fix permissions for python3 binary
+chmod 755 venv/bin/python3
+chmod 755 venv/bin/python
 
 # Install requirements
 echo "Installing Python requirements..."
@@ -102,11 +113,12 @@ echo "Deployment complete!"
 echo "Please configure InfluxDB at http://your-server-ip:8086"
 echo "Then access the dashboard at http://your-server-ip:3000"
 
-# Print status
-echo "Checking service status..."
+# Print status and permissions
+echo "Checking permissions and status..."
+echo "Python venv permissions:"
+ls -la $WORKING_DIR/coresight-agent/venv/bin/
 echo "Python path: $PYTHON_VENV_PATH"
 echo "Current directory: $(pwd)"
-ls -la $WORKING_DIR/coresight-agent/venv/bin/
 systemctl status influxdb --no-pager
 systemctl status coresight-agent --no-pager
 pm2 status
