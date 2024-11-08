@@ -35,14 +35,35 @@ cd backend
 npm install --production
 cp .env.production .env
 
-# 7. Set up the Python agent
+# 7. Create agent directory if it doesn't exist
+echo "Creating agent directory..."
+mkdir -p ../coresight-agent
+
+# 8. Set up the Python agent
 echo "Setting up Python agent..."
 cd ../coresight-agent
 python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+source venv/bin/activate || {
+    echo "Failed to activate virtual environment"
+    exit 1
+}
 
-# 8. Create systemd service for the agent
+# Verify Python is available
+which python3 || {
+    echo "Python3 not found in path"
+    exit 1
+}
+
+# Install requirements
+if [ -f requirements.txt ]; then
+    pip install -r requirements.txt
+else
+    echo "Warning: requirements.txt not found"
+    # Install basic requirements
+    pip install psutil requests netifaces
+fi
+
+# 9. Create systemd service for the agent
 echo "Creating systemd service for agent..."
 sudo tee /etc/systemd/system/coresight-agent.service << EOF
 [Unit]
@@ -54,7 +75,7 @@ Type=simple
 User=$USER
 WorkingDirectory=$(pwd)
 Environment=PYTHONPATH=$(pwd)
-ExecStart=$(pwd)/venv/bin/python agent.py
+ExecStart=$(pwd)/venv/bin/python3 agent.py
 Restart=always
 RestartSec=10
 
@@ -62,15 +83,18 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-# 9. Start services
+# 10. Start services
 echo "Starting services..."
 cd ../backend
 pm2 start server.js --name coresight-backend
 pm2 save
+
+# Reload systemd and start agent
+sudo systemctl daemon-reload
 sudo systemctl start coresight-agent
 sudo systemctl enable coresight-agent
 
-# 10. Configure firewall
+# 11. Configure firewall
 echo "Configuring firewall..."
 sudo ufw allow 22/tcp  # SSH
 sudo ufw allow 80/tcp  # HTTP
@@ -81,3 +105,9 @@ sudo ufw --force enable
 echo "Deployment complete!"
 echo "Please configure InfluxDB at http://your-server-ip:8086"
 echo "Then access the dashboard at http://your-server-ip:3000"
+
+# Print status of services
+echo "Checking service status..."
+systemctl status influxdb --no-pager
+systemctl status coresight-agent --no-pager
+pm2 status
