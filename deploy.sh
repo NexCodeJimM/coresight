@@ -49,8 +49,10 @@ rm -rf venv
 # Create and activate virtual environment with proper permissions
 echo "Creating Python virtual environment..."
 python3 -m venv venv
+
+# Set correct permissions and ownership
 chmod -R 755 venv/
-chmod -R root:root venv/
+chown -R root:root venv/
 
 # Activate virtual environment
 . venv/bin/activate
