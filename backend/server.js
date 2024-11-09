@@ -141,7 +141,18 @@ app.post("/api/metrics", async (req, res) => {
   }
 });
 
-// Query endpoint for frontend
+// Add debug logging function
+const debugRow = (row) => {
+  logger.info("Row details:", {
+    measurement: row._measurement,
+    field: row._field,
+    value: row._value,
+    time: row._time,
+    allFields: Object.keys(row),
+  });
+};
+
+// Update the query endpoint
 app.get("/api/metrics/:host", async (req, res) => {
   const queryApi = influxDB.getQueryApi(process.env.INFLUXDB_ORG);
   const host = req.params.host;
@@ -159,17 +170,15 @@ app.get("/api/metrics/:host", async (req, res) => {
     const rows = await queryApi.collectRows(query);
     logger.info(`Query returned ${rows.length} rows`);
 
-    if (rows.length === 0) {
-      logger.warn("No data found for this host");
-      return res.status(404).json({ error: "No data found for this host" });
-    }
+    // Log the first few rows to see their structure
+    logger.info("Sample rows:", rows.slice(0, 2));
 
-    // Format the data into a more readable structure
+    // Initialize data structure
     const formattedData = {
       cpu: {
-        percent: [],
-        count: [],
-        frequency: [],
+        cpu_percent: [],
+        cpu_count: [],
+        cpu_freq_current: [],
       },
       memory: {
         total: [],
@@ -192,56 +201,90 @@ app.get("/api/metrics/:host", async (req, res) => {
       processes: [],
     };
 
-    // Process each row and organize by measurement type
+    // Process each row
     rows.forEach((row) => {
+      debugRow(row); // Log details of each row
+
       const timestamp = new Date(row._time).toLocaleString();
       const value = row._value;
       const measurement = row._measurement;
       const field = row._field;
 
-      switch (measurement) {
-        case "cpu":
-          formattedData.cpu[field].push({
-            time: timestamp,
-            value: value,
-          });
-          break;
-        case "memory":
-          formattedData.memory[field].push({
-            time: timestamp,
-            value: value,
-          });
-          break;
-        case "disk":
-          formattedData.disk[field].push({
-            time: timestamp,
-            value: value,
-          });
-          break;
-        case "network":
-          formattedData.network[field].push({
-            time: timestamp,
-            value: value,
-          });
-          break;
-        case "process":
-          formattedData.processes.push({
-            time: timestamp,
-            name: row.process_name,
-            pid: value,
-            cpu_percent: row.cpu_percent,
-            memory_percent: row.memory_percent,
-          });
-          break;
+      try {
+        switch (measurement) {
+          case "cpu":
+            if (!formattedData.cpu.hasOwnProperty(field)) {
+              logger.warn(`Unknown CPU field: ${field}`);
+              formattedData.cpu[field] = [];
+            }
+            formattedData.cpu[field].push({
+              time: timestamp,
+              value: value,
+            });
+            break;
+
+          case "memory":
+            if (!formattedData.memory.hasOwnProperty(field)) {
+              logger.warn(`Unknown memory field: ${field}`);
+              formattedData.memory[field] = [];
+            }
+            formattedData.memory[field].push({
+              time: timestamp,
+              value: value,
+            });
+            break;
+
+          case "disk":
+            if (!formattedData.disk.hasOwnProperty(field)) {
+              logger.warn(`Unknown disk field: ${field}`);
+              formattedData.disk[field] = [];
+            }
+            formattedData.disk[field].push({
+              time: timestamp,
+              value: value,
+            });
+            break;
+
+          case "network":
+            if (!formattedData.network.hasOwnProperty(field)) {
+              logger.warn(`Unknown network field: ${field}`);
+              formattedData.network[field] = [];
+            }
+            formattedData.network[field].push({
+              time: timestamp,
+              value: value,
+            });
+            break;
+
+          case "process":
+            formattedData.processes.push({
+              time: timestamp,
+              name: row.process_name,
+              pid: value,
+              cpu_percent: row.cpu_percent,
+              memory_percent: row.memory_percent,
+            });
+            break;
+
+          default:
+            logger.warn(`Unknown measurement type: ${measurement}`);
+        }
+      } catch (error) {
+        logger.error(`Error processing row: ${error.message}`, {
+          measurement,
+          field,
+          value,
+          row: JSON.stringify(row),
+        });
       }
     });
 
-    // Add summary of latest values
+    // Create summary
     const summary = {
       lastUpdate: new Date().toLocaleString(),
       cpu: {
-        current_usage: formattedData.cpu.percent[0]?.value || 0,
-        count: formattedData.cpu.count[0]?.value || 0,
+        current_usage: formattedData.cpu.cpu_percent[0]?.value || 0,
+        count: formattedData.cpu.cpu_count[0]?.value || 0,
       },
       memory: {
         percent_used: formattedData.memory.percent[0]?.value || 0,
