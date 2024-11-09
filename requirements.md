@@ -34,3 +34,5 @@
   - Implement polling or WebSocket connections to update data every 10 seconds.
   - Add threshold-based alerts to notify users when any metric exceeds 85%.
   - Alerts should be sent via email.
+- Authentication for admin.
+- Can create users that can also access the dashboard but only admins can add them in.

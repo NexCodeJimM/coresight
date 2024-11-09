@@ -22,31 +22,56 @@
         gap: 20px;
         padding: 20px;
       }
+      .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        text-align: center;
+        margin: 10px 0;
+      }
+      .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body>
     <div class="grid">
       <div id="error-message" style="color: red; padding: 20px"></div>
       <div class="metric-card">
-        <h2>CPU Usage</h2>
+        <div class="metric-header">
+          <h2>CPU Usage</h2>
+          <div id="cpuValue" class="metric-value">0%</div>
+        </div>
         <div class="chart-container">
           <canvas id="cpuChart"></canvas>
         </div>
       </div>
       <div class="metric-card">
-        <h2>Memory Usage</h2>
+        <div class="metric-header">
+          <h2>Memory Usage</h2>
+          <div id="memoryValue" class="metric-value">0%</div>
+        </div>
         <div class="chart-container">
           <canvas id="memoryChart"></canvas>
         </div>
       </div>
       <div class="metric-card">
-        <h2>Disk Usage</h2>
+        <div class="metric-header">
+          <h2>Disk Usage</h2>
+          <div id="diskValue" class="metric-value">0%</div>
+        </div>
         <div class="chart-container">
           <canvas id="diskChart"></canvas>
         </div>
       </div>
       <div class="metric-card">
-        <h2>Network Traffic</h2>
+        <div class="metric-header">
+          <h2>Network Traffic</h2>
+          <div id="networkValue" class="metric-value">0 MB/s</div>
+        </div>
         <div class="chart-container">
           <canvas id="networkChart"></canvas>
         </div>
@@ -97,10 +122,13 @@
             return response.json();
           })
           .then((data) => {
-            console.log("Received data:", data); // Add this for debugging
+            console.log("Received data:", data);
             const { summary } = data;
 
-            // Update CPU Chart
+            // Update CPU
+            document.getElementById(
+              "cpuValue"
+            ).textContent = `${summary.cpu.current_usage.toFixed(1)}%`;
             charts.cpu.data.labels.push(new Date().toLocaleTimeString());
             charts.cpu.data.datasets[0].data.push(summary.cpu.current_usage);
             if (charts.cpu.data.labels.length > 10) {
@@ -109,7 +137,10 @@
             }
             charts.cpu.update();
 
-            // Update Memory Chart
+            // Update Memory
+            document.getElementById(
+              "memoryValue"
+            ).textContent = `${summary.memory.percent_used.toFixed(1)}%`;
             charts.memory.data.labels.push(new Date().toLocaleTimeString());
             charts.memory.data.datasets[0].data.push(
               summary.memory.percent_used
@@ -120,7 +151,10 @@
             }
             charts.memory.update();
 
-            // Update Disk Chart
+            // Update Disk
+            document.getElementById(
+              "diskValue"
+            ).textContent = `${summary.disk.percent_used.toFixed(1)}%`;
             charts.disk.data.labels.push(new Date().toLocaleTimeString());
             charts.disk.data.datasets[0].data.push(summary.disk.percent_used);
             if (charts.disk.data.labels.length > 10) {
@@ -129,11 +163,15 @@
             }
             charts.disk.update();
 
-            // Update Network Chart
+            // Update Network
+            const networkTotal = (
+              summary.network.bytes_sent_mb + summary.network.bytes_recv_mb
+            ).toFixed(2);
+            document.getElementById(
+              "networkValue"
+            ).textContent = `${networkTotal} MB/s`;
             charts.network.data.labels.push(new Date().toLocaleTimeString());
-            charts.network.data.datasets[0].data.push(
-              summary.network.bytes_sent_mb
-            );
+            charts.network.data.datasets[0].data.push(networkTotal);
             if (charts.network.data.labels.length > 10) {
               charts.network.data.labels.shift();
               charts.network.data.datasets[0].data.shift();
