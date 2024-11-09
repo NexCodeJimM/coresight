@@ -26,9 +26,16 @@ const logger = winston.createLogger({
 const app = express();
 app.use(
   cors({
-    origin: "*", // Be more specific in production
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
+    origin: [
+      "http://localhost:3000", // Local development
+      "http://165.22.237.60", // Production server
+      "http://165.22.237.60:3000", // Production server with port
+      // Add any other allowed origins
+    ],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // Allow credentials
+    maxAge: 86400, // Cache preflight requests for 24 hours
   })
 );
 app.use(express.json());
@@ -361,6 +368,34 @@ app.get("/api/debug/metrics", async (req, res) => {
       },
     });
   }
+});
+
+// Add this before your routes
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header("Access-Control-Allow-Credentials", true);
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    return res.status(200).json({});
+  }
+  next();
+});
+
+// Add error handling for CORS
+app.use((err, req, res, next) => {
+  if (err.name === "CORSError") {
+    logger.error("CORS Error:", err);
+    return res.status(403).json({
+      error: "CORS error",
+      message: "Origin not allowed",
+      origin: req.headers.origin,
+    });
+  }
+  next(err);
 });
 
 // Start server

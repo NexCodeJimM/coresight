@@ -26,13 +26,28 @@
 
 ##Step 3: Develop the Next.js Frontend
 
-- Design the Dashboard:
-  - Build the initial UI in Next.js, focusing on the layout for displaying CPU, memory, disk, network, and process data.
-- Fetch Data from Backend:
-  - Use Next.js API routes to pull data from InfluxDB and display it on the frontend.
-- Real-time Updates and Alerts:
-  - Implement polling or WebSocket connections to update data every 10 seconds.
-  - Add threshold-based alerts to notify users when any metric exceeds 85%.
-  - Alerts should be sent via email.
-- Authentication for admin.
-- Can create users that can also access the dashboard but only admins can add them in.
+- The files are in `coresight-web-main`
+- Create the website using Next.JS 14
+- MAKE SURE THAT YOU USE APPROUTER.
+- Store the data to MySQL database.
+- Use NextAUTH for the authentication.
+- There should be a default admin user with the username `efi_admin`, email `efi_admin@test.com`, password of `*7eL£~0YV&9h`.
+- Users cannot signup only admin can create users.
+- Create a bash file on how to set it up on a new server.
+- The server should have MySQL with PHPMyAdmin
+- Use ShadCN UI for the UI Framework
+- use Chart.js for the charts.
+- Create the appropriate MySQL table for this system.
+- There should be a role where not everyone can be admin. Maybe a viewer
+
+MYSQL:
+Users:
+Username
+Password
+Email
+Profile Picture
+role
+is_Admin
+last_login
+
+Put more table that is applicable to this system.
