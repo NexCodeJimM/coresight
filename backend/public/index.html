@@ -54,7 +54,7 @@
     </div>
 
     <script>
-      const hostname = "Rons-MacBook-Pro.local";
+      const hostname = "intel-test-server-ca";
       const charts = {};
 
       function initChart(ctx, label) {
@@ -87,7 +87,7 @@
         const errorDiv = document.getElementById("error-message");
         errorDiv.textContent = ""; // Clear previous errors
 
-        fetch(`http://YOUR_SERVER_IP:3000/api/metrics/${hostname}`)
+        fetch(`http://165.22.237.60:3000/api/metrics/${hostname}`)
           .then((response) => {
             if (!response.ok) {
               return response.json().then((err) => {

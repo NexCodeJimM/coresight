@@ -112,8 +112,8 @@ ufw allow 3000/tcp # Your app
 ufw --force enable
 
 echo "Deployment complete!"
-echo "Please configure InfluxDB at http://your-server-ip:8086"
-echo "Then access the dashboard at http://your-server-ip:3000"
+echo "Please configure InfluxDB at http://165.22.237.60:8086"
+echo "Then access the dashboard at http://165.22.237.60:3000"
 
 # Print status and permissions
 echo "Checking permissions and status..."

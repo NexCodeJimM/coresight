@@ -24,7 +24,13 @@ const logger = winston.createLogger({
 
 // Initialize Express app
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // Be more specific in production
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -313,18 +319,6 @@ app.get("/api/debug/metrics", async (req, res) => {
     });
   }
 });
-
-// Add HTTPS support if certificates exist
-if (process.env.NODE_ENV === "production") {
-  const privateKey = fs.readFileSync("/path/to/private.key", "utf8");
-  const certificate = fs.readFileSync("/path/to/certificate.crt", "utf8");
-  const credentials = { key: privateKey, cert: certificate };
-
-  const httpsServer = https.createServer(credentials, app);
-  httpsServer.listen(443, () => {
-    logger.info("HTTPS Server running on port 443");
-  });
-}
 
 // Start server
 const PORT = process.env.PORT || 3000;
