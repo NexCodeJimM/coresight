@@ -1,0 +1,15 @@
+[Unit]
+Description=Coresight System Monitoring Agent
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/coresight/coresight-agent
+Environment=PYTHONPATH=/root/coresight/coresight-agent
+ExecStart=/root/coresight/coresight-agent/venv/bin/python3 /root/coresight/coresight-agent/agent.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
