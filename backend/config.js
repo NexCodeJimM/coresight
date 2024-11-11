@@ -2,7 +2,7 @@ const config = {
   development: {
     port: 3000,
     influxdb: {
-      url: "http://localhost:8086",
+      url: "http://165.22.237.60:8086",
       org: "EFI",
       bucket: "efi_servers",
     },
