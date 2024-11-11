@@ -2,12 +2,31 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 
+async function fetchWithRetry(url: string, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.status === 429) {
+        await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
+        continue;
+      }
+      if (!response.ok) {
+        throw new Error(`Backend responded with ${response.status}`);
+      }
+      return response;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
+    }
+  }
+  throw new Error("Max retries reached");
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get the server hostname from the database
     const [servers] = await db.query(
       "SELECT name, ip_address, hostname FROM servers WHERE id = ?",
       [params.id]
@@ -19,30 +38,14 @@ export async function GET(
     }
 
     try {
-      // Fetch from the monitoring backend
-      const response = await fetch(
-        `${config.API_URL}${config.HEALTH_ENDPOINT}/${server.hostname}`
+      const response = await fetchWithRetry(
+        `${config.API_URL}${config.METRICS_ENDPOINT}/${server.hostname}`
       );
-
-      if (!response.ok) {
-        throw new Error(`Backend responded with ${response.status}`);
-      }
-
       const data = await response.json();
 
-      // Transform the data to match our interface
       return NextResponse.json({
-        cpu_usage: data.cpu.usage,
-        memory_usage: data.memory.percentage,
-        disk_usage: data.disk.percentage,
-        uptime: data.uptime,
-        total_memory: data.memory.total,
-        total_disk: data.disk.total,
-        used_memory: data.memory.used,
-        used_disk: data.disk.used,
+        ...data,
         is_connected: true,
-        network_in: data.network.rx_bytes,
-        network_out: data.network.tx_bytes,
       });
     } catch (error) {
       console.error("Backend connection error:", error);
@@ -52,16 +55,8 @@ export async function GET(
     console.error("Failed to fetch server health:", error);
     return NextResponse.json(
       {
-        cpu_usage: 0,
-        memory_usage: 0,
-        disk_usage: 0,
-        uptime: 0,
-        total_memory: 0,
-        total_disk: 0,
-        used_memory: 0,
-        used_disk: 0,
+        error: "Failed to fetch server health",
         is_connected: false,
-        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

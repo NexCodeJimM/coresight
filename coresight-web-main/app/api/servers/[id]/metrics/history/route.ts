@@ -2,12 +2,32 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 
+async function fetchWithRetry(url: string, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.status === 429) {
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
+        continue;
+      }
+      if (!response.ok) {
+        throw new Error(`Backend responded with ${response.status}`);
+      }
+      return response;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
+    }
+  }
+  throw new Error("Max retries reached");
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get server details
     const [servers] = await db.query(
       "SELECT name, ip_address, hostname FROM servers WHERE id = ?",
       [params.id]
@@ -18,36 +38,13 @@ export async function GET(
       return NextResponse.json({ error: "Server not found" }, { status: 404 });
     }
 
-    // Get history parameter
-    const { searchParams } = new URL(request.url);
-    const hours = parseInt(searchParams.get("hours") || "24");
-    const type = searchParams.get("type") || "performance";
-
     try {
-      // Fetch from monitoring backend
-      const response = await fetch(
-        `${config.API_URL}${config.METRICS_ENDPOINT}/${server.hostname}/history?hours=${hours}&type=${type}`
+      const response = await fetchWithRetry(
+        `${config.API_URL}${config.METRICS_ENDPOINT}/${server.hostname}/history`
       );
-
-      if (!response.ok) {
-        throw new Error(`Backend responded with ${response.status}`);
-      }
-
       const data = await response.json();
 
-      // Transform the data to match our interface
-      const transformedData = data.map((metric: any) => ({
-        timestamp: new Date(metric.timestamp).toISOString(),
-        cpu_usage: metric.cpu.usage,
-        memory_usage: metric.memory.percentage,
-        disk_usage: metric.disk.percentage,
-        network_in: metric.network.rx_bytes,
-        network_out: metric.network.tx_bytes,
-        disk_read: metric.disk.read_bytes,
-        disk_write: metric.disk.write_bytes,
-      }));
-
-      return NextResponse.json(transformedData);
+      return NextResponse.json(data);
     } catch (error) {
       console.error("Backend connection error:", error);
       throw new Error("Failed to connect to monitoring backend");
