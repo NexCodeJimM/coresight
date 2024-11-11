@@ -57,6 +57,9 @@ export default async function ServerPage({
     notFound();
   }
 
+  console.log("Server ID:", params.id);
+  console.log("Server data:", server);
+
   return (
     <DashboardShell>
       <ServerHeader server={server} />

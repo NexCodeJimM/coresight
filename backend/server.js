@@ -402,6 +402,53 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// Metrics history endpoint
+app.get("/api/metrics/history/:hostname", async (req, res) => {
+  try {
+    const { hostname } = req.params;
+    console.log("Fetching history for hostname:", hostname);
+
+    // Get metrics from your database or source
+    const metrics = await getMetricsHistory(hostname);
+
+    res.json(metrics);
+  } catch (error) {
+    console.error("Error fetching metrics history:", error);
+    res.status(500).json({ error: "Failed to fetch metrics history" });
+  }
+});
+
+// Health check endpoint
+app.get("/api/health/:hostname", async (req, res) => {
+  try {
+    const { hostname } = req.params;
+    console.log("Fetching health for hostname:", hostname);
+
+    // Get current health metrics
+    const health = await getCurrentHealth(hostname);
+
+    res.json(health);
+  } catch (error) {
+    console.error("Error fetching health:", error);
+    res.status(500).json({ error: "Failed to fetch health data" });
+  }
+});
+
+// Add logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Server error:", err);
+  res.status(500).json({
+    error: "Internal server error",
+    message: err.message,
+  });
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
