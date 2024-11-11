@@ -1,12 +1,16 @@
 const express = require("express");
 const cors = require("cors");
 const influx = require("influx"); // Make sure influxdb is installed
+const config = require("./config");
 const app = express();
 
-// Configure InfluxDB
+// Configure InfluxDB with more options
 const influxClient = new influx.InfluxDB({
-  host: "efi",
-  database: "efi_servers",
+  host: config.influxdb.host,
+  database: config.influxdb.database,
+  username: config.influxdb.username,
+  password: config.influxdb.password,
+  port: config.influxdb.port,
   schema: [
     {
       measurement: "system_metrics",
@@ -21,6 +25,25 @@ const influxClient = new influx.InfluxDB({
     },
   ],
 });
+
+// Test InfluxDB connection on startup
+async function testInfluxConnection() {
+  try {
+    const names = await influxClient.getDatabaseNames();
+    console.log("Connected to InfluxDB successfully");
+    console.log("Available databases:", names);
+
+    if (!names.includes(config.influxdb.database)) {
+      console.log(`Creating database ${config.influxdb.database}`);
+      await influxClient.createDatabase(config.influxdb.database);
+    }
+  } catch (err) {
+    console.error("Error connecting to InfluxDB:", err);
+    process.exit(1); // Exit if we can't connect to InfluxDB
+  }
+}
+
+testInfluxConnection();
 
 // Middleware
 app.use(cors());
@@ -38,7 +61,10 @@ app.get("/api/metrics/history/:hostname", async (req, res) => {
     const { hostname } = req.params;
     console.log(`Fetching metrics history for hostname: ${hostname}`);
 
-    // Query InfluxDB for the last 24 hours of metrics
+    // Test query to check connection
+    const testQuery = await influxClient.query(`SHOW MEASUREMENTS`);
+    console.log("Available measurements:", testQuery);
+
     const results = await influxClient.query(`
       SELECT mean("cpu_usage") as cpu_usage,
              mean("memory_usage") as memory_usage,
@@ -51,7 +77,8 @@ app.get("/api/metrics/history/:hostname", async (req, res) => {
       GROUP BY time(5m)
     `);
 
-    // Transform the data
+    console.log("Query results:", results);
+
     const metrics = results.map((point) => ({
       timestamp: point.time,
       cpu_usage: point.cpu_usage || 0,
@@ -63,10 +90,15 @@ app.get("/api/metrics/history/:hostname", async (req, res) => {
 
     res.json(metrics);
   } catch (error) {
-    console.error("Error fetching metrics history:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      query: error.query,
+    });
     res.status(500).json({
       error: "Failed to fetch metrics history",
       details: error.message,
+      query: error.query,
     });
   }
 });

@@ -1,9 +1,10 @@
 module.exports = {
   influxdb: {
-    host: "intel-test-server-ca",
+    host: "165.22.237.60",
     database: "efi_servers",
-    username: "jimm", // if required
-    password: "Rjmendoza21!", // if required
+    username: "jimm",
+    password: "Rjmendoza21!",
+    port: 8086,
   },
   server: {
     port: 3000,
