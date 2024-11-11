@@ -25286,3 +25286,3200 @@
   ]
 }
 2024-11-11 23:10:04,354 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x77f2dfc238f0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-11 23:14:42,142 - CoreSightAgent - INFO - Agent running with hostname: intel-test-server-ca
+2024-11-11 23:14:43,167 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:14:42.142464",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 12.1,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7580983296,
+    "percent": 9.0,
+    "used": 422043648
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15816040448,
+    "free": 149576491008,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5293210432,
+    "bytes_recv": 4643896350,
+    "packets_sent": 2134117,
+    "packets_recv": 1816994
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:14:43,338 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:14:42.142464
+2024-11-11 23:14:54,352 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:14:53.338800",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7536295936,
+    "percent": 9.5,
+    "used": 466731008
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15823470592,
+    "free": 149569060864,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5294091602,
+    "bytes_recv": 4643913585,
+    "packets_sent": 2134430,
+    "packets_recv": 1817061
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:14:54,364 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:14:53.338800
+2024-11-11 23:15:05,402 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:15:04.364659",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 78.4,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7513051136,
+    "percent": 9.8,
+    "used": 489820160
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15829467136,
+    "free": 149563064320,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5298492110,
+    "bytes_recv": 4648051315,
+    "packets_sent": 2135174,
+    "packets_recv": 1817736
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:15:05,458 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:15:04.364659
+2024-11-11 23:15:16,472 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:15:15.459328",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7238848512,
+    "percent": 13.1,
+    "used": 764076032
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15845773312,
+    "free": 149546758144,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5368590360,
+    "bytes_recv": 4716465085,
+    "packets_sent": 2138516,
+    "packets_recv": 1820611
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:15:16,485 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:15:15.459328
+2024-11-11 23:15:27,506 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:15:26.485917",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7185240064,
+    "percent": 13.7,
+    "used": 817774592
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15853219840,
+    "free": 149539311616,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5371532226,
+    "bytes_recv": 4718540472,
+    "packets_sent": 2139366,
+    "packets_recv": 1821217
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:15:27,520 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:15:26.485917
+2024-11-11 23:15:38,534 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:15:37.521027",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7129481216,
+    "percent": 14.4,
+    "used": 873545728
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15860666368,
+    "free": 149531865088,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5374491160,
+    "bytes_recv": 4720621858,
+    "packets_sent": 2140226,
+    "packets_recv": 1821854
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:15:38,544 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:15:37.521027
+2024-11-11 23:15:49,566 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:15:48.544788",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7071862784,
+    "percent": 15.1,
+    "used": 931164160
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15868104704,
+    "free": 149524426752,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5377429586,
+    "bytes_recv": 4722696286,
+    "packets_sent": 2141072,
+    "packets_recv": 1822448
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:15:49,582 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:15:48.544788
+2024-11-11 23:16:00,596 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:15:59.583068",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7002181632,
+    "percent": 15.9,
+    "used": 1000845312
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15875543040,
+    "free": 149516988416,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5380368311,
+    "bytes_recv": 4724771105,
+    "packets_sent": 2141894,
+    "packets_recv": 1823027
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:16:00,605 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:15:59.583068
+2024-11-11 23:16:11,617 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:16:10.605984",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 6943698944,
+    "percent": 16.6,
+    "used": 1059328000
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15882981376,
+    "free": 149509550080,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5383302016,
+    "bytes_recv": 4726841335,
+    "packets_sent": 2142659,
+    "packets_recv": 1823548
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:16:11,626 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:16:10.605984
+2024-11-11 23:16:22,640 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:16:21.627267",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 6881492992,
+    "percent": 17.4,
+    "used": 1121533952
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15890415616,
+    "free": 149502115840,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5386234545,
+    "bytes_recv": 4728910779,
+    "packets_sent": 2143403,
+    "packets_recv": 1824054
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:16:22,651 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:16:21.627267
+2024-11-11 23:16:33,664 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:16:32.652192",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 6826704896,
+    "percent": 18.0,
+    "used": 1176322048
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15897862144,
+    "free": 149494669312,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5389182867,
+    "bytes_recv": 4730986525,
+    "packets_sent": 2144210,
+    "packets_recv": 1824631
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:16:33,673 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:16:32.652192
+2024-11-11 23:16:44,694 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:16:43.673961",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 28.8,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 6723928064,
+    "percent": 19.3,
+    "used": 1279053824
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15908200448,
+    "free": 149484331008,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5394201052,
+    "bytes_recv": 4735124043,
+    "packets_sent": 2145513,
+    "packets_recv": 1825688
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:16:44,714 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:16:43.673961
+2024-11-11 23:16:55,727 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:16:54.714822",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 31.2,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7422771200,
+    "percent": 10.9,
+    "used": 580186112
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15920189440,
+    "free": 149472342016,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5397355659,
+    "bytes_recv": 4737208641,
+    "packets_sent": 2146347,
+    "packets_recv": 1826211
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:16:55,737 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:16:54.714822
+2024-11-11 23:17:06,753 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:17:05.737685",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7442681856,
+    "percent": 10.6,
+    "used": 560250880
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15927627776,
+    "free": 149464903680,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5400914843,
+    "bytes_recv": 4739258388,
+    "packets_sent": 2147392,
+    "packets_recv": 1826805
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:17:06,765 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:17:05.737685
+2024-11-11 23:17:17,779 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:17:16.765565",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7449391104,
+    "percent": 10.5,
+    "used": 553541632
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15935062016,
+    "free": 149457469440,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5403850316,
+    "bytes_recv": 4741330170,
+    "packets_sent": 2148190,
+    "packets_recv": 1827356
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:17:17,789 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:17:16.765565
+2024-11-11 23:17:28,815 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:17:27.789970",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7447781376,
+    "percent": 10.6,
+    "used": 555196416
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15942512640,
+    "free": 149450018816,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5406802947,
+    "bytes_recv": 4743410299,
+    "packets_sent": 2149067,
+    "packets_recv": 1827998
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:17:28,830 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:17:27.789970
+2024-11-11 23:17:39,844 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:17:38.831510",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7441567744,
+    "percent": 10.6,
+    "used": 561352704
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15949959168,
+    "free": 149442572288,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5409747364,
+    "bytes_recv": 4745486026,
+    "packets_sent": 2149892,
+    "packets_recv": 1828591
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:17:39,852 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:17:38.831510
+2024-11-11 23:17:50,879 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:17:49.853066",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7450472448,
+    "percent": 10.5,
+    "used": 552452096
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15957409792,
+    "free": 149435121664,
+    "percent": 9.6
+  },
+  "network": {
+    "bytes_sent": 5412713554,
+    "bytes_recv": 4747578155,
+    "packets_sent": 2150805,
+    "packets_recv": 1829289
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:17:50,897 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:17:49.853066
+2024-11-11 23:18:01,910 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:18:00.897770",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7455715328,
+    "percent": 10.5,
+    "used": 547311616
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15964844032,
+    "free": 149427687424,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5415652708,
+    "bytes_recv": 4749653930,
+    "packets_sent": 2151670,
+    "packets_recv": 1829912
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:18:01,920 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:18:00.897770
+2024-11-11 23:18:12,937 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:18:11.920986",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7451308032,
+    "percent": 10.5,
+    "used": 551714816
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15972286464,
+    "free": 149420244992,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5418588812,
+    "bytes_recv": 4751726317,
+    "packets_sent": 2152481,
+    "packets_recv": 1830476
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:18:12,948 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:18:11.920986
+2024-11-11 23:18:23,962 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:18:22.949360",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7460626432,
+    "percent": 10.4,
+    "used": 542400512
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15979720704,
+    "free": 149412810752,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5421523237,
+    "bytes_recv": 4753796678,
+    "packets_sent": 2153117,
+    "packets_recv": 1830878
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:18:23,974 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:18:22.949360
+2024-11-11 23:18:34,996 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:18:33.975107",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 21.6,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7464128512,
+    "percent": 10.4,
+    "used": 538841088
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15988740096,
+    "free": 149403791360,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5426539331,
+    "bytes_recv": 4757932408,
+    "packets_sent": 2154445,
+    "packets_recv": 1831962
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:18:35,011 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:18:33.975107
+2024-11-11 23:18:46,025 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:18:45.012246",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 44.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7463751680,
+    "percent": 10.4,
+    "used": 539238400
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16002056192,
+    "free": 149390475264,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5429755259,
+    "bytes_recv": 4760070881,
+    "packets_sent": 2155343,
+    "packets_recv": 1832565
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:18:46,036 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:18:45.012246
+2024-11-11 23:18:57,049 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:18:56.036577",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7470907392,
+    "percent": 10.3,
+    "used": 532086784
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16009494528,
+    "free": 149383036928,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5433324504,
+    "bytes_recv": 4762132120,
+    "packets_sent": 2156085,
+    "packets_recv": 1832876
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:18:57,058 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:18:56.036577
+2024-11-11 23:19:08,072 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:19:07.058360",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7449710592,
+    "percent": 10.5,
+    "used": 553140224
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16016928768,
+    "free": 149375602688,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5436283381,
+    "bytes_recv": 4764227928,
+    "packets_sent": 2156848,
+    "packets_recv": 1833402
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:19:08,083 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:19:07.058360
+2024-11-11 23:19:19,100 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:19:18.083661",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7449546752,
+    "percent": 10.5,
+    "used": 553369600
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16024363008,
+    "free": 149368168448,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5439204917,
+    "bytes_recv": 4766285686,
+    "packets_sent": 2157378,
+    "packets_recv": 1833684
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:19:19,109 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:19:18.083661
+2024-11-11 23:19:30,130 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:19:29.110062",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7448424448,
+    "percent": 10.6,
+    "used": 554602496
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16024387584,
+    "free": 149368143872,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5439222136,
+    "bytes_recv": 4766302804,
+    "packets_sent": 2157418,
+    "packets_recv": 1833727
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:19:30,144 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:19:29.110062
+2024-11-11 23:19:41,157 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:19:40.144463",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7487082496,
+    "percent": 10.1,
+    "used": 515944448
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16024424448,
+    "free": 149368107008,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5439251940,
+    "bytes_recv": 4766324078,
+    "packets_sent": 2157480,
+    "packets_recv": 1833803
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:19:41,167 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:19:40.144463
+2024-11-11 23:19:52,180 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:19:51.167502",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7459901440,
+    "percent": 10.4,
+    "used": 543121408
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16031858688,
+    "free": 149360672768,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5442177305,
+    "bytes_recv": 4768383222,
+    "packets_sent": 2158015,
+    "packets_recv": 1834081
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:19:52,192 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:19:51.167502
+2024-11-11 23:20:03,236 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:20:02.192854",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7462477824,
+    "percent": 10.4,
+    "used": 540549120
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16031891456,
+    "free": 149360640000,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5442192572,
+    "bytes_recv": 4768398465,
+    "packets_sent": 2158050,
+    "packets_recv": 1834116
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.1,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:20:03,288 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:20:02.192854
+2024-11-11 23:20:14,301 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:20:13.289005",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7462502400,
+    "percent": 10.4,
+    "used": 540524544
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16031916032,
+    "free": 149360615424,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5442207346,
+    "bytes_recv": 4768413239,
+    "packets_sent": 2158080,
+    "packets_recv": 1834146
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.1,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:20:14,310 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:20:13.289005
+2024-11-11 23:20:25,324 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:20:24.310677",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7481544704,
+    "percent": 10.2,
+    "used": 521482240
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16031969280,
+    "free": 149360562176,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5442231931,
+    "bytes_recv": 4768438124,
+    "packets_sent": 2158116,
+    "packets_recv": 1834187
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:20:25,335 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:20:24.310677
+2024-11-11 23:20:36,348 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:20:35.335521",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7481589760,
+    "percent": 10.2,
+    "used": 521437184
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16031989760,
+    "free": 149360541696,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5442246677,
+    "bytes_recv": 4768452982,
+    "packets_sent": 2158146,
+    "packets_recv": 1834218
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:20:36,357 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:20:35.335521
+2024-11-11 23:20:47,373 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-11T23:20:46.357667",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7475404800,
+    "percent": 10.2,
+    "used": 527622144
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 16039440384,
+    "free": 149353091072,
+    "percent": 9.7
+  },
+  "network": {
+    "bytes_sent": 5445198806,
+    "bytes_recv": 4770532613,
+    "packets_sent": 2158845,
+    "packets_recv": 1834682
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-11 23:20:47,382 - CoreSightAgent - INFO - Metrics sent successfully at 2024-11-11T23:20:46.357667
