@@ -1,91 +1,62 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatBytes } from "@/lib/utils";
-import { Activity, HardDrive, Cpu, WifiOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Activity, HardDrive, CircuitBoard, Cpu } from "lucide-react";
 
 interface ServerHealth {
   cpu_usage: number;
   memory_usage: number;
+  memory_total: number;
+  memory_used: number;
   disk_usage: number;
+  disk_total: number;
+  disk_used: number;
   uptime: number;
-  total_memory: number;
-  total_disk: number;
-  used_memory: number;
-  used_disk: number;
   is_connected: boolean;
+  last_seen: string;
 }
 
 export function ServerHealth({ serverId }: { serverId: string }) {
   const [health, setHealth] = useState<ServerHealth | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchHealth = async () => {
+    try {
+      const response = await fetch(`/api/servers/${serverId}/health`);
+      if (!response.ok) throw new Error("Failed to fetch server health");
+      const data = await response.json();
+      console.log("Updated health data:", data); // Debug log
+      setHealth(data);
+      setError(null);
+    } catch (error) {
+      console.error("Failed to fetch server health:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        const response = await fetch(`/api/servers/${serverId}/health`);
-        if (!response.ok) {
-          setIsConnected(false);
-          throw new Error("Failed to fetch server health");
-        }
-        const data = await response.json();
-        setHealth(data);
-        setIsConnected(true);
-      } catch (error) {
-        console.error("Failed to fetch server health:", error);
-        setHealth(null);
-        setIsConnected(false);
-        toast({
-          title: "Connection Error",
-          description:
-            "Unable to connect to the server. Please check the agent status.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    // Initial fetch
     fetchHealth();
-    const interval = setInterval(fetchHealth, 10000); // Update every 10 seconds
 
-    return () => clearInterval(interval);
-  }, [serverId, toast]);
+    // Set up polling interval (every 5 seconds)
+    const interval = setInterval(fetchHealth, 5000);
 
-  if (!isConnected) {
+    // Cleanup interval on component unmount
+    return () => {
+      clearInterval(interval);
+    };
+  }, [serverId]); // Re-run effect if serverId changes
+
+  if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="col-span-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Server Status</CardTitle>
-            <WifiOff className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-center text-sm text-muted-foreground">
-              Unable to connect to server agent. Please check if the agent is
-              running.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (loading || !health) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Loading...</CardTitle>
@@ -93,9 +64,6 @@ export function ServerHealth({ serverId }: { serverId: string }) {
             <CardContent>
               <div className="space-y-2">
                 <Progress value={0} />
-                <p className="text-xs text-muted-foreground">
-                  Loading metrics...
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -104,16 +72,15 @@ export function ServerHealth({ serverId }: { serverId: string }) {
     );
   }
 
-  const {
-    cpu_usage = 0,
-    memory_usage = 0,
-    disk_usage = 0,
-    uptime = 0,
-    total_memory = 0,
-    total_disk = 0,
-    used_memory = 0,
-    used_disk = 0,
-  } = health;
+  if (error) {
+    return (
+      <div className="p-4 text-red-500 bg-red-50 rounded-md">
+        Error loading server health: {error}
+      </div>
+    );
+  }
+
+  if (!health) return null;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -124,9 +91,9 @@ export function ServerHealth({ serverId }: { serverId: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Progress value={cpu_usage} />
+            <Progress value={health.cpu_usage} />
             <p className="text-xs text-muted-foreground">
-              {cpu_usage.toFixed(1)}% utilized
+              {health.cpu_usage.toFixed(1)}% utilized
             </p>
           </div>
         </CardContent>
@@ -135,13 +102,14 @@ export function ServerHealth({ serverId }: { serverId: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Memory Usage</CardTitle>
-          <Activity className="h-4 w-4 text-muted-foreground" />
+          <CircuitBoard className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Progress value={memory_usage} />
+            <Progress value={health.memory_usage} />
             <p className="text-xs text-muted-foreground">
-              {formatBytes(used_memory)} / {formatBytes(total_memory)}
+              {formatBytes(health.memory_used)} /{" "}
+              {formatBytes(health.memory_total)}
             </p>
           </div>
         </CardContent>
@@ -154,9 +122,9 @@ export function ServerHealth({ serverId }: { serverId: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Progress value={disk_usage} />
+            <Progress value={health.disk_usage} />
             <p className="text-xs text-muted-foreground">
-              {formatBytes(used_disk)} / {formatBytes(total_disk)}
+              {formatBytes(health.disk_used)} / {formatBytes(health.disk_total)}
             </p>
           </div>
         </CardContent>
@@ -170,12 +138,11 @@ export function ServerHealth({ serverId }: { serverId: string }) {
         <CardContent>
           <div className="space-y-2">
             <div className="text-2xl font-bold">
-              {Math.floor(uptime / 86400)}d{" "}
-              {Math.floor((uptime % 86400) / 3600)}h
+              {Math.floor(health.uptime / 86400)}d{" "}
+              {Math.floor((health.uptime % 86400) / 3600)}h
             </div>
             <p className="text-xs text-muted-foreground">
-              Last reboot:{" "}
-              {new Date(Date.now() - uptime * 1000).toLocaleDateString()}
+              Last reboot: {new Date(health.last_seen).toLocaleDateString()}
             </p>
           </div>
         </CardContent>

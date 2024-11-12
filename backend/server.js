@@ -3,6 +3,7 @@ const cors = require("cors");
 const os = require("os");
 const { exec } = require("child_process");
 const fs = require("fs").promises;
+const si = require("systeminformation");
 
 const app = express();
 
@@ -20,81 +21,116 @@ app.use((req, res, next) => {
   next();
 });
 
-// Get detailed system metrics
+// Enhanced system metrics function
 async function getDetailedSystemMetrics() {
-  return new Promise((resolve, reject) => {
-    exec("df -B1 / | tail -1", (error, dfOutput, stderr) => {
-      if (error) {
-        console.error("Error getting disk stats:", error);
-        return reject(error);
-      }
+  try {
+    const [cpu, mem, disk, network, processes] = await Promise.all([
+      si.cpu(),
+      si.mem(),
+      si.fsSize(),
+      si.networkStats(),
+      si.processes(),
+    ]);
 
-      const diskStats = dfOutput.trim().split(/\s+/);
-      const diskTotal = parseInt(diskStats[1]);
-      const diskUsed = parseInt(diskStats[2]);
-      const diskFree = parseInt(diskStats[3]);
+    // Get CPU temperature if available
+    let cpuTemp;
+    try {
+      cpuTemp = await si.cpuTemperature();
+    } catch (e) {
+      cpuTemp = { main: 0, cores: [], max: 0 };
+    }
 
-      exec("vmstat 1 2 | tail -1", (error, vmstatOutput, stderr) => {
-        if (error) {
-          console.error("Error getting vmstat:", error);
-          return reject(error);
-        }
+    // Get detailed CPU load per core
+    const cpuLoad = await si.currentLoad();
 
-        const vmstat = vmstatOutput.trim().split(/\s+/);
-        const cpuUser = parseInt(vmstat[12]);
-        const cpuSystem = parseInt(vmstat[13]);
-        const cpuIdle = parseInt(vmstat[14]);
-        const cpuIowait = parseInt(vmstat[15]);
-
-        const totalMem = os.totalmem();
-        const freeMem = os.freemem();
-        const usedMem = totalMem - freeMem;
-        const memoryPercentage = (usedMem / totalMem) * 100;
-
-        const metrics = {
-          timestamp: new Date().toISOString(),
-          system: {
-            hostname: os.hostname(),
-            platform: os.platform(),
-            release: os.release(),
-            uptime: os.uptime(),
-            loadavg: os.loadavg(),
-            totalmem: totalMem,
-            freemem: freeMem,
-          },
-          cpu: {
-            model: os.cpus()[0].model,
-            cores: os.cpus().length,
-            speed: os.cpus()[0].speed,
-            usage: {
-              user: cpuUser,
-              system: cpuSystem,
-              idle: cpuIdle,
-              iowait: cpuIowait,
-              total: cpuUser + cpuSystem,
-            },
-          },
-          memory: {
-            total: totalMem,
-            free: freeMem,
-            used: usedMem,
-            percentage: memoryPercentage,
-          },
-          disk: {
-            total: diskTotal,
-            used: diskUsed,
-            free: diskFree,
-            percentage: (diskUsed / diskTotal) * 100,
-            io: {
-              util_percentage: ((diskTotal - diskFree) / diskTotal) * 100,
-            },
-          },
-        };
-
-        resolve(metrics);
-      });
-    });
-  });
+    return {
+      timestamp: new Date().toISOString(),
+      cpu: {
+        usage: {
+          total: cpuLoad.currentLoad,
+          user: cpuLoad.currentLoadUser,
+          system: cpuLoad.currentLoadSystem,
+          idle: cpuLoad.currentLoadIdle,
+        },
+        cores: cpuLoad.cpus.map((core, index) => ({
+          number: index + 1,
+          load: core.load,
+          loadUser: core.loadUser,
+          loadSystem: core.loadSystem,
+        })),
+        temperature: {
+          main: cpuTemp.main,
+          cores: cpuTemp.cores,
+          max: cpuTemp.max,
+        },
+        info: {
+          manufacturer: cpu.manufacturer,
+          brand: cpu.brand,
+          speed: cpu.speed,
+          cores: cpu.cores,
+          physicalCores: cpu.physicalCores,
+        },
+      },
+      memory: {
+        total: mem.total,
+        used: mem.used,
+        free: mem.free,
+        active: mem.active,
+        available: mem.available,
+        swap: {
+          total: mem.swaptotal,
+          used: mem.swapused,
+          free: mem.swapfree,
+        },
+        percentage: (mem.used / mem.total) * 100,
+      },
+      disk: {
+        volumes: disk.map((volume) => ({
+          fs: volume.fs,
+          type: volume.type,
+          size: volume.size,
+          used: volume.used,
+          available: volume.available,
+          mount: volume.mount,
+          percentage: (volume.used / volume.size) * 100,
+        })),
+        io: {
+          total: disk.reduce((acc, curr) => acc + curr.size, 0),
+          used: disk.reduce((acc, curr) => acc + curr.used, 0),
+          available: disk.reduce((acc, curr) => acc + curr.available, 0),
+        },
+      },
+      network: {
+        interfaces: network.map((iface) => ({
+          interface: iface.iface,
+          rx_bytes: iface.rx_bytes,
+          tx_bytes: iface.tx_bytes,
+          rx_sec: iface.rx_sec,
+          tx_sec: iface.tx_sec,
+          rx_dropped: iface.rx_dropped,
+          tx_dropped: iface.tx_dropped,
+          rx_errors: iface.rx_errors,
+          tx_errors: iface.tx_errors,
+        })),
+      },
+      processes: {
+        all: processes.all,
+        running: processes.running,
+        blocked: processes.blocked,
+        sleeping: processes.sleeping,
+        top: processes.list.slice(0, 10).map((proc) => ({
+          pid: proc.pid,
+          name: proc.name,
+          cpu: proc.cpu,
+          mem: proc.mem,
+          command: proc.command,
+        })),
+      },
+    };
+  } catch (error) {
+    console.error("Error getting detailed metrics:", error);
+    throw error;
+  }
 }
 
 // Get current metrics for a specific server
@@ -102,13 +138,9 @@ app.get("/api/metrics/:hostname", async (req, res) => {
   const { hostname } = req.params;
 
   try {
-    const systemMetrics = await getDetailedSystemMetrics();
-    latestMetrics[hostname] = {
-      ...systemMetrics,
-      timestamp: new Date().toISOString(),
-    };
-
-    res.json(latestMetrics[hostname]);
+    const metrics = await getDetailedSystemMetrics();
+    latestMetrics[hostname] = metrics;
+    res.json(metrics);
   } catch (error) {
     console.error("Error getting metrics:", error);
     res.status(500).json({ error: "Failed to get metrics" });
