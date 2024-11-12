@@ -62,6 +62,45 @@ app.get("/api/metrics/:hostname", async (req, res) => {
   }
 });
 
+// Add this endpoint for historical data
+app.get("/api/metrics/:hostname/history", async (req, res) => {
+  try {
+    const { hostname } = req.params;
+
+    // Generate mock historical data for the last 24 hours
+    const historicalData = Array.from({ length: 288 }, (_, i) => {
+      const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
+      return {
+        timestamp: timestamp.toISOString(),
+        summary: {
+          cpu: {
+            current_usage: Math.random() * 100,
+            temperature: 40 + Math.random() * 20,
+          },
+          memory: {
+            percent_used: Math.random() * 100,
+            total_gb: os.totalmem() / (1024 * 1024 * 1024),
+            swap_used: Math.random() * 1024 * 1024 * 1024,
+          },
+          disk: {
+            percent_used: Math.random() * 100,
+            total_gb: 500,
+          },
+          network: {
+            bytes_sent_mb: Math.random() * 1000,
+            bytes_recv_mb: Math.random() * 1000,
+          },
+        },
+      };
+    }).reverse();
+
+    res.json(historicalData);
+  } catch (error) {
+    console.error("Error getting historical metrics:", error);
+    res.status(500).json({ error: "Failed to get historical metrics" });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

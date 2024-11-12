@@ -4,7 +4,6 @@ import { ServerHeader } from "@/components/dashboard/server-header";
 import { ServerMetricsGraphs } from "@/components/dashboard/server-metrics-graphs";
 import { ServerHealth } from "@/components/dashboard/server-health";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { ServerDetailSkeleton } from "@/components/dashboard/server-detail-skeleton";
 import { db } from "@/lib/db";
 
 async function getServer(id: string) {
@@ -59,12 +58,12 @@ export default async function ServerPage({
     <DashboardShell>
       <ServerHeader server={server} />
       <div className="grid gap-6">
-        <Suspense fallback={<ServerDetailSkeleton />}>
+        <Suspense>
           <ServerHealth serverId={server.id} />
         </Suspense>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Suspense fallback={<ServerDetailSkeleton />}>
+          <Suspense>
             <ServerMetricsGraphs
               serverId={server.id}
               type="network"
@@ -72,7 +71,7 @@ export default async function ServerPage({
               description="Inbound and outbound network traffic"
             />
           </Suspense>
-          <Suspense fallback={<ServerDetailSkeleton />}>
+          <Suspense>
             <ServerMetricsGraphs
               serverId={server.id}
               type="temperature"
@@ -83,7 +82,7 @@ export default async function ServerPage({
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Suspense fallback={<ServerDetailSkeleton />}>
+          <Suspense>
             <ServerMetricsGraphs
               serverId={server.id}
               type="memory"
@@ -91,7 +90,7 @@ export default async function ServerPage({
               description="Active memory and swap usage"
             />
           </Suspense>
-          <Suspense fallback={<ServerDetailSkeleton />}>
+          <Suspense>
             <ServerMetricsGraphs
               serverId={server.id}
               type="performance"
