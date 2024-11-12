@@ -2,26 +2,6 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { config } from "@/lib/config";
 
-async function fetchWithRetry(url: string, retries = 3, delay = 1000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url);
-      if (response.status === 429) {
-        await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
-        continue;
-      }
-      if (!response.ok) {
-        throw new Error(`Backend responded with ${response.status}`);
-      }
-      return response;
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
-    }
-  }
-  throw new Error("Max retries reached");
-}
-
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -37,26 +17,45 @@ export async function GET(
       return NextResponse.json({ error: "Server not found" }, { status: 404 });
     }
 
-    try {
-      const response = await fetchWithRetry(
-        `${config.API_URL}${config.METRICS_ENDPOINT}/${server.hostname}`
-      );
-      const data = await response.json();
+    const url = `${config.API_URL}/api/metrics/${server.hostname}`;
+    console.log("Requesting health metrics from:", url);
 
-      return NextResponse.json({
-        ...data,
-        is_connected: true,
-      });
-    } catch (error) {
-      console.error("Backend connection error:", error);
-      throw new Error("Failed to connect to monitoring backend");
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Backend responded with ${response.status}`);
     }
+
+    const data = await response.json();
+
+    // Transform the data to match the frontend's expected format
+    const transformedData = {
+      cpu_usage: data.cpu.usage.user + data.cpu.usage.system,
+      memory_usage: data.memory.percentage,
+      memory_total: data.memory.total,
+      memory_used: data.memory.used,
+      disk_usage: data.disk.io?.util_percentage || 0,
+      disk_total: data.system.totalmem,
+      disk_used: data.system.totalmem - data.system.freemem,
+      uptime: data.system.uptime,
+      is_connected: true,
+      last_seen: data.timestamp,
+    };
+
+    return NextResponse.json(transformedData);
   } catch (error) {
     console.error("Failed to fetch server health:", error);
     return NextResponse.json(
       {
-        error: "Failed to fetch server health",
+        cpu_usage: 0,
+        memory_usage: 0,
+        memory_total: 0,
+        memory_used: 0,
+        disk_usage: 0,
+        disk_total: 0,
+        disk_used: 0,
+        uptime: 0,
         is_connected: false,
+        error: "Failed to fetch server health",
       },
       { status: 500 }
     );

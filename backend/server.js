@@ -23,117 +23,75 @@ app.use((req, res, next) => {
 // Get detailed system metrics
 async function getDetailedSystemMetrics() {
   return new Promise((resolve, reject) => {
-    exec("vmstat 1 2 | tail -1", (error, stdout, stderr) => {
+    exec("df -B1 / | tail -1", (error, dfOutput, stderr) => {
       if (error) {
-        console.error("Error getting vmstat:", error);
+        console.error("Error getting disk stats:", error);
         return reject(error);
       }
 
-      const vmstat = stdout.trim().split(/\s+/);
+      const diskStats = dfOutput.trim().split(/\s+/);
+      const diskTotal = parseInt(diskStats[1]);
+      const diskUsed = parseInt(diskStats[2]);
+      const diskFree = parseInt(diskStats[3]);
 
-      // Get disk I/O stats
-      exec("iostat -x 1 2 | grep sda", (error, stdout, stderr) => {
-        const iostat = error ? null : stdout.trim().split(/\s+/);
+      exec("vmstat 1 2 | tail -1", (error, vmstatOutput, stderr) => {
+        if (error) {
+          console.error("Error getting vmstat:", error);
+          return reject(error);
+        }
 
-        // Get network stats
-        exec("netstat -i | grep eth0", (error, stdout, stderr) => {
-          const netstat = error ? null : stdout.trim().split(/\s+/);
+        const vmstat = vmstatOutput.trim().split(/\s+/);
+        const cpuUser = parseInt(vmstat[12]);
+        const cpuSystem = parseInt(vmstat[13]);
+        const cpuIdle = parseInt(vmstat[14]);
+        const cpuIowait = parseInt(vmstat[15]);
 
-          // Get process stats
-          exec("ps aux | head -n 5", (error, stdout, stderr) => {
-            const processes = error
-              ? []
-              : stdout
-                  .trim()
-                  .split("\n")
-                  .slice(1)
-                  .map((line) => {
-                    const parts = line.trim().split(/\s+/);
-                    return {
-                      user: parts[0],
-                      pid: parts[1],
-                      cpu: parseFloat(parts[2]),
-                      mem: parseFloat(parts[3]),
-                      command: parts[10],
-                    };
-                  });
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const usedMem = totalMem - freeMem;
+        const memoryPercentage = (usedMem / totalMem) * 100;
 
-            const metrics = {
-              system: {
-                hostname: os.hostname(),
-                platform: os.platform(),
-                release: os.release(),
-                uptime: os.uptime(),
-                loadavg: os.loadavg(),
-                totalmem: os.totalmem(),
-                freemem: os.freemem(),
-              },
-              cpu: {
-                model: os.cpus()[0].model,
-                cores: os.cpus().length,
-                speed: os.cpus()[0].speed,
-                usage: vmstat
-                  ? {
-                      user: parseInt(vmstat[12]),
-                      system: parseInt(vmstat[13]),
-                      idle: parseInt(vmstat[14]),
-                      iowait: parseInt(vmstat[15]),
-                    }
-                  : null,
-              },
-              memory: {
-                total: os.totalmem(),
-                free: os.freemem(),
-                used: os.totalmem() - os.freemem(),
-                percentage:
-                  ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
-                swap: vmstat
-                  ? {
-                      total: parseInt(vmstat[2]),
-                      used: parseInt(vmstat[3]),
-                    }
-                  : null,
-              },
-              disk: {
-                io: iostat
-                  ? {
-                      reads_per_sec: parseFloat(iostat[3]),
-                      writes_per_sec: parseFloat(iostat[4]),
-                      read_bytes_per_sec: parseFloat(iostat[5]),
-                      write_bytes_per_sec: parseFloat(iostat[6]),
-                      util_percentage: parseFloat(iostat[iostat.length - 1]),
-                    }
-                  : null,
-              },
-              network: {
-                interfaces: Object.entries(os.networkInterfaces()).map(
-                  ([name, data]) => ({
-                    name,
-                    addresses: data.map((addr) => ({
-                      address: addr.address,
-                      family: addr.family,
-                      internal: addr.internal,
-                    })),
-                  })
-                ),
-                stats: netstat
-                  ? {
-                      rx_packets: parseInt(netstat[3]),
-                      tx_packets: parseInt(netstat[7]),
-                      rx_bytes: parseInt(netstat[5]),
-                      tx_bytes: parseInt(netstat[9]),
-                    }
-                  : null,
-              },
-              processes: {
-                total: processes.length,
-                top: processes,
-              },
-            };
+        const metrics = {
+          timestamp: new Date().toISOString(),
+          system: {
+            hostname: os.hostname(),
+            platform: os.platform(),
+            release: os.release(),
+            uptime: os.uptime(),
+            loadavg: os.loadavg(),
+            totalmem: totalMem,
+            freemem: freeMem,
+          },
+          cpu: {
+            model: os.cpus()[0].model,
+            cores: os.cpus().length,
+            speed: os.cpus()[0].speed,
+            usage: {
+              user: cpuUser,
+              system: cpuSystem,
+              idle: cpuIdle,
+              iowait: cpuIowait,
+              total: cpuUser + cpuSystem,
+            },
+          },
+          memory: {
+            total: totalMem,
+            free: freeMem,
+            used: usedMem,
+            percentage: memoryPercentage,
+          },
+          disk: {
+            total: diskTotal,
+            used: diskUsed,
+            free: diskFree,
+            percentage: (diskUsed / diskTotal) * 100,
+            io: {
+              util_percentage: ((diskTotal - diskFree) / diskTotal) * 100,
+            },
+          },
+        };
 
-            resolve(metrics);
-          });
-        });
+        resolve(metrics);
       });
     });
   });
@@ -144,13 +102,11 @@ app.get("/api/metrics/:hostname", async (req, res) => {
   const { hostname } = req.params;
 
   try {
-    if (!latestMetrics[hostname]) {
-      const systemMetrics = await getDetailedSystemMetrics();
-      latestMetrics[hostname] = {
-        ...systemMetrics,
-        timestamp: new Date().toISOString(),
-      };
-    }
+    const systemMetrics = await getDetailedSystemMetrics();
+    latestMetrics[hostname] = {
+      ...systemMetrics,
+      timestamp: new Date().toISOString(),
+    };
 
     res.json(latestMetrics[hostname]);
   } catch (error) {
