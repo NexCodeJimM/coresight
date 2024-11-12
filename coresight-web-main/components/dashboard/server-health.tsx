@@ -8,6 +8,7 @@ import { Activity, HardDrive, CircuitBoard, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThresholdConfig, DEFAULT_THRESHOLDS } from "@/lib/threshold-config";
 import { ThresholdSettings } from "./threshold-settings";
+import { useNotifications } from "@/components/notifications/notification-provider";
 
 interface ServerHealth {
   cpu_usage: number;
@@ -32,20 +33,65 @@ export function ServerHealth({ serverId }: { serverId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [thresholds, setThresholds] =
     useState<ThresholdConfig>(DEFAULT_THRESHOLDS);
+  const { addNotification } = useNotifications();
 
-  // Separate data fetching function
+  const checkThresholds = (data: ServerHealth) => {
+    if (data.cpu_usage >= thresholds.cpu.critical) {
+      addNotification({
+        type: "error",
+        title: "CPU Usage Critical",
+        message: `CPU usage is at ${data.cpu_usage.toFixed(1)}%`,
+        duration: 10000,
+      });
+    } else if (data.cpu_usage >= thresholds.cpu.warning) {
+      addNotification({
+        type: "warning",
+        title: "CPU Usage Warning",
+        message: `CPU usage is at ${data.cpu_usage.toFixed(1)}%`,
+        duration: 10000,
+      });
+    }
+
+    if (data.memory_usage >= thresholds.memory.critical) {
+      addNotification({
+        type: "error",
+        title: "Memory Usage Critical",
+        message: `Memory usage is at ${data.memory_usage.toFixed(1)}%`,
+        duration: 10000,
+      });
+    } else if (data.memory_usage >= thresholds.memory.warning) {
+      addNotification({
+        type: "warning",
+        title: "Memory Usage Warning",
+        message: `Memory usage is at ${data.memory_usage.toFixed(1)}%`,
+        duration: 10000,
+      });
+    }
+
+    if (data.disk_usage >= thresholds.disk.critical) {
+      addNotification({
+        type: "error",
+        title: "Disk Usage Critical",
+        message: `Disk usage is at ${data.disk_usage.toFixed(1)}%`,
+        duration: 10000,
+      });
+    } else if (data.disk_usage >= thresholds.disk.warning) {
+      addNotification({
+        type: "warning",
+        title: "Disk Usage Warning",
+        message: `Disk usage is at ${data.disk_usage.toFixed(1)}%`,
+        duration: 10000,
+      });
+    }
+  };
+
   const fetchHealthData = async () => {
     try {
-      // Add timestamp to prevent caching
       const timestamp = new Date().getTime();
       const response = await fetch(
         `/api/servers/${serverId}/health?t=${timestamp}`,
         {
           cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
         }
       );
 
@@ -54,17 +100,42 @@ export function ServerHealth({ serverId }: { serverId: string }) {
       }
 
       const data = await response.json();
-      console.log("Fetched health data:", data); // Debug log
 
       if (data.error) {
         throw new Error(data.error);
       }
 
-      setHealth(data);
+      const transformedData: ServerHealth = {
+        cpu_usage: data.cpu_usage || 0,
+        memory_usage: data.memory_usage || 0,
+        memory_total: data.memory_total || 0,
+        memory_used: data.memory_used || 0,
+        disk_usage: data.disk_usage || 0,
+        disk_total: data.disk_total || 0,
+        disk_used: data.disk_used || 0,
+        network: {
+          bytes_sent: data.network?.bytes_sent || 0,
+          bytes_recv: data.network?.bytes_recv || 0,
+        },
+        uptime: data.uptime || 0,
+        is_connected: data.is_connected || false,
+        last_seen: data.last_seen || new Date().toISOString(),
+      };
+
+      setHealth(transformedData);
+      checkThresholds(transformedData);
       setError(null);
     } catch (error) {
       console.error("Failed to fetch health data:", error);
       setError(error instanceof Error ? error.message : "Failed to fetch data");
+
+      addNotification({
+        type: "error",
+        title: "Error Fetching Data",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch data",
+        duration: 5000,
+      });
     } finally {
       setLoading(false);
     }
@@ -72,13 +143,11 @@ export function ServerHealth({ serverId }: { serverId: string }) {
 
   useEffect(() => {
     fetchHealthData();
-    // Update more frequently - every 2 seconds
-    const interval = setInterval(fetchHealthData, 2000);
+    const interval = setInterval(fetchHealthData, 5000);
 
     return () => clearInterval(interval);
   }, [serverId]);
 
-  // Loading state
   if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -98,7 +167,6 @@ export function ServerHealth({ serverId }: { serverId: string }) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="rounded-md bg-red-50 p-4">
