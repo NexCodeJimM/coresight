@@ -1,9 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ServerHeader } from "@/components/dashboard/server-header";
-import { ServerMetricsChart } from "@/components/dashboard/server-metrics-chart";
-import { ServerAlerts } from "@/components/dashboard/server-alerts";
-import { ServerActions } from "@/components/dashboard/server-actions";
+import { ServerMetricsGraphs } from "@/components/dashboard/server-metrics-graphs";
 import { ServerHealth } from "@/components/dashboard/server-health";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { ServerDetailSkeleton } from "@/components/dashboard/server-detail-skeleton";
@@ -57,36 +55,17 @@ export default async function ServerPage({
     notFound();
   }
 
-  console.log("Server ID:", params.id);
-  console.log("Server data:", server);
-
   return (
     <DashboardShell>
       <ServerHeader server={server} />
       <div className="grid gap-6">
-        {/* Health Overview */}
         <Suspense fallback={<ServerDetailSkeleton />}>
           <ServerHealth serverId={server.id} />
         </Suspense>
 
-        {/* Performance Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-4">
-            <Suspense fallback={<ServerDetailSkeleton />}>
-              <ServerMetricsChart serverId={server.id} />
-            </Suspense>
-          </div>
-          <div className="col-span-3">
-            <Suspense fallback={<ServerDetailSkeleton />}>
-              <ServerActions server={server} />
-            </Suspense>
-          </div>
-        </div>
-
-        {/* Network Traffic */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Suspense fallback={<ServerDetailSkeleton />}>
-            <ServerMetricsChart
+            <ServerMetricsGraphs
               serverId={server.id}
               type="network"
               title="Network Traffic"
@@ -94,19 +73,33 @@ export default async function ServerPage({
             />
           </Suspense>
           <Suspense fallback={<ServerDetailSkeleton />}>
-            <ServerMetricsChart
+            <ServerMetricsGraphs
               serverId={server.id}
-              type="disk_io"
-              title="Disk I/O"
-              description="Read and write operations per second"
+              type="temperature"
+              title="CPU Temperature"
+              description="CPU temperature over time"
             />
           </Suspense>
         </div>
 
-        {/* Server Alerts */}
-        <Suspense fallback={<ServerDetailSkeleton />}>
-          <ServerAlerts serverId={server.id} />
-        </Suspense>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Suspense fallback={<ServerDetailSkeleton />}>
+            <ServerMetricsGraphs
+              serverId={server.id}
+              type="memory"
+              title="Memory Usage"
+              description="Active memory and swap usage"
+            />
+          </Suspense>
+          <Suspense fallback={<ServerDetailSkeleton />}>
+            <ServerMetricsGraphs
+              serverId={server.id}
+              type="performance"
+              title="System Performance"
+              description="CPU, Memory, and Disk usage"
+            />
+          </Suspense>
+        </div>
       </div>
     </DashboardShell>
   );

@@ -20,42 +20,56 @@ export async function GET(
     const url = `${config.API_URL}/api/metrics/${server.hostname}`;
     console.log("Requesting health metrics from:", url);
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Backend responded with ${response.status}`);
+    try {
+      const response = await fetch(url, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Received metrics:", data);
+
+      // Transform data with safe fallbacks
+      const transformedData = {
+        cpu_usage: data?.summary?.cpu?.current_usage ?? 0,
+        memory_usage: data?.summary?.memory?.percent_used ?? 0,
+        memory_total: data?.summary?.memory?.total_gb * 1024 * 1024 * 1024 ?? 0,
+        memory_used:
+          ((data?.summary?.memory?.total_gb *
+            data?.summary?.memory?.percent_used) /
+            100) *
+            1024 *
+            1024 *
+            1024 ?? 0,
+        disk_usage: data?.summary?.disk?.percent_used ?? 0,
+        disk_total: data?.summary?.disk?.total_gb * 1024 * 1024 * 1024 ?? 0,
+        disk_used:
+          ((data?.summary?.disk?.total_gb * data?.summary?.disk?.percent_used) /
+            100) *
+            1024 *
+            1024 *
+            1024 ?? 0,
+        network: {
+          bytes_sent: data?.summary?.network?.bytes_sent_mb * 1024 * 1024 ?? 0,
+          bytes_recv: data?.summary?.network?.bytes_recv_mb * 1024 * 1024 ?? 0,
+        },
+        uptime: 0,
+        is_connected: true,
+        last_seen: data?.summary?.lastUpdate ?? new Date().toISOString(),
+      };
+
+      console.log("Transformed data:", transformedData);
+      return NextResponse.json(transformedData);
+    } catch (error) {
+      console.error("Backend request failed:", error);
+      throw error;
     }
-
-    const data = await response.json();
-    console.log("Received metrics:", data);
-
-    // Transform data with new metrics
-    const transformedData = {
-      cpu_usage: data.cpu.usage.total || 0,
-      cpu_cores: data.cpu.cores || [],
-      cpu_temp: data.cpu.temperature.main || 0,
-      memory_usage: data.memory.percentage || 0,
-      memory_total: data.memory.total || 0,
-      memory_used: data.memory.used || 0,
-      memory_active: data.memory.active || 0,
-      memory_available: data.memory.available || 0,
-      swap_total: data.memory.swap.total || 0,
-      swap_used: data.memory.swap.used || 0,
-      disk_usage: data.disk.volumes[0]?.percentage || 0,
-      disk_total: data.disk.io.total || 0,
-      disk_used: data.disk.io.used || 0,
-      disk_volumes: data.disk.volumes || [],
-      network_interfaces: data.network.interfaces || [],
-      processes: {
-        total: data.processes.all || 0,
-        running: data.processes.running || 0,
-        top: data.processes.top || [],
-      },
-      is_connected: true,
-      last_seen: data.timestamp,
-    };
-
-    console.log("Transformed data:", transformedData);
-    return NextResponse.json(transformedData);
   } catch (error) {
     console.error("Failed to fetch server health:", error);
     return NextResponse.json(
@@ -67,8 +81,10 @@ export async function GET(
         disk_usage: 0,
         disk_total: 0,
         disk_used: 0,
-        network_in: 0,
-        network_out: 0,
+        network: {
+          bytes_sent: 0,
+          bytes_recv: 0,
+        },
         uptime: 0,
         is_connected: false,
         error:
