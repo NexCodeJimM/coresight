@@ -3,8 +3,18 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
+<<<<<<< Updated upstream
     "cors": "^2.8.5",
     "express": "^4.18.2"
+=======
+    "@influxdata/influxdb-client": "^1.35.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.1",
+    "express-rate-limit": "^6.11.2",
+    "helmet": "^7.0.0",
+    "winston": "^3.11.0"
+>>>>>>> Stashed changes
   },
   "scripts": {
     "start": "node server.js",
