@@ -1,42 +1,44 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
+
+interface MetricsResult extends RowDataPacket {
+  totalServers: number;
+  activeServers: number;
+  totalAlerts: number;
+  criticalAlerts: number;
+}
 
 export async function GET() {
   try {
-    // Get total servers count
-    const [totalServersResult] = await db.query(
-      "SELECT COUNT(*) as count FROM servers"
-    );
-    const totalServers = (totalServersResult as any)[0].count;
+    const [rows] = await db.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM servers) as totalServers,
+        (SELECT COUNT(*) FROM servers WHERE status = 'active') as activeServers,
+        (SELECT COUNT(*) FROM alerts WHERE status = 'active') as totalAlerts,
+        (SELECT COUNT(*) FROM alerts WHERE status = 'active') as criticalAlerts
+      FROM dual
+    `);
 
-    // Get active servers count (seen in last 5 minutes)
-    const [activeServersResult] = await db.query(
-      "SELECT COUNT(*) as count FROM servers WHERE last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE) AND status = 'active'"
-    );
-    const activeServers = (activeServersResult as any)[0].count;
+    // Type assertion for the query result
+    const results = rows as MetricsResult[];
 
-    // Get total alerts count
-    const [totalAlertsResult] = await db.query(
-      "SELECT COUNT(*) as count FROM alerts WHERE status = 'active'"
-    );
-    const totalAlerts = (totalAlertsResult as any)[0].count;
+    if (!Array.isArray(results) || results.length === 0) {
+      throw new Error("No metrics data returned");
+    }
 
-    // Get critical alerts count
-    const [criticalAlertsResult] = await db.query(
-      "SELECT COUNT(*) as count FROM alerts WHERE severity = 'critical' AND status = 'active'"
-    );
-    const criticalAlerts = (criticalAlertsResult as any)[0].count;
+    const metrics = {
+      totalServers: results[0].totalServers || 0,
+      activeServers: results[0].activeServers || 0,
+      totalAlerts: results[0].totalAlerts || 0,
+      criticalAlerts: results[0].totalAlerts || 0,
+    };
 
-    return NextResponse.json({
-      totalServers,
-      activeServers,
-      totalAlerts,
-      criticalAlerts,
-    });
+    return NextResponse.json(metrics);
   } catch (error) {
-    console.error("Failed to fetch metrics:", error);
+    console.error("Failed to fetch dashboard metrics:", error);
     return NextResponse.json(
-      { error: "Failed to fetch metrics" },
+      { error: "Failed to fetch dashboard metrics" },
       { status: 500 }
     );
   }

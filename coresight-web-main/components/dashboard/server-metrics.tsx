@@ -17,6 +17,13 @@ interface MetricCardProps {
   className?: string;
 }
 
+interface DashboardMetrics {
+  totalServers: number;
+  activeServers: number;
+  totalAlerts: number;
+  criticalAlerts: number;
+}
+
 function MetricCard({ title, value, description, className }: MetricCardProps) {
   return (
     <Card className={className}>
@@ -32,21 +39,27 @@ function MetricCard({ title, value, description, className }: MetricCardProps) {
 }
 
 export function ServerMetrics() {
-  const [metrics, setMetrics] = useState({
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalServers: 0,
     activeServers: 0,
     totalAlerts: 0,
     criticalAlerts: 0,
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         const response = await fetch("/api/dashboard/metrics");
+        if (!response.ok) {
+          throw new Error("Failed to fetch metrics");
+        }
         const data = await response.json();
         setMetrics(data);
+        setError(null);
       } catch (error) {
         console.error("Failed to fetch metrics:", error);
+        setError("Failed to load metrics");
       }
     };
 
@@ -55,6 +68,14 @@ export function ServerMetrics() {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (error) {
+    return (
+      <div className="text-sm text-destructive">
+        Error loading metrics: {error}
+      </div>
+    );
+  }
 
   return (
     <>
