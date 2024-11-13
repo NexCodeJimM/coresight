@@ -9509,3 +9509,943 @@
   ]
 }
 2024-11-13 23:36:29,483 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fe0538f0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:36:40,498 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:36:39.483984",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7608926208,
+    "percent": 8.6,
+    "used": 394096640
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727472640,
+    "free": 149665058816,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014665103,
+    "bytes_recv": 5069282481,
+    "packets_sent": 2887170,
+    "packets_recv": 2586515
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.1,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:36:40,499 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fe12bec0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:36:51,517 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:36:50.500015",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7606267904,
+    "percent": 8.7,
+    "used": 396754944
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727497216,
+    "free": 149665034240,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014688368,
+    "bytes_recv": 5069305694,
+    "packets_sent": 2887264,
+    "packets_recv": 2586653
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:36:51,519 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fdff55e0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:37:02,539 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:37:01.519386",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7591231488,
+    "percent": 8.8,
+    "used": 411791360
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727157248,
+    "free": 149665374208,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014709895,
+    "bytes_recv": 5069329526,
+    "packets_sent": 2887354,
+    "packets_recv": 2586749
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:37:02,541 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fdff5ee0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:37:13,555 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:37:12.541397",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7595294720,
+    "percent": 8.8,
+    "used": 407728128
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727185920,
+    "free": 149665345536,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014727225,
+    "bytes_recv": 5069347133,
+    "packets_sent": 2887407,
+    "packets_recv": 2586820
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:37:13,556 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fe052030>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:37:24,582 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:37:23.556888",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7608107008,
+    "percent": 8.6,
+    "used": 394915840
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727214592,
+    "free": 149665316864,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014748438,
+    "bytes_recv": 5069367989,
+    "packets_sent": 2887480,
+    "packets_recv": 2586908
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:37:24,584 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fecf4fb0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:37:35,599 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:37:34.584834",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7596609536,
+    "percent": 8.8,
+    "used": 406413312
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727374336,
+    "free": 149665157120,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014784537,
+    "bytes_recv": 5069408372,
+    "packets_sent": 2887607,
+    "packets_recv": 2587061
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:37:35,600 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fdff5d30>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:37:46,614 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:37:45.601028",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7604252672,
+    "percent": 8.7,
+    "used": 398770176
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727407104,
+    "free": 149665124352,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014802171,
+    "bytes_recv": 5069425652,
+    "packets_sent": 2887659,
+    "packets_recv": 2587127
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:37:46,615 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fdff5c10>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:37:57,629 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:37:56.615820",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7602032640,
+    "percent": 8.7,
+    "used": 400990208
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727439872,
+    "free": 149665091584,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014822879,
+    "bytes_recv": 5069443784,
+    "packets_sent": 2887723,
+    "packets_recv": 2587205
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:37:57,630 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fe0535f0>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:38:08,644 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:38:07.631166",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 1.0,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7611670528,
+    "percent": 8.6,
+    "used": 391352320
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727464448,
+    "free": 149665067008,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014842440,
+    "bytes_recv": 5069462310,
+    "packets_sent": 2887783,
+    "packets_recv": 2587274
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.1,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:38:08,645 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fdff5460>: Failed to establish a new connection: [Errno 111] Connection refused'))
+2024-11-13 23:38:19,660 - CoreSightAgent - INFO - Collected metrics: {
+  "timestamp": "2024-11-13T23:38:18.645779",
+  "hostname": "intel-test-server-ca",
+  "cpu": {
+    "cpu_percent": 0.5,
+    "cpu_count": 2,
+    "cpu_freq": {
+      "current": 1995.31,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "memory": {
+    "total": 8327163904,
+    "available": 7609991168,
+    "percent": 8.6,
+    "used": 393031680
+  },
+  "disk": {
+    "total": 165409308672,
+    "used": 15727443968,
+    "free": 149665087488,
+    "percent": 9.5
+  },
+  "network": {
+    "bytes_sent": 6014861566,
+    "bytes_recv": 5069482002,
+    "packets_sent": 2887851,
+    "packets_recv": 2587369
+  },
+  "processes": [
+    {
+      "pid": 1,
+      "name": "systemd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.1799312247571199
+    },
+    {
+      "pid": 2,
+      "name": "kthreadd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 3,
+      "name": "pool_workqueue_release",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 4,
+      "name": "kworker/R-rcu_gp",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 5,
+      "name": "kworker/R-sync_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 6,
+      "name": "kworker/R-slub_flushwq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 7,
+      "name": "kworker/R-netns",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 9,
+      "name": "kworker/0:0H-kblockd",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 11,
+      "name": "kworker/u8:0-ipv6_addrconf",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    },
+    {
+      "pid": 12,
+      "name": "kworker/R-mm_percpu_wq",
+      "cpu_percent": 0.0,
+      "memory_percent": 0.0
+    }
+  ]
+}
+2024-11-13 23:38:19,661 - CoreSightAgent - ERROR - Error sending metrics: HTTPConnectionPool(host='165.22.237.60', port=3000): Max retries exceeded with url: /api/metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x78d4fdff6c30>: Failed to establish a new connection: [Errno 111] Connection refused'))
