@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ServerHeader } from "@/components/dashboard/server-header";
 import { ServerMetricsGraphs } from "@/components/dashboard/server-metrics-graphs";
 import { ServerHealth } from "@/components/dashboard/server-health";
+import { ServerProcesses } from "@/components/dashboard/server-processes";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { db } from "@/lib/db";
 
@@ -99,6 +100,10 @@ export default async function ServerPage({
             />
           </Suspense>
         </div>
+
+        <Suspense>
+          <ServerProcesses serverId={server.id} />
+        </Suspense>
       </div>
     </DashboardShell>
   );

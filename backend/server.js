@@ -149,6 +149,31 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
   }
 });
 
+// Add this endpoint for processes
+app.get("/api/metrics/:hostname/processes", async (req, res) => {
+  try {
+    const { hostname } = req.params;
+    const processes = await si.processes();
+
+    // Format and sort processes by CPU usage
+    const formattedProcesses = processes.list
+      .map((proc) => ({
+        pid: proc.pid,
+        name: proc.name,
+        cpu: proc.cpu,
+        memory: proc.mem,
+        status: proc.state.toLowerCase(),
+      }))
+      .sort((a, b) => b.cpu - a.cpu)
+      .slice(0, 10); // Only return top 10 processes
+
+    res.json(formattedProcesses);
+  } catch (error) {
+    console.error("Error getting processes:", error);
+    res.status(500).json({ error: "Failed to get processes" });
+  }
+});
+
 // Add error handling middleware at the end of your file, before app.listen
 app.use((err, req, res, next) => {
   console.error("Server Error:", err);
