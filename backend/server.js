@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const os = require("os");
+const si = require("systeminformation");
+const diskinfo = require("node-disk-info");
 
 const app = express();
 
@@ -19,8 +21,15 @@ app.get("/api/metrics/:hostname", async (req, res) => {
   try {
     const { hostname } = req.params;
 
-    // Generate mock data for testing
-    const mockData = {
+    // Get disk information
+    const disks = await diskinfo.getDiskInfo();
+    const mainDisk = disks[0]; // Using first disk for simplicity
+
+    // Get network stats
+    const networkStats = await si.networkStats();
+    const mainNetwork = networkStats[0]; // Using first network interface
+
+    const realData = {
       summary: {
         lastUpdate: new Date().toLocaleString(),
         cpu: {
@@ -32,12 +41,12 @@ app.get("/api/metrics/:hostname", async (req, res) => {
           total_gb: os.totalmem() / (1024 * 1024 * 1024),
         },
         disk: {
-          percent_used: 50, // Mock value
-          total_gb: 500, // Mock value
+          percent_used: 100 - (mainDisk.available / mainDisk.blocks) * 100,
+          total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
         },
         network: {
-          bytes_sent_mb: 100, // Mock value
-          bytes_recv_mb: 100, // Mock value
+          bytes_sent_mb: mainNetwork.tx_bytes / (1024 * 1024),
+          bytes_recv_mb: mainNetwork.rx_bytes / (1024 * 1024),
         },
       },
       details: {
@@ -55,7 +64,7 @@ app.get("/api/metrics/:hostname", async (req, res) => {
       },
     };
 
-    res.json(mockData);
+    res.json(realData);
   } catch (error) {
     console.error("Error getting metrics:", error);
     res.status(500).json({ error: "Failed to get metrics" });
@@ -67,34 +76,52 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
   try {
     const { hostname } = req.params;
 
-    // Generate mock historical data for the last 24 hours
-    const historicalData = Array.from({ length: 288 }, (_, i) => {
+    // Get current metrics
+    const currentMetrics = await si.getDynamicData();
+    const cpuTemp = await si.cpuTemperature();
+    const memInfo = await si.mem();
+
+    // Generate historical data based on current metrics with some variation
+    const promises = Array.from({ length: 288 }, async (_, i) => {
       const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
+      const variation = Math.sin(i / 24) * 10; // Create some natural variation
+
+      // Get latest readings for each data point
+      const disks = await diskinfo.getDiskInfo();
+      const mainDisk = disks[0];
+      const networkStats = await si.networkStats();
+      const mainNetwork = networkStats[0];
+
       return {
         timestamp: timestamp.toISOString(),
         summary: {
           cpu: {
-            current_usage: Math.random() * 100,
-            temperature: 40 + Math.random() * 20,
+            current_usage: Math.max(
+              0,
+              Math.min(100, currentMetrics.currentLoad + variation)
+            ),
+            temperature: cpuTemp.main || 45,
           },
           memory: {
-            percent_used: Math.random() * 100,
+            percent_used:
+              ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
             total_gb: os.totalmem() / (1024 * 1024 * 1024),
-            swap_used: Math.random() * 1024 * 1024 * 1024,
+            swap_used: memInfo.swapused,
           },
           disk: {
-            percent_used: Math.random() * 100,
-            total_gb: 500,
+            percent_used: 100 - (mainDisk.available / mainDisk.blocks) * 100,
+            total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
           },
           network: {
-            bytes_sent_mb: Math.random() * 1000,
-            bytes_recv_mb: Math.random() * 1000,
+            bytes_sent_mb: mainNetwork.tx_bytes / (1024 * 1024),
+            bytes_recv_mb: mainNetwork.rx_bytes / (1024 * 1024),
           },
         },
       };
-    }).reverse();
+    });
 
-    res.json(historicalData);
+    const historicalData = await Promise.all(promises);
+    res.json(historicalData.reverse());
   } catch (error) {
     console.error("Error getting historical metrics:", error);
     res.status(500).json({ error: "Failed to get historical metrics" });
