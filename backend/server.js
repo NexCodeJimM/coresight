@@ -4,19 +4,22 @@ const os = require("os");
 const si = require("systeminformation");
 const diskinfo = require("node-disk-info");
 const nodemailer = require("nodemailer");
-const mysql = require("mysql2/promise");
+const mysql = require("mysql2");
+const config = require("./config");
 require("dotenv").config();
 
 // Create MySQL connection pool
-const db = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "efi",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+const db = mysql
+  .createPool({
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "efi",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  })
+  .promise();
 
 // Test database connection
 db.getConnection()
