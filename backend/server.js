@@ -4,6 +4,29 @@ const os = require("os");
 const si = require("systeminformation");
 const diskinfo = require("node-disk-info");
 const nodemailer = require("nodemailer");
+const mysql = require("mysql2/promise");
+require("dotenv").config();
+
+// Create MySQL connection pool
+const db = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "efi",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+// Test database connection
+db.getConnection()
+  .then((connection) => {
+    console.log("Database connected successfully");
+    connection.release();
+  })
+  .catch((err) => {
+    console.error("Error connecting to the database:", err);
+  });
 
 const app = express();
 
@@ -35,6 +58,20 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
+
+// Make sure to add this SQL to create the server_uptime table if it doesn't exist
+db.query(
+  `
+  CREATE TABLE IF NOT EXISTS server_uptime (
+    server_id VARCHAR(36) PRIMARY KEY,
+    status ENUM('online', 'offline') NOT NULL DEFAULT 'offline',
+    last_checked DATETIME NOT NULL,
+    last_downtime DATETIME,
+    uptime INT UNSIGNED DEFAULT 0,
+    FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+  )
+`
+).catch((err) => console.error("Error creating server_uptime table:", err));
 
 // Add uptime monitoring function
 async function checkServerUptime(server) {
