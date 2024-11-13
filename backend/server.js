@@ -16,6 +16,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add this near the top of your file, after the other middleware
+app.use((req, res, next) => {
+  // Increase timeout to 30 seconds
+  req.setTimeout(30000);
+  res.setTimeout(30000);
+  next();
+});
+
 // Health check endpoint
 app.get("/api/metrics/:hostname", async (req, res) => {
   try {
@@ -76,21 +84,19 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
   try {
     const { hostname } = req.params;
 
-    // Get current metrics
+    // Get current metrics once
     const currentMetrics = await si.getDynamicData();
     const cpuTemp = await si.cpuTemperature();
     const memInfo = await si.mem();
+    const disks = await diskinfo.getDiskInfo();
+    const mainDisk = disks[0];
+    const networkStats = await si.networkStats();
+    const mainNetwork = networkStats[0];
 
-    // Generate historical data based on current metrics with some variation
-    const promises = Array.from({ length: 288 }, async (_, i) => {
+    // Generate historical data using the current metrics as base
+    const historicalData = Array.from({ length: 288 }, (_, i) => {
       const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
       const variation = Math.sin(i / 24) * 10; // Create some natural variation
-
-      // Get latest readings for each data point
-      const disks = await diskinfo.getDiskInfo();
-      const mainDisk = disks[0];
-      const networkStats = await si.networkStats();
-      const mainNetwork = networkStats[0];
 
       return {
         timestamp: timestamp.toISOString(),
@@ -103,29 +109,53 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
             temperature: cpuTemp.main || 45,
           },
           memory: {
-            percent_used:
-              ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
-            total_gb: os.totalmem() / (1024 * 1024 * 1024),
+            percent_used: Math.max(
+              0,
+              Math.min(100, (memInfo.used / memInfo.total) * 100 + variation)
+            ),
+            total_gb: memInfo.total / (1024 * 1024 * 1024),
             swap_used: memInfo.swapused,
           },
           disk: {
-            percent_used: 100 - (mainDisk.available / mainDisk.blocks) * 100,
+            percent_used: Math.max(
+              0,
+              Math.min(
+                100,
+                100 -
+                  (mainDisk.available / mainDisk.blocks) * 100 +
+                  variation / 2
+              )
+            ),
             total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
           },
           network: {
-            bytes_sent_mb: mainNetwork.tx_bytes / (1024 * 1024),
-            bytes_recv_mb: mainNetwork.rx_bytes / (1024 * 1024),
+            bytes_sent_mb: Math.max(
+              0,
+              mainNetwork.tx_bytes / (1024 * 1024) + variation * 10
+            ),
+            bytes_recv_mb: Math.max(
+              0,
+              mainNetwork.rx_bytes / (1024 * 1024) + variation * 10
+            ),
           },
         },
       };
     });
 
-    const historicalData = await Promise.all(promises);
     res.json(historicalData.reverse());
   } catch (error) {
     console.error("Error getting historical metrics:", error);
     res.status(500).json({ error: "Failed to get historical metrics" });
   }
+});
+
+// Add error handling middleware at the end of your file, before app.listen
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err);
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
 });
 
 // Start server
