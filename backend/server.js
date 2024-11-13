@@ -3,6 +3,7 @@ const cors = require("cors");
 const os = require("os");
 const si = require("systeminformation");
 const diskinfo = require("node-disk-info");
+const nodemailer = require("nodemailer");
 
 const app = express();
 
@@ -23,6 +24,75 @@ app.use((req, res, next) => {
   res.setTimeout(30000);
   next();
 });
+
+// Configure email transport
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: true,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+// Add uptime monitoring function
+async function checkServerUptime(server) {
+  try {
+    const response = await fetch(
+      `http://${server.hostname}:${server.port}/health`
+    );
+    const isOnline = response.ok;
+
+    // Update uptime in database
+    await db.query(
+      `
+      INSERT INTO server_uptime (server_id, status, last_checked, uptime)
+      VALUES (?, ?, NOW(), COALESCE(
+        (SELECT uptime + TIMESTAMPDIFF(SECOND, last_checked, NOW())
+        FROM server_uptime WHERE server_id = ? AND status = 'online'),
+        0
+      ))
+      ON DUPLICATE KEY UPDATE
+        status = VALUES(status),
+        last_checked = VALUES(last_checked),
+        uptime = VALUES(uptime),
+        last_downtime = CASE 
+          WHEN status = 'online' AND VALUES(status) = 'offline'
+          THEN NOW()
+          ELSE last_downtime
+        END
+    `,
+      [server.id, isOnline ? "online" : "offline", server.id]
+    );
+
+    // Send notification if server goes down
+    if (!isOnline) {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM,
+        to: process.env.ADMIN_EMAIL,
+        subject: `Server Down Alert: ${server.name}`,
+        text: `Server ${server.name} (${
+          server.hostname
+        }) is unreachable.\nTime: ${new Date().toISOString()}`,
+      });
+    }
+  } catch (error) {
+    console.error(`Error checking uptime for ${server.name}:`, error);
+  }
+}
+
+// Add uptime monitoring interval
+setInterval(async () => {
+  try {
+    const [servers] = await db.query("SELECT * FROM servers");
+    for (const server of servers) {
+      await checkServerUptime(server);
+    }
+  } catch (error) {
+    console.error("Error in uptime monitoring:", error);
+  }
+}, 60000); // Check every minute
 
 // Health check endpoint
 app.get("/api/metrics/:hostname", async (req, res) => {
