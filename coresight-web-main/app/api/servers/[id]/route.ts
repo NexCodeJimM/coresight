@@ -163,3 +163,44 @@ export async function DELETE(
     );
   }
 }
+
+// Add PUT method to handle server updates
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json();
+    const { name, hostname, ip_address, port } = body;
+
+    // Validate required fields
+    if (!name || !hostname || !ip_address) {
+      return NextResponse.json(
+        { error: "Name, hostname, and IP address are required" },
+        { status: 400 }
+      );
+    }
+
+    const [result] = await db.query(
+      `UPDATE servers 
+       SET name = ?, hostname = ?, ip_address = ?, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`,
+      [name, hostname, ip_address, params.id]
+    );
+
+    if ((result as any).affectedRows === 0) {
+      return NextResponse.json({ error: "Server not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      message: "Server updated successfully",
+      server: { id: params.id, name, hostname, ip_address },
+    });
+  } catch (error) {
+    console.error("Failed to update server:", error);
+    return NextResponse.json(
+      { error: "Failed to update server settings" },
+      { status: 500 }
+    );
+  }
+}

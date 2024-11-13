@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,17 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Trash2 } from "lucide-react";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ServerDangerZoneProps {
   server: {
@@ -31,33 +33,34 @@ interface ServerDangerZoneProps {
 export function ServerDangerZone({ server }: ServerDangerZoneProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  async function onDelete() {
-    setLoading(true);
+  async function deleteServer() {
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/servers/${server.id}`, {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete server");
+      if (!response.ok) {
+        throw new Error("Failed to delete server");
+      }
 
       toast({
         title: "Success",
-        description: "Server deleted successfully.",
+        description: "Server deleted successfully",
       });
-
-      router.push("/dashboard/servers");
+      router.push("/dashboard/servers"); // Redirect to servers list
+      router.refresh();
     } catch (error) {
+      console.error("Error deleting server:", error);
       toast({
         title: "Error",
-        description: "Failed to delete server.",
+        description: "Failed to delete server",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
-      setDeleteDialogOpen(false);
+      setIsDeleting(false);
     }
   }
 
@@ -66,43 +69,35 @@ export function ServerDangerZone({ server }: ServerDangerZoneProps) {
       <CardHeader>
         <CardTitle className="text-destructive">Danger Zone</CardTitle>
         <CardDescription>
-          Actions in this section can lead to irreversible changes
+          Actions here can&apos;t be undone. Please be certain.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="destructive">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Server
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete Server"}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Server</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete {server.name}? This action
-                cannot be undone and will remove all associated data including
-                metrics and alerts.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteDialogOpen(false)}
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                server &quot;{server.name}&quot; and all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={deleteServer}
               >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={onDelete}
-                disabled={loading}
-              >
-                {loading ? "Deleting..." : "Delete Server"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                Delete Server
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
