@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { Bell } from "lucide-react";
+import { useNotifications } from "@/components/notifications/notification-provider";
 
 const routes = [
   {
@@ -45,6 +47,7 @@ const routes = [
 export default function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { notifications } = useNotifications();
 
   return (
     <header className="border-b">
@@ -70,6 +73,43 @@ export default function Navbar() {
             );
           })}
         </nav>
+
+        {/* Notifications Bell */}
+        <div className="relative mr-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              {notifications.length === 0 ? (
+                <div className="p-4 text-center text-sm text-gray-500">
+                  No new notifications
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="p-4 border-b last:border-0"
+                  >
+                    <div>
+                      <div className="font-medium">{notification.title}</div>
+                      <div className="text-sm text-gray-500">
+                        {notification.message}
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         {/* User Menu */}
         <div className="ml-auto flex items-center space-x-4">
