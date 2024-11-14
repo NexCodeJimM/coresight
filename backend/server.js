@@ -79,25 +79,27 @@ db.query(
 // Add uptime monitoring function
 async function checkServerUptime(server) {
   try {
-    // Clean up the hostname and ensure proper port
-    const cleanHostname = server.hostname.replace(/^https?:\/\//, "");
-    const port = server.port || "3000";
-
     // Get the current server's IP
     const serverIP = Object.values(os.networkInterfaces())
       .flat()
       .find((ip) => ip?.family === "IPv4" && !ip.internal)?.address;
 
-    // Only check health if this is the current server
-    if (cleanHostname === serverIP) {
+    console.log(`Current server IP: ${serverIP}`);
+    console.log(`Checking server: ${server.name} (${server.ip_address})`);
+
+    // Compare using IP address instead of hostname
+    if (server.ip_address === serverIP) {
       console.log(`Checking local server health: ${server.name}`);
       try {
-        const response = await fetch(`http://localhost:${port}/health`, {
-          timeout: 5000,
-          headers: {
-            Accept: "application/json",
-          },
-        });
+        const response = await fetch(
+          `http://localhost:${server.port || 3000}/health`,
+          {
+            timeout: 5000,
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
         const isOnline = response.ok;
         await handleServerStatus(server, isOnline);
       } catch (error) {
@@ -106,7 +108,7 @@ async function checkServerUptime(server) {
       }
     } else {
       console.log(
-        `Skipping health check for remote server: ${server.name} (${cleanHostname})`
+        `Skipping health check for remote server: ${server.name} (IP: ${server.ip_address})`
       );
     }
   } catch (error) {
@@ -182,18 +184,43 @@ setInterval(async () => {
   }
 }, 60000); // Check every minute
 
-// Health check endpoint
+// Metrics endpoint
 app.get("/api/metrics/:hostname", async (req, res) => {
   try {
     const { hostname } = req.params;
 
-    // Get disk information
-    const disks = await diskinfo.getDiskInfo();
-    const mainDisk = disks[0]; // Using first disk for simplicity
+    // Get the current server's IP
+    const serverIP = Object.values(os.networkInterfaces())
+      .flat()
+      .find((ip) => ip?.family === "IPv4" && !ip.internal)?.address;
 
-    // Get network stats
+    // If request is for a different server, proxy it
+    if (hostname !== serverIP) {
+      try {
+        console.log(
+          `Forwarding metrics request to: http://${hostname}:3000/api/metrics/local`
+        );
+        const response = await fetch(
+          `http://${hostname}:3000/api/metrics/local`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metrics from ${hostname}`);
+        }
+        const data = await response.json();
+        return res.json(data);
+      } catch (error) {
+        console.error(`Error fetching metrics from ${hostname}:`, error);
+        return res
+          .status(500)
+          .json({ error: `Failed to fetch metrics from ${hostname}` });
+      }
+    }
+
+    // Get local metrics if request is for this server
+    const disks = await diskinfo.getDiskInfo();
+    const mainDisk = disks[0];
     const networkStats = await si.networkStats();
-    const mainNetwork = networkStats[0]; // Using first network interface
+    const mainNetwork = networkStats[0];
 
     const realData = {
       summary: {
@@ -234,6 +261,56 @@ app.get("/api/metrics/:hostname", async (req, res) => {
   } catch (error) {
     console.error("Error getting metrics:", error);
     res.status(500).json({ error: "Failed to get metrics" });
+  }
+});
+
+// Add a local metrics endpoint that doesn't do proxying
+app.get("/api/metrics/local", async (req, res) => {
+  try {
+    const disks = await diskinfo.getDiskInfo();
+    const mainDisk = disks[0];
+    const networkStats = await si.networkStats();
+    const mainNetwork = networkStats[0];
+
+    const realData = {
+      summary: {
+        lastUpdate: new Date().toLocaleString(),
+        cpu: {
+          current_usage: (os.loadavg()[0] * 100) / os.cpus().length,
+          count: os.cpus().length,
+        },
+        memory: {
+          percent_used: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
+          total_gb: os.totalmem() / (1024 * 1024 * 1024),
+        },
+        disk: {
+          percent_used: 100 - (mainDisk.available / mainDisk.blocks) * 100,
+          total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
+        },
+        network: {
+          bytes_sent_mb: mainNetwork.tx_bytes / (1024 * 1024),
+          bytes_recv_mb: mainNetwork.rx_bytes / (1024 * 1024),
+        },
+      },
+      details: {
+        cpu: {
+          cpu_percent: os.cpus().map((cpu) => cpu.times),
+          cpu_count: os.cpus().length,
+          cpu_freq_current: os.cpus().map((cpu) => cpu.speed),
+        },
+        memory: {
+          total: os.totalmem(),
+          used: os.totalmem() - os.freemem(),
+          available: os.freemem(),
+          percent: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
+        },
+      },
+    };
+
+    res.json(realData);
+  } catch (error) {
+    console.error("Error getting local metrics:", error);
+    res.status(500).json({ error: "Failed to get local metrics" });
   }
 });
 

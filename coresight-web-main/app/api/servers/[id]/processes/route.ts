@@ -6,11 +6,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const backendUrl = process.env.BACKEND_URL || "localhost:3000";
+    // First, get the server's IP address from the database
+    const [servers] = await db.query(
+      `SELECT hostname, ip_address FROM servers WHERE id = ?`,
+      [params.id]
+    );
 
-    // Fetch processes from your backend server
+    if (!Array.isArray(servers) || servers.length === 0) {
+      throw new Error("Server not found");
+    }
+
+    const server = (servers as any)[0];
+    const serverIP = server.ip_address; // Use IP address instead of hostname
+
+    // Fetch processes using the server's IP address
     const response = await fetch(
-      `http://${backendUrl}/api/metrics/${params.id}/processes`,
+      `http://${serverIP}:3000/api/metrics/local/processes`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -20,7 +31,7 @@ export async function GET(
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch processes");
+      throw new Error(`Failed to fetch processes from ${serverIP}`);
     }
 
     const processes = await response.json();
