@@ -84,26 +84,44 @@ async function checkServerUptime(server) {
     );
     const isOnline = response.ok;
 
-    // Update uptime in database
+    // First, get the current uptime if server was online
+    const [currentUptime] = await db.query(
+      `SELECT uptime, last_checked 
+       FROM server_uptime 
+       WHERE server_id = ? AND status = 'online'`,
+      [server.id]
+    );
+
+    // Calculate new uptime
+    let newUptime = 0;
+    if (currentUptime && currentUptime[0]) {
+      const timeDiff = Math.floor(
+        (Date.now() - new Date(currentUptime[0].last_checked).getTime()) / 1000
+      );
+      newUptime = currentUptime[0].uptime + timeDiff;
+    }
+
+    // Update server_uptime table
     await db.query(
-      `
-      INSERT INTO server_uptime (server_id, status, last_checked, uptime)
-      VALUES (?, ?, NOW(), COALESCE(
-        (SELECT uptime + TIMESTAMPDIFF(SECOND, last_checked, NOW())
-        FROM server_uptime WHERE server_id = ? AND status = 'online'),
-        0
-      ))
-      ON DUPLICATE KEY UPDATE
-        status = VALUES(status),
-        last_checked = VALUES(last_checked),
-        uptime = VALUES(uptime),
-        last_downtime = CASE 
-          WHEN status = 'online' AND VALUES(status) = 'offline'
-          THEN NOW()
-          ELSE last_downtime
-        END
-    `,
-      [server.id, isOnline ? "online" : "offline", server.id]
+      `INSERT INTO server_uptime 
+         (server_id, status, last_checked, uptime, last_downtime)
+       VALUES (?, ?, NOW(), ?, 
+         CASE 
+           WHEN ? = 'offline' THEN NOW()
+           ELSE (SELECT last_downtime FROM server_uptime WHERE server_id = ? LIMIT 1)
+         END)
+       ON DUPLICATE KEY UPDATE
+         status = VALUES(status),
+         last_checked = VALUES(last_checked),
+         uptime = VALUES(uptime),
+         last_downtime = VALUES(last_downtime)`,
+      [
+        server.id,
+        isOnline ? "online" : "offline",
+        newUptime,
+        isOnline ? "online" : "offline",
+        server.id,
+      ]
     );
 
     // Send notification if server goes down

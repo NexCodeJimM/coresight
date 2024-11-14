@@ -51,3 +51,47 @@ is_Admin
 last_login
 
 Put more table that is applicable to this system.
+
+<!-- Server Uptime SQL Code -->
+
+CREATE TABLE server_uptime (
+server_id VARCHAR(36) PRIMARY KEY,
+status ENUM('online', 'offline') NOT NULL DEFAULT 'offline',
+last_checked DATETIME NOT NULL,
+last_downtime DATETIME,
+uptime INT UNSIGNED DEFAULT 0,
+FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+);
+
+<!-- Create User in MySQL to grant server -->
+
+mysql -u root -p
+
+<!-- -- Create user with IP address -->
+
+CREATE USER 'root'@'YOUR_SERVER_IP' IDENTIFIED BY 'Rjmendoza21!';
+
+<!-- -- Grant privileges to the new user -->
+
+GRANT ALL PRIVILEGES ON _._ TO 'root'@'YOUR_SERVER_IP';
+
+<!-- -- Allow access from any host (optional, but might be needed) -->
+
+CREATE USER 'root'@'%' IDENTIFIED BY 'Rjmendoza21!';
+GRANT ALL PRIVILEGES ON _._ TO 'root'@'%';
+
+<!-- -- Apply the changes -->
+
+FLUSH PRIVILEGES;
+
+<!-- # Edit MySQL configuration -->
+
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+
+<!-- Set bind-address -->
+
+bind-address = 0.0.0.0
+
+<!-- Restart MySQL -->
+
+sudo systemctl restart mysql
