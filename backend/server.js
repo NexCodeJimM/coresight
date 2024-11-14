@@ -356,44 +356,34 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
       .map((ip) => ip.address);
 
     console.log(`Local IPs: ${localIPs.join(", ")}`);
-    console.log(`Requested hostname: ${hostname}`);
+    console.log(`Requested hostname/IP: ${hostname}`);
 
-    // Check if the requested hostname matches any of our local IPs
+    // Check if the requested hostname/IP matches any of our local IPs
     const isLocalRequest = localIPs.includes(hostname);
 
     if (!isLocalRequest) {
       try {
-        // Try different ports if 3000 doesn't work
-        const ports = [3000, 80, 443];
-        let response = null;
-        let error = null;
+        const proxyUrl = `http://${hostname}:3000/api/metrics/local/history`;
+        console.log(`Attempting to connect to: ${proxyUrl}`);
 
-        for (const port of ports) {
-          try {
-            const proxyUrl = `http://${hostname}:${port}/api/metrics/local/history`;
-            console.log(`Attempting to connect to: ${proxyUrl}`);
+        const response = await fetch(proxyUrl, {
+          timeout: 10000,
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "CoreSight-Monitoring/1.0",
+          },
+        });
 
-            response = await fetch(proxyUrl, {
-              timeout: 10000, // Increased timeout to 10 seconds
-              headers: {
-                Accept: "application/json",
-                "User-Agent": "CoreSight-Monitoring/1.0",
-              },
-            });
-
-            if (response.ok) {
-              break; // Successfully connected
-            }
-          } catch (e) {
-            error = e;
-            console.log(`Failed to connect on port ${port}:`, e.message);
-          }
-        }
-
-        if (!response?.ok) {
-          throw (
-            error || new Error(`Failed to connect to ${hostname} on any port`)
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `Proxy request failed: ${response.status} - ${errorText}`
           );
+          return res.status(502).json({
+            error: `Failed to fetch from remote server`,
+            details: errorText,
+            status: response.status,
+          });
         }
 
         const data = await response.json();
