@@ -79,12 +79,52 @@ db.query(
 // Add uptime monitoring function
 async function checkServerUptime(server) {
   try {
-    const response = await fetch(
-      `http://${server.hostname}:${server.port}/health`
-    );
-    const isOnline = response.ok;
+    // Clean up the hostname and ensure proper port
+    const cleanHostname = server.hostname.replace(/^https?:\/\//, "");
+    const port = server.port || 3000;
 
-    // First, get the current uptime if server was online
+    // Try HTTP first
+    try {
+      const response = await fetch(`http://${cleanHostname}:${port}/health`, {
+        timeout: 5000,
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      const isOnline = response.ok;
+      handleServerStatus(server, isOnline);
+    } catch (httpError) {
+      // If HTTP fails, try HTTPS
+      try {
+        const response = await fetch(
+          `https://${cleanHostname}:${port}/health`,
+          {
+            timeout: 5000,
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+        const isOnline = response.ok;
+        handleServerStatus(server, isOnline);
+      } catch (httpsError) {
+        console.error(
+          `Both HTTP and HTTPS failed for ${server.name}:`,
+          httpsError
+        );
+        handleServerStatus(server, false);
+      }
+    }
+  } catch (error) {
+    console.error(`Error checking uptime for ${server.name}:`, error);
+    handleServerStatus(server, false);
+  }
+}
+
+// Separate function to handle server status updates
+async function handleServerStatus(server, isOnline) {
+  try {
+    // Get current uptime data
     const [currentUptime] = await db.query(
       `SELECT uptime, last_checked, last_downtime 
        FROM server_uptime 
@@ -95,11 +135,8 @@ async function checkServerUptime(server) {
     // Calculate new uptime
     let newUptime = 0;
     let lastDowntime = currentUptime?.[0]?.last_downtime || null;
-    if (
-      currentUptime &&
-      currentUptime[0] &&
-      currentUptime[0].status === "online"
-    ) {
+
+    if (currentUptime?.[0]?.status === "online" && isOnline) {
       const timeDiff = Math.floor(
         (Date.now() - new Date(currentUptime[0].last_checked).getTime()) / 1000
       );
@@ -110,7 +147,7 @@ async function checkServerUptime(server) {
       lastDowntime = new Date();
     }
 
-    // Update server_uptime table
+    // Update database
     await db.query(
       `INSERT INTO server_uptime 
          (server_id, status, last_checked, uptime, last_downtime)
@@ -135,7 +172,7 @@ async function checkServerUptime(server) {
       });
     }
   } catch (error) {
-    console.error(`Error checking uptime for ${server.name}:`, error);
+    console.error(`Error updating server status for ${server.name}:`, error);
   }
 }
 
@@ -308,6 +345,15 @@ app.use((err, req, res, next) => {
     error: "Internal Server Error",
     message: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
+});
+
+// Add this near your other endpoints
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+app.get("/", (req, res) => {
+  res.status(200).json({ message: "Server is running" });
 });
 
 // Start server
