@@ -354,90 +354,115 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
       .flat()
       .find((ip) => ip?.family === "IPv4" && !ip.internal)?.address;
 
+    console.log(`Requested hostname: ${hostname}, Server IP: ${serverIP}`);
+
     // If request is for a different server, proxy it
     if (hostname !== serverIP) {
       try {
-        console.log(
-          `Forwarding history request to: http://${hostname}:3000/api/metrics/local/history`
-        );
-        const response = await fetch(
-          `http://${hostname}:3000/api/metrics/local/history`
-        );
+        const proxyUrl = `http://${hostname}:3000/api/metrics/local/history`;
+        console.log(`Proxying request to: ${proxyUrl}`);
+
+        const response = await fetch(proxyUrl, {
+          timeout: 5000,
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
         if (!response.ok) {
-          throw new Error(`Failed to fetch history from ${hostname}`);
+          const errorText = await response.text();
+          console.error(
+            `Proxy request failed: ${response.status} - ${errorText}`
+          );
+          throw new Error(
+            `Failed to fetch history from ${hostname}: ${response.status}`
+          );
         }
+
         const data = await response.json();
         return res.json(data);
       } catch (error) {
-        console.error(`Error fetching history from ${hostname}:`, error);
-        return res
-          .status(500)
-          .json({ error: `Failed to fetch history from ${hostname}` });
+        console.error(`Detailed proxy error for ${hostname}:`, error);
+        return res.status(502).json({
+          error: `Failed to fetch history from ${hostname}`,
+          details: error.message,
+        });
       }
     }
 
     // Get current metrics for local server
-    const currentMetrics = await si.getDynamicData();
-    const cpuTemp = await si.cpuTemperature();
-    const memInfo = await si.mem();
-    const disks = await diskinfo.getDiskInfo();
-    const mainDisk = disks[0];
-    const networkStats = await si.networkStats();
-    const mainNetwork = networkStats[0];
+    try {
+      const currentMetrics = await si.getDynamicData();
+      const cpuTemp = await si.cpuTemperature();
+      const memInfo = await si.mem();
+      const disks = await diskinfo.getDiskInfo();
+      const mainDisk = disks[0];
+      const networkStats = await si.networkStats();
+      const mainNetwork = networkStats[0];
 
-    // Generate historical data for local server
-    const historicalData = Array.from({ length: 288 }, (_, i) => {
-      const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
-      const variation = Math.sin(i / 24) * 10;
+      // Generate historical data for local server
+      const historicalData = Array.from({ length: 288 }, (_, i) => {
+        const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
+        const variation = Math.sin(i / 24) * 10;
 
-      return {
-        timestamp: timestamp.toISOString(),
-        summary: {
-          cpu: {
-            current_usage: Math.max(
-              0,
-              Math.min(100, currentMetrics.currentLoad + variation)
-            ),
-            temperature: cpuTemp.main || 45,
+        return {
+          timestamp: timestamp.toISOString(),
+          summary: {
+            cpu: {
+              current_usage: Math.max(
+                0,
+                Math.min(100, currentMetrics.currentLoad + variation)
+              ),
+              temperature: cpuTemp.main || 45,
+            },
+            memory: {
+              percent_used: Math.max(
+                0,
+                Math.min(100, (memInfo.used / memInfo.total) * 100 + variation)
+              ),
+              total_gb: memInfo.total / (1024 * 1024 * 1024),
+              swap_used: memInfo.swapused,
+            },
+            disk: {
+              percent_used: Math.max(
+                0,
+                Math.min(
+                  100,
+                  100 -
+                    (mainDisk.available / mainDisk.blocks) * 100 +
+                    variation / 2
+                )
+              ),
+              total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
+            },
+            network: {
+              bytes_sent_mb: Math.max(
+                0,
+                mainNetwork.tx_bytes / (1024 * 1024) + variation * 10
+              ),
+              bytes_recv_mb: Math.max(
+                0,
+                mainNetwork.rx_bytes / (1024 * 1024) + variation * 10
+              ),
+            },
           },
-          memory: {
-            percent_used: Math.max(
-              0,
-              Math.min(100, (memInfo.used / memInfo.total) * 100 + variation)
-            ),
-            total_gb: memInfo.total / (1024 * 1024 * 1024),
-            swap_used: memInfo.swapused,
-          },
-          disk: {
-            percent_used: Math.max(
-              0,
-              Math.min(
-                100,
-                100 -
-                  (mainDisk.available / mainDisk.blocks) * 100 +
-                  variation / 2
-              )
-            ),
-            total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
-          },
-          network: {
-            bytes_sent_mb: Math.max(
-              0,
-              mainNetwork.tx_bytes / (1024 * 1024) + variation * 10
-            ),
-            bytes_recv_mb: Math.max(
-              0,
-              mainNetwork.rx_bytes / (1024 * 1024) + variation * 10
-            ),
-          },
-        },
-      };
-    });
+        };
+      });
 
-    res.json(historicalData.reverse());
+      return res.json(historicalData.reverse());
+    } catch (metricsError) {
+      console.error("Error collecting local metrics:", metricsError);
+      return res.status(500).json({
+        error: "Failed to collect local metrics",
+        details: metricsError.message,
+      });
+    }
   } catch (error) {
-    console.error("Error getting historical metrics:", error);
-    res.status(500).json({ error: "Failed to get historical metrics" });
+    console.error("Top-level error in historical metrics:", error);
+    return res.status(500).json({
+      error: "Failed to get historical metrics",
+      details: error.message,
+    });
   }
 });
 
