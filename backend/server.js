@@ -349,48 +349,72 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
   try {
     const { hostname } = req.params;
 
-    // Get the current server's IP
-    const serverIP = Object.values(os.networkInterfaces())
+    // Get all IPv4 addresses of the current server
+    const localIPs = Object.values(os.networkInterfaces())
       .flat()
-      .find((ip) => ip?.family === "IPv4" && !ip.internal)?.address;
+      .filter((ip) => ip?.family === "IPv4")
+      .map((ip) => ip.address);
 
-    console.log(`Requested hostname: ${hostname}, Server IP: ${serverIP}`);
+    console.log(`Local IPs: ${localIPs.join(", ")}`);
+    console.log(`Requested hostname: ${hostname}`);
 
-    // If request is for a different server, proxy it
-    if (hostname !== serverIP) {
+    // Check if the requested hostname matches any of our local IPs
+    const isLocalRequest = localIPs.includes(hostname);
+
+    if (!isLocalRequest) {
       try {
-        const proxyUrl = `http://${hostname}:3000/api/metrics/local/history`;
-        console.log(`Proxying request to: ${proxyUrl}`);
+        // Try different ports if 3000 doesn't work
+        const ports = [3000, 80, 443];
+        let response = null;
+        let error = null;
 
-        const response = await fetch(proxyUrl, {
-          timeout: 5000,
-          headers: {
-            Accept: "application/json",
-          },
-        });
+        for (const port of ports) {
+          try {
+            const proxyUrl = `http://${hostname}:${port}/api/metrics/local/history`;
+            console.log(`Attempting to connect to: ${proxyUrl}`);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(
-            `Proxy request failed: ${response.status} - ${errorText}`
-          );
-          throw new Error(
-            `Failed to fetch history from ${hostname}: ${response.status}`
+            response = await fetch(proxyUrl, {
+              timeout: 10000, // Increased timeout to 10 seconds
+              headers: {
+                Accept: "application/json",
+                "User-Agent": "CoreSight-Monitoring/1.0",
+              },
+            });
+
+            if (response.ok) {
+              break; // Successfully connected
+            }
+          } catch (e) {
+            error = e;
+            console.log(`Failed to connect on port ${port}:`, e.message);
+          }
+        }
+
+        if (!response?.ok) {
+          throw (
+            error || new Error(`Failed to connect to ${hostname} on any port`)
           );
         }
 
         const data = await response.json();
         return res.json(data);
       } catch (error) {
-        console.error(`Detailed proxy error for ${hostname}:`, error);
+        console.error(`Proxy error details:`, {
+          hostname,
+          error: error.message,
+          stack: error.stack,
+          code: error.code,
+        });
+
         return res.status(502).json({
-          error: `Failed to fetch history from ${hostname}`,
+          error: `Cannot connect to server ${hostname}`,
           details: error.message,
+          code: error.code || "UNKNOWN_ERROR",
         });
       }
     }
 
-    // Get current metrics for local server
+    // Local server metrics collection (rest of the code remains the same)
     try {
       const currentMetrics = await si.getDynamicData();
       const cpuTemp = await si.cpuTemperature();
