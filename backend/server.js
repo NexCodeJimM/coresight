@@ -86,42 +86,41 @@ async function checkServerUptime(server) {
 
     // First, get the current uptime if server was online
     const [currentUptime] = await db.query(
-      `SELECT uptime, last_checked 
+      `SELECT uptime, last_checked, last_downtime 
        FROM server_uptime 
-       WHERE server_id = ? AND status = 'online'`,
+       WHERE server_id = ?`,
       [server.id]
     );
 
     // Calculate new uptime
     let newUptime = 0;
-    if (currentUptime && currentUptime[0]) {
+    let lastDowntime = currentUptime?.[0]?.last_downtime || null;
+    if (
+      currentUptime &&
+      currentUptime[0] &&
+      currentUptime[0].status === "online"
+    ) {
       const timeDiff = Math.floor(
         (Date.now() - new Date(currentUptime[0].last_checked).getTime()) / 1000
       );
       newUptime = currentUptime[0].uptime + timeDiff;
     }
 
+    if (!isOnline) {
+      lastDowntime = new Date();
+    }
+
     // Update server_uptime table
     await db.query(
       `INSERT INTO server_uptime 
          (server_id, status, last_checked, uptime, last_downtime)
-       VALUES (?, ?, NOW(), ?, 
-         CASE 
-           WHEN ? = 'offline' THEN NOW()
-           ELSE (SELECT last_downtime FROM server_uptime WHERE server_id = ? LIMIT 1)
-         END)
+       VALUES (?, ?, NOW(), ?, ?)
        ON DUPLICATE KEY UPDATE
          status = VALUES(status),
          last_checked = VALUES(last_checked),
          uptime = VALUES(uptime),
          last_downtime = VALUES(last_downtime)`,
-      [
-        server.id,
-        isOnline ? "online" : "offline",
-        newUptime,
-        isOnline ? "online" : "offline",
-        server.id,
-      ]
+      [server.id, isOnline ? "online" : "offline", newUptime, lastDowntime]
     );
 
     // Send notification if server goes down
