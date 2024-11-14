@@ -21,7 +21,7 @@ class SystemMonitor:
         self.hostname = socket.gethostname()
         logger.info(f"Agent running with hostname: {self.hostname}")
         # Replace The IP Address of the server
-        self.backend_url = "http://165.22.237.60:3000/api/metrics"  
+        self.backend_url = "http://143.198.84.214:3000/api/metrics"  
     
     def get_cpu_metrics(self):
         try:
