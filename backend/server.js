@@ -189,6 +189,13 @@ app.get("/api/metrics/:hostname", async (req, res) => {
   try {
     const { hostname } = req.params;
 
+    // Get system information
+    const cpuLoad = await si.currentLoad();
+    const memoryInfo = await si.mem();
+    const diskInfo = await si.fsSize();
+    const networkStats = await si.networkStats();
+    const mainNetwork = networkStats[0];
+
     // Get the current server's IP
     const serverIP = Object.values(os.networkInterfaces())
       .flat()
@@ -210,20 +217,49 @@ app.get("/api/metrics/:hostname", async (req, res) => {
         return res.json(data);
       } catch (error) {
         console.error(`Error fetching metrics from ${hostname}:`, error);
-        return res
-          .status(500)
-          .json({ error: `Failed to fetch metrics from ${hostname}` });
+        // Return local metrics as fallback
+        return res.json({
+          summary: {
+            lastUpdate: new Date().toLocaleString(),
+            cpu: {
+              current_usage: cpuLoad.currentLoad || 0,
+              count: os.cpus().length,
+            },
+            memory: {
+              percent_used: (memoryInfo.used / memoryInfo.total) * 100,
+              total_gb: memoryInfo.total / (1024 * 1024 * 1024),
+              used_gb: memoryInfo.used / (1024 * 1024 * 1024),
+              available_gb: memoryInfo.available / (1024 * 1024 * 1024),
+            },
+            disk: {
+              percent_used: diskInfo[0] ? diskInfo[0].use : 0,
+              total_gb: diskInfo[0]
+                ? diskInfo[0].size / (1024 * 1024 * 1024)
+                : 0,
+              used_gb: diskInfo[0]
+                ? diskInfo[0].used / (1024 * 1024 * 1024)
+                : 0,
+              available_gb: diskInfo[0]
+                ? diskInfo[0].available / (1024 * 1024 * 1024)
+                : 0,
+            },
+            network: {
+              bytes_sent_mb: mainNetwork
+                ? mainNetwork.tx_bytes / (1024 * 1024)
+                : 0,
+              bytes_recv_mb: mainNetwork
+                ? mainNetwork.rx_bytes / (1024 * 1024)
+                : 0,
+              bytes_sent_sec: mainNetwork ? mainNetwork.tx_sec : 0,
+              bytes_recv_sec: mainNetwork ? mainNetwork.rx_sec : 0,
+            },
+          },
+        });
       }
     }
 
-    // Get system information
-    const cpuLoad = await si.currentLoad();
-    const memoryInfo = await si.mem();
-    const diskInfo = await si.fsSize();
-    const networkStats = await si.networkStats();
-    const mainNetwork = networkStats[0];
-
-    const realData = {
+    // Return local metrics
+    return res.json({
       summary: {
         lastUpdate: new Date().toLocaleString(),
         cpu: {
@@ -251,22 +287,7 @@ app.get("/api/metrics/:hostname", async (req, res) => {
           bytes_recv_sec: mainNetwork ? mainNetwork.rx_sec : 0,
         },
       },
-      details: {
-        cpu: {
-          cpu_percent: cpuLoad.cpus.map((cpu) => cpu.load),
-          cpu_count: os.cpus().length,
-          cpu_freq_current: os.cpus().map((cpu) => cpu.speed),
-        },
-        memory: {
-          total: memoryInfo.total,
-          used: memoryInfo.used,
-          available: memoryInfo.available,
-          percent: (memoryInfo.used / memoryInfo.total) * 100,
-        },
-      },
-    };
-
-    res.json(realData);
+    });
   } catch (error) {
     console.error("Error getting metrics:", error);
     res.status(500).json({ error: "Failed to get metrics" });
