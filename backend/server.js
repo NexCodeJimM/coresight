@@ -349,7 +349,34 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
   try {
     const { hostname } = req.params;
 
-    // Get current metrics once
+    // Get the current server's IP
+    const serverIP = Object.values(os.networkInterfaces())
+      .flat()
+      .find((ip) => ip?.family === "IPv4" && !ip.internal)?.address;
+
+    // If request is for a different server, proxy it
+    if (hostname !== serverIP) {
+      try {
+        console.log(
+          `Forwarding history request to: http://${hostname}:3000/api/metrics/local/history`
+        );
+        const response = await fetch(
+          `http://${hostname}:3000/api/metrics/local/history`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch history from ${hostname}`);
+        }
+        const data = await response.json();
+        return res.json(data);
+      } catch (error) {
+        console.error(`Error fetching history from ${hostname}:`, error);
+        return res
+          .status(500)
+          .json({ error: `Failed to fetch history from ${hostname}` });
+      }
+    }
+
+    // Get current metrics for local server
     const currentMetrics = await si.getDynamicData();
     const cpuTemp = await si.cpuTemperature();
     const memInfo = await si.mem();
@@ -358,10 +385,10 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
     const networkStats = await si.networkStats();
     const mainNetwork = networkStats[0];
 
-    // Generate historical data using the current metrics as base
+    // Generate historical data for local server
     const historicalData = Array.from({ length: 288 }, (_, i) => {
       const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
-      const variation = Math.sin(i / 24) * 10; // Create some natural variation
+      const variation = Math.sin(i / 24) * 10;
 
       return {
         timestamp: timestamp.toISOString(),
