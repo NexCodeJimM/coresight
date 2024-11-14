@@ -344,7 +344,7 @@ app.get("/api/metrics/local", async (req, res) => {
   }
 });
 
-// Add this endpoint for historical data
+// Modify the /api/metrics/:hostname/history endpoint
 app.get("/api/metrics/:hostname/history", async (req, res) => {
   try {
     const { hostname } = req.params;
@@ -358,54 +358,14 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
     console.log(`Local IPs: ${localIPs.join(", ")}`);
     console.log(`Requested hostname/IP: ${hostname}`);
 
-    // Check if the requested hostname/IP matches any of our local IPs
-    const isLocalRequest = localIPs.includes(hostname);
+    // Check if this is a local request
+    const isLocalRequest =
+      localIPs.includes(hostname) ||
+      hostname === "local" ||
+      hostname === "localhost";
 
-    if (!isLocalRequest) {
-      try {
-        const proxyUrl = `http://${hostname}:3000/api/metrics/local/history`;
-        console.log(`Attempting to connect to: ${proxyUrl}`);
-
-        const response = await fetch(proxyUrl, {
-          timeout: 10000,
-          headers: {
-            Accept: "application/json",
-            "User-Agent": "CoreSight-Monitoring/1.0",
-          },
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(
-            `Proxy request failed: ${response.status} - ${errorText}`
-          );
-          return res.status(502).json({
-            error: `Failed to fetch from remote server`,
-            details: errorText,
-            status: response.status,
-          });
-        }
-
-        const data = await response.json();
-        return res.json(data);
-      } catch (error) {
-        console.error(`Proxy error details:`, {
-          hostname,
-          error: error.message,
-          stack: error.stack,
-          code: error.code,
-        });
-
-        return res.status(502).json({
-          error: `Cannot connect to server ${hostname}`,
-          details: error.message,
-          code: error.code || "UNKNOWN_ERROR",
-        });
-      }
-    }
-
-    // Local server metrics collection (rest of the code remains the same)
-    try {
+    if (isLocalRequest) {
+      // Handle local request
       const currentMetrics = await si.getDynamicData();
       const cpuTemp = await si.cpuTemperature();
       const memInfo = await si.mem();
@@ -414,7 +374,7 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
       const networkStats = await si.networkStats();
       const mainNetwork = networkStats[0];
 
-      // Generate historical data for local server
+      // Generate historical data
       const historicalData = Array.from({ length: 288 }, (_, i) => {
         const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
         const variation = Math.sin(i / 24) * 10;
@@ -464,12 +424,48 @@ app.get("/api/metrics/:hostname/history", async (req, res) => {
       });
 
       return res.json(historicalData.reverse());
-    } catch (metricsError) {
-      console.error("Error collecting local metrics:", metricsError);
-      return res.status(500).json({
-        error: "Failed to collect local metrics",
-        details: metricsError.message,
-      });
+    } else {
+      // Handle remote request
+      try {
+        const proxyUrl = `http://${hostname}:3000/api/metrics/local/history`;
+        console.log(`Attempting to connect to remote server: ${proxyUrl}`);
+
+        const response = await fetch(proxyUrl, {
+          timeout: 10000,
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "CoreSight-Monitoring/1.0",
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `Proxy request failed: ${response.status} - ${errorText}`
+          );
+          return res.status(502).json({
+            error: `Failed to fetch from remote server`,
+            details: errorText,
+            status: response.status,
+          });
+        }
+
+        const data = await response.json();
+        return res.json(data);
+      } catch (error) {
+        console.error(`Proxy error details:`, {
+          hostname,
+          error: error.message,
+          stack: error.stack,
+          code: error.code,
+        });
+
+        return res.status(502).json({
+          error: `Cannot connect to server ${hostname}`,
+          details: error.message,
+          code: error.code || "UNKNOWN_ERROR",
+        });
+      }
     }
   } catch (error) {
     console.error("Top-level error in historical metrics:", error);
@@ -521,76 +517,6 @@ app.get("/health", (req, res) => {
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Server is running" });
-});
-
-// Add this endpoint for local history
-app.get("/api/metrics/local/history", async (req, res) => {
-  try {
-    const currentMetrics = await si.getDynamicData();
-    const cpuTemp = await si.cpuTemperature();
-    const memInfo = await si.mem();
-    const disks = await diskinfo.getDiskInfo();
-    const mainDisk = disks[0];
-    const networkStats = await si.networkStats();
-    const mainNetwork = networkStats[0];
-
-    // Generate historical data
-    const historicalData = Array.from({ length: 288 }, (_, i) => {
-      const timestamp = new Date(Date.now() - i * 5 * 60 * 1000);
-      const variation = Math.sin(i / 24) * 10;
-
-      return {
-        timestamp: timestamp.toISOString(),
-        summary: {
-          cpu: {
-            current_usage: Math.max(
-              0,
-              Math.min(100, currentMetrics.currentLoad + variation)
-            ),
-            temperature: cpuTemp.main || 45,
-          },
-          memory: {
-            percent_used: Math.max(
-              0,
-              Math.min(100, (memInfo.used / memInfo.total) * 100 + variation)
-            ),
-            total_gb: memInfo.total / (1024 * 1024 * 1024),
-            swap_used: memInfo.swapused,
-          },
-          disk: {
-            percent_used: Math.max(
-              0,
-              Math.min(
-                100,
-                100 -
-                  (mainDisk.available / mainDisk.blocks) * 100 +
-                  variation / 2
-              )
-            ),
-            total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
-          },
-          network: {
-            bytes_sent_mb: Math.max(
-              0,
-              mainNetwork.tx_bytes / (1024 * 1024) + variation * 10
-            ),
-            bytes_recv_mb: Math.max(
-              0,
-              mainNetwork.rx_bytes / (1024 * 1024) + variation * 10
-            ),
-          },
-        },
-      };
-    });
-
-    return res.json(historicalData.reverse());
-  } catch (error) {
-    console.error("Error getting local history:", error);
-    return res.status(500).json({
-      error: "Failed to get local history",
-      details: error.message,
-    });
-  }
 });
 
 // Start server
