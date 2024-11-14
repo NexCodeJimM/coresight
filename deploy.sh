@@ -22,6 +22,10 @@ echo "Installing Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 
+# 3.5. Install npm
+echo "Installing npm..."
+apt install -y npm
+
 # 4. Install PM2
 echo "Installing PM2..."
 npm install -g pm2

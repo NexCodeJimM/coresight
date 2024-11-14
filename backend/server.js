@@ -81,43 +81,37 @@ async function checkServerUptime(server) {
   try {
     // Clean up the hostname and ensure proper port
     const cleanHostname = server.hostname.replace(/^https?:\/\//, "");
-    const port = server.port || 3000;
+    const port = server.port || "3000";
 
-    // Try HTTP first
-    try {
-      const response = await fetch(`http://${cleanHostname}:${port}/health`, {
-        timeout: 5000,
-        headers: {
-          Accept: "application/json",
-        },
-      });
-      const isOnline = response.ok;
-      handleServerStatus(server, isOnline);
-    } catch (httpError) {
-      // If HTTP fails, try HTTPS
+    // Get the current server's IP
+    const serverIP = Object.values(os.networkInterfaces())
+      .flat()
+      .find((ip) => ip?.family === "IPv4" && !ip.internal)?.address;
+
+    // Only check health if this is the current server
+    if (cleanHostname === serverIP) {
+      console.log(`Checking local server health: ${server.name}`);
       try {
-        const response = await fetch(
-          `https://${cleanHostname}:${port}/health`,
-          {
-            timeout: 5000,
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
+        const response = await fetch(`http://localhost:${port}/health`, {
+          timeout: 5000,
+          headers: {
+            Accept: "application/json",
+          },
+        });
         const isOnline = response.ok;
-        handleServerStatus(server, isOnline);
-      } catch (httpsError) {
-        console.error(
-          `Both HTTP and HTTPS failed for ${server.name}:`,
-          httpsError
-        );
-        handleServerStatus(server, false);
+        await handleServerStatus(server, isOnline);
+      } catch (error) {
+        console.error(`Health check failed for ${server.name}:`, error);
+        await handleServerStatus(server, false);
       }
+    } else {
+      console.log(
+        `Skipping health check for remote server: ${server.name} (${cleanHostname})`
+      );
     }
   } catch (error) {
     console.error(`Error checking uptime for ${server.name}:`, error);
-    handleServerStatus(server, false);
+    await handleServerStatus(server, false);
   }
 }
 
