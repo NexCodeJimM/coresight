@@ -216,9 +216,10 @@ app.get("/api/metrics/:hostname", async (req, res) => {
       }
     }
 
-    // Get local metrics if request is for this server
-    const disks = await diskinfo.getDiskInfo();
-    const mainDisk = disks[0];
+    // Get system information
+    const cpuLoad = await si.currentLoad();
+    const memoryInfo = await si.mem();
+    const diskInfo = await si.fsSize();
     const networkStats = await si.networkStats();
     const mainNetwork = networkStats[0];
 
@@ -226,33 +227,41 @@ app.get("/api/metrics/:hostname", async (req, res) => {
       summary: {
         lastUpdate: new Date().toLocaleString(),
         cpu: {
-          current_usage: (os.loadavg()[0] * 100) / os.cpus().length,
+          current_usage: cpuLoad.currentLoad || 0,
           count: os.cpus().length,
         },
         memory: {
-          percent_used: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
-          total_gb: os.totalmem() / (1024 * 1024 * 1024),
+          percent_used: (memoryInfo.used / memoryInfo.total) * 100,
+          total_gb: memoryInfo.total / (1024 * 1024 * 1024),
+          used_gb: memoryInfo.used / (1024 * 1024 * 1024),
+          available_gb: memoryInfo.available / (1024 * 1024 * 1024),
         },
         disk: {
-          percent_used: 100 - (mainDisk.available / mainDisk.blocks) * 100,
-          total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
+          percent_used: diskInfo[0] ? diskInfo[0].use : 0,
+          total_gb: diskInfo[0] ? diskInfo[0].size / (1024 * 1024 * 1024) : 0,
+          used_gb: diskInfo[0] ? diskInfo[0].used / (1024 * 1024 * 1024) : 0,
+          available_gb: diskInfo[0]
+            ? diskInfo[0].available / (1024 * 1024 * 1024)
+            : 0,
         },
         network: {
-          bytes_sent_mb: mainNetwork.tx_bytes / (1024 * 1024),
-          bytes_recv_mb: mainNetwork.rx_bytes / (1024 * 1024),
+          bytes_sent_mb: mainNetwork ? mainNetwork.tx_bytes / (1024 * 1024) : 0,
+          bytes_recv_mb: mainNetwork ? mainNetwork.rx_bytes / (1024 * 1024) : 0,
+          bytes_sent_sec: mainNetwork ? mainNetwork.tx_sec : 0,
+          bytes_recv_sec: mainNetwork ? mainNetwork.rx_sec : 0,
         },
       },
       details: {
         cpu: {
-          cpu_percent: os.cpus().map((cpu) => cpu.times),
+          cpu_percent: cpuLoad.cpus.map((cpu) => cpu.load),
           cpu_count: os.cpus().length,
           cpu_freq_current: os.cpus().map((cpu) => cpu.speed),
         },
         memory: {
-          total: os.totalmem(),
-          used: os.totalmem() - os.freemem(),
-          available: os.freemem(),
-          percent: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
+          total: memoryInfo.total,
+          used: memoryInfo.used,
+          available: memoryInfo.available,
+          percent: (memoryInfo.used / memoryInfo.total) * 100,
         },
       },
     };
