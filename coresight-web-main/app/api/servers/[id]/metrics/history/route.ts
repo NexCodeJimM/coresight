@@ -19,7 +19,7 @@ export async function GET(
 
     // Use IP address instead of hostname for the request
     const targetAddress = server.ip_address || server.hostname;
-    const url = `${config.API_URL}/api/metrics/${targetAddress}/history`;
+    const url = `http://${targetAddress}:3000/api/metrics/local/history`;
     console.log("Requesting metrics history from:", url);
 
     // Create AbortController for timeout
@@ -28,13 +28,12 @@ export async function GET(
 
     try {
       const response = await fetch(url, {
-        cache: "no-store",
         headers: {
           "Cache-Control": "no-cache",
           Accept: "application/json",
           "User-Agent": "CoreSight-Monitoring/1.0",
         },
-        next: { revalidate: 0 },
+        cache: "no-store",
         signal: controller.signal,
       });
 
@@ -46,6 +45,7 @@ export async function GET(
           status: response.status,
           statusText: response.statusText,
           body: errorText,
+          url,
         });
         throw new Error(
           `Backend responded with ${response.status}: ${errorText}`
@@ -87,7 +87,7 @@ export async function GET(
         return NextResponse.json(
           {
             error: "Request timeout",
-            details: "The request took too long to complete",
+            details: `Connection to ${targetAddress} timed out`,
           },
           { status: 504 }
         );
