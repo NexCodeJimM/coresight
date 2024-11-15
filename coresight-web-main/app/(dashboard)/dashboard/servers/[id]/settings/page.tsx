@@ -1,9 +1,12 @@
+"use client";
+
 import { notFound } from "next/navigation";
 import { ServerSettingsForm } from "@/components/dashboard/server-settings-form";
 import { ServerSettingsHeader } from "@/components/dashboard/server-settings-header";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { db } from "@/lib/db";
 import { ServerDangerZone } from "@/components/dashboard/server-danger-zone";
+import { useEffect, useState } from "react";
 
 interface Server {
   id: string;
@@ -16,42 +19,51 @@ interface Server {
   active_alerts: number;
 }
 
-async function getServer(id: string): Promise<Server | null> {
-  try {
-    const [servers] = await db.query(
-      `SELECT 
-        s.*,
-        (
-          SELECT COUNT(*) 
-          FROM alerts 
-          WHERE server_id = s.id AND status = 'active'
-        ) as active_alerts,
-        COALESCE(s.status, 'inactive') as status
-      FROM servers s 
-      WHERE s.id = ?`,
-      [id]
-    );
-    const server = (servers as any[])[0];
-    if (!server) return null;
-    return {
-      ...server,
-      status: server.status || "inactive",
-    } as Server;
-  } catch (error) {
-    console.error("Failed to fetch server:", error);
-    return null;
-  }
-}
-
-export default async function ServerSettingsPage({
+export default function ServerSettingsPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const server = await getServer(params.id);
+  const [server, setServer] = useState<Server | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!server) {
-    notFound();
+  useEffect(() => {
+    async function fetchServer() {
+      try {
+        const response = await fetch(`/api/servers/${params.id}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch server data");
+        }
+        const data = await response.json();
+        setServer(data);
+      } catch (err) {
+        console.error("Error fetching server:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch server data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchServer();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <DashboardShell>
+        <div>Loading...</div>
+      </DashboardShell>
+    );
+  }
+
+  if (error || !server) {
+    return (
+      <DashboardShell>
+        <div className="text-red-500">{error || "Server not found"}</div>
+      </DashboardShell>
+    );
   }
 
   return (

@@ -67,13 +67,20 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id;
-        session.user.email = token.email as string;
-        session.user.username = token.username;
-        session.user.role = token.role;
-        session.user.isAdmin = token.isAdmin;
+    async session({ session, user }) {
+      if (session?.user) {
+        try {
+          const [rows] = await db.query(
+            "SELECT role FROM users WHERE email = ?",
+            [session.user.email]
+          );
+          const dbUser = (rows as any[])[0];
+
+          session.user.role = dbUser?.role || "user";
+          session.user.isAdmin = dbUser?.role === "admin";
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        }
       }
       return session;
     },

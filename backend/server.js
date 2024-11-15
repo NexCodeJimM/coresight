@@ -172,7 +172,7 @@ async function handleServerStatus(server, isOnline) {
   }
 }
 
-// Add uptime monitoring interval
+// Add uptime monitoring interval with reduced frequency
 setInterval(async () => {
   try {
     const [servers] = await db.query("SELECT * FROM servers");
@@ -182,7 +182,67 @@ setInterval(async () => {
   } catch (error) {
     console.error("Error in uptime monitoring:", error);
   }
-}, 60000); // Check every minute
+}, 300000); // Check every 5 minutes instead of every minute
+
+// Update metrics collection interval
+setInterval(async () => {
+  try {
+    const [servers] = await db.query(
+      `SELECT id, name, ip_address, hostname, port 
+       FROM servers 
+       WHERE status = 'active'`
+    );
+
+    for (const server of servers) {
+      try {
+        const metrics = await collectServerMetrics(server);
+        if (metrics) {
+          await updateServerMetrics(server.id, metrics);
+        }
+      } catch (error) {
+        console.error(`Failed to collect metrics for ${server.name}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error("Error in metrics collection:", error);
+  }
+}, 120000); // Check every 2 minutes
+
+// Add helper function to collect metrics
+async function collectServerMetrics(server) {
+  try {
+    const response = await fetch(
+      `http://${server.ip_address}:${server.port || 3000}/api/metrics/local`
+    );
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (error) {
+    console.error(`Error collecting metrics for ${server.name}:`, error);
+    return null;
+  }
+}
+
+// Add helper function to update metrics
+async function updateServerMetrics(serverId, metrics) {
+  try {
+    await db.query(
+      `UPDATE servers 
+       SET last_seen = NOW(),
+           cpu_usage = ?,
+           memory_usage = ?,
+           disk_usage = ?
+       WHERE id = ?`,
+      [
+        metrics.summary?.cpu?.current_usage || 0,
+        metrics.summary?.memory?.percent_used || 0,
+        metrics.summary?.disk?.percent_used || 0,
+        serverId,
+      ]
+    );
+  } catch (error) {
+    console.error(`Error updating metrics for server ${serverId}:`, error);
+  }
+}
 
 // Metrics endpoint
 app.get("/api/metrics/:hostname", async (req, res) => {
@@ -535,10 +595,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Add this near your other endpoints
+// Update health check interval
 app.get("/health", async (req, res) => {
   try {
-    // Get basic system info
+    // Get basic system info without database query
     const cpuLoad = await si.currentLoad();
     const memInfo = await si.mem();
 

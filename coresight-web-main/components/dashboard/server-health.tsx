@@ -100,7 +100,7 @@ export function ServerHealth({ serverId }: { serverId: string }) {
       }
 
       const data = await response.json();
-      console.log("Raw health data:", data);
+      console.log("Raw health data from API:", data);
 
       if (data.error) {
         throw new Error(data.error);
@@ -124,6 +124,11 @@ export function ServerHealth({ serverId }: { serverId: string }) {
       };
 
       console.log("Transformed health data:", transformedData);
+      console.log("Memory values:", {
+        total: formatBytes(transformedData.memory_total),
+        used: formatBytes(transformedData.memory_used),
+        percentage: transformedData.memory_usage,
+      });
 
       setHealth(transformedData);
       checkThresholds(transformedData);
