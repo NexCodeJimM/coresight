@@ -303,12 +303,13 @@ app.get("/api/metrics/local", async (req, res) => {
     const fsSize = await si.fsSize();
     const networkStats = await si.networkStats();
     const mainNetwork = networkStats[0];
+    const mainDisk = fsSize[0]; // Get the first disk
 
     // Debug log the raw values
     console.log("Raw metrics:", {
       cpu: cpuLoad,
       memory: memInfo,
-      disk: fsSize[0],
+      disk: mainDisk,
       network: mainNetwork,
     });
 
@@ -332,20 +333,26 @@ app.get("/api/metrics/local", async (req, res) => {
           available_gb: parseFloat(
             (memInfo.available / (1024 * 1024 * 1024)).toFixed(2)
           ),
+          // Add these for byte values
+          total: memInfo.total,
+          used: memInfo.active,
+          available: memInfo.available,
         },
         disk: {
-          percent_used: fsSize[0] ? parseFloat(fsSize[0].use.toFixed(1)) : 0,
-          total_gb: fsSize[0]
-            ? parseFloat((fsSize[0].size / (1024 * 1024 * 1024)).toFixed(2))
+          percent_used: mainDisk ? parseFloat(mainDisk.use.toFixed(1)) : 0,
+          total_gb: mainDisk
+            ? parseFloat((mainDisk.size / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
-          used_gb: fsSize[0]
-            ? parseFloat((fsSize[0].used / (1024 * 1024 * 1024)).toFixed(2))
+          used_gb: mainDisk
+            ? parseFloat((mainDisk.used / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
-          available_gb: fsSize[0]
-            ? parseFloat(
-                (fsSize[0].available / (1024 * 1024 * 1024)).toFixed(2)
-              )
+          available_gb: mainDisk
+            ? parseFloat((mainDisk.available / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
+          // Add these for byte values
+          total: mainDisk ? mainDisk.size : 0,
+          used: mainDisk ? mainDisk.used : 0,
+          available: mainDisk ? mainDisk.available : 0,
         },
         network: {
           bytes_sent_mb: parseFloat(
@@ -385,8 +392,16 @@ app.get("/api/metrics/local", async (req, res) => {
     // Debug log the processed metrics
     console.log("Processed metrics:", {
       cpu: realData.summary.cpu.current_usage,
-      memory: realData.summary.memory.percent_used,
-      disk: realData.summary.disk.percent_used,
+      memory: {
+        percent: realData.summary.memory.percent_used,
+        total: realData.summary.memory.total,
+        used: realData.summary.memory.used,
+      },
+      disk: {
+        percent: realData.summary.disk.percent_used,
+        total: realData.summary.disk.total,
+        used: realData.summary.disk.used,
+      },
       network: {
         in: realData.summary.network.bytes_recv_sec,
         out: realData.summary.network.bytes_sent_sec,
