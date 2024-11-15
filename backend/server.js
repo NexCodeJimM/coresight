@@ -300,65 +300,90 @@ app.get("/api/metrics/local", async (req, res) => {
     // Get current system metrics using systeminformation
     const cpuLoad = await si.currentLoad();
     const memInfo = await si.mem();
-    const disks = await diskinfo.getDiskInfo();
-    const mainDisk = disks[0];
+    const fsSize = await si.fsSize();
     const networkStats = await si.networkStats();
     const mainNetwork = networkStats[0];
 
+    // Debug log the raw values
+    console.log("Raw metrics:", {
+      cpu: cpuLoad,
+      memory: memInfo,
+      disk: fsSize[0],
+      network: mainNetwork,
+    });
+
     const realData = {
       summary: {
-        lastUpdate: new Date().toLocaleString(),
+        lastUpdate: new Date().toISOString(),
         cpu: {
-          current_usage: cpuLoad.currentLoad || 0, // Use actual CPU load instead of loadavg
+          current_usage: parseFloat(cpuLoad.currentLoad.toFixed(1)), // Round to 1 decimal
           count: os.cpus().length,
         },
         memory: {
-          percent_used: (memInfo.used / memInfo.total) * 100,
-          total_gb: memInfo.total / (1024 * 1024 * 1024),
-          used_gb: memInfo.used / (1024 * 1024 * 1024),
-          available_gb: memInfo.available / (1024 * 1024 * 1024),
+          percent_used: parseFloat(
+            ((memInfo.active / memInfo.total) * 100).toFixed(1)
+          ),
+          total_gb: parseFloat(
+            (memInfo.total / (1024 * 1024 * 1024)).toFixed(2)
+          ),
+          used_gb: parseFloat(
+            (memInfo.active / (1024 * 1024 * 1024)).toFixed(2)
+          ),
+          available_gb: parseFloat(
+            (memInfo.available / (1024 * 1024 * 1024)).toFixed(2)
+          ),
         },
         disk: {
-          percent_used: mainDisk
-            ? 100 - (mainDisk.available / mainDisk.blocks) * 100
+          percent_used: fsSize[0] ? parseFloat(fsSize[0].use.toFixed(1)) : 0,
+          total_gb: fsSize[0]
+            ? parseFloat((fsSize[0].size / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
-          total_gb: mainDisk ? mainDisk.blocks / (1024 * 1024 * 1024) : 0,
-          used_gb: mainDisk
-            ? (mainDisk.blocks - mainDisk.available) / (1024 * 1024 * 1024)
+          used_gb: fsSize[0]
+            ? parseFloat((fsSize[0].used / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
-          available_gb: mainDisk
-            ? mainDisk.available / (1024 * 1024 * 1024)
+          available_gb: fsSize[0]
+            ? parseFloat(
+                (fsSize[0].available / (1024 * 1024 * 1024)).toFixed(2)
+              )
             : 0,
         },
         network: {
-          bytes_sent_mb: mainNetwork ? mainNetwork.tx_bytes / (1024 * 1024) : 0,
-          bytes_recv_mb: mainNetwork ? mainNetwork.rx_bytes / (1024 * 1024) : 0,
-          bytes_sent_sec: mainNetwork ? mainNetwork.tx_sec : 0,
-          bytes_recv_sec: mainNetwork ? mainNetwork.rx_sec : 0,
+          bytes_sent_mb: parseFloat(
+            (mainNetwork.tx_bytes / (1024 * 1024)).toFixed(2)
+          ),
+          bytes_recv_mb: parseFloat(
+            (mainNetwork.rx_bytes / (1024 * 1024)).toFixed(2)
+          ),
+          bytes_sent_sec: parseFloat(mainNetwork.tx_sec.toFixed(2)),
+          bytes_recv_sec: parseFloat(mainNetwork.rx_sec.toFixed(2)),
         },
       },
       details: {
         cpu: {
-          cpu_percent: cpuLoad.cpus.map((cpu) => cpu.load),
+          cpu_percent: cpuLoad.cpus.map((cpu) =>
+            parseFloat(cpu.load.toFixed(1))
+          ),
           cpu_count: os.cpus().length,
           cpu_freq_current: os.cpus().map((cpu) => cpu.speed),
-          load_1: os.loadavg()[0],
-          load_5: os.loadavg()[1],
-          load_15: os.loadavg()[2],
+          load_1: parseFloat(os.loadavg()[0].toFixed(2)),
+          load_5: parseFloat(os.loadavg()[1].toFixed(2)),
+          load_15: parseFloat(os.loadavg()[2].toFixed(2)),
         },
         memory: {
           total: memInfo.total,
-          used: memInfo.used,
+          used: memInfo.active,
           available: memInfo.available,
           swap_total: memInfo.swaptotal,
           swap_used: memInfo.swapused,
-          swap_percent: (memInfo.swapused / memInfo.swaptotal) * 100,
+          swap_percent: parseFloat(
+            ((memInfo.swapused / memInfo.swaptotal) * 100).toFixed(1)
+          ),
         },
       },
     };
 
-    // Add debug logging
-    console.log("Current metrics:", {
+    // Debug log the processed metrics
+    console.log("Processed metrics:", {
       cpu: realData.summary.cpu.current_usage,
       memory: realData.summary.memory.percent_used,
       disk: realData.summary.disk.percent_used,
@@ -371,7 +396,7 @@ app.get("/api/metrics/local", async (req, res) => {
     res.json(realData);
   } catch (error) {
     console.error("Error getting local metrics:", error);
-    console.error(error.stack); // Add stack trace
+    console.error(error.stack);
     res.status(500).json({
       error: "Failed to get local metrics",
       details: error.message,

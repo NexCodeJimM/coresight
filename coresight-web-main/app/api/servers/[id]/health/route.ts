@@ -34,7 +34,6 @@ export async function GET(
           "User-Agent": "CoreSight-Monitoring/1.0",
         },
         cache: "no-store",
-        next: { revalidate: 0 }, // Disable caching
       });
 
       if (!response.ok) {
@@ -74,6 +73,7 @@ export async function GET(
               out: metrics.summary?.network?.bytes_sent_sec || 0,
             },
           },
+          system: data.system || {},
         });
       }
 
@@ -86,6 +86,7 @@ export async function GET(
           ip: serverIP,
           port: port,
         },
+        system: data.system || {},
       });
     } catch (error) {
       console.error(`Health check failed for ${serverIP}:`, error);
