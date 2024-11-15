@@ -845,6 +845,30 @@ app.get("/api/servers/:id", async (req, res) => {
   }
 });
 
+// Add this with your other endpoints
+app.delete("/api/servers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Delete server from MySQL database
+    const [result] = await db.query("DELETE FROM servers WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Server not found" });
+    }
+
+    res.json({
+      message: "Server deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting server:", error);
+    res.status(500).json({
+      error: "Failed to delete server",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
