@@ -317,29 +317,29 @@ app.get("/api/metrics/local", async (req, res) => {
       summary: {
         lastUpdate: new Date().toISOString(),
         cpu: {
-          current_usage: parseFloat(cpuLoad.currentLoad.toFixed(1)), // Round to 1 decimal
+          current_usage: parseFloat(cpuLoad.currentLoad.toFixed(1)),
           count: os.cpus().length,
         },
         memory: {
           percent_used: parseFloat(
-            ((memInfo.active / memInfo.total) * 100).toFixed(1)
+            ((memInfo.used / memInfo.total) * 100).toFixed(1)
           ),
+          total: memInfo.total, // Raw bytes value
+          used: memInfo.used, // Raw bytes value
+          available: memInfo.available,
           total_gb: parseFloat(
             (memInfo.total / (1024 * 1024 * 1024)).toFixed(2)
           ),
-          used_gb: parseFloat(
-            (memInfo.active / (1024 * 1024 * 1024)).toFixed(2)
-          ),
+          used_gb: parseFloat((memInfo.used / (1024 * 1024 * 1024)).toFixed(2)),
           available_gb: parseFloat(
             (memInfo.available / (1024 * 1024 * 1024)).toFixed(2)
           ),
-          // Add these for byte values
-          total: memInfo.total,
-          used: memInfo.active,
-          available: memInfo.available,
         },
         disk: {
           percent_used: mainDisk ? parseFloat(mainDisk.use.toFixed(1)) : 0,
+          total: mainDisk ? mainDisk.size : 0, // Raw bytes value
+          used: mainDisk ? mainDisk.used : 0, // Raw bytes value
+          available: mainDisk ? mainDisk.available : 0,
           total_gb: mainDisk
             ? parseFloat((mainDisk.size / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
@@ -349,42 +349,12 @@ app.get("/api/metrics/local", async (req, res) => {
           available_gb: mainDisk
             ? parseFloat((mainDisk.available / (1024 * 1024 * 1024)).toFixed(2))
             : 0,
-          // Add these for byte values
-          total: mainDisk ? mainDisk.size : 0,
-          used: mainDisk ? mainDisk.used : 0,
-          available: mainDisk ? mainDisk.available : 0,
         },
         network: {
-          bytes_sent_mb: parseFloat(
-            (mainNetwork.tx_bytes / (1024 * 1024)).toFixed(2)
-          ),
-          bytes_recv_mb: parseFloat(
-            (mainNetwork.rx_bytes / (1024 * 1024)).toFixed(2)
-          ),
           bytes_sent_sec: parseFloat(mainNetwork.tx_sec.toFixed(2)),
           bytes_recv_sec: parseFloat(mainNetwork.rx_sec.toFixed(2)),
-        },
-      },
-      details: {
-        cpu: {
-          cpu_percent: cpuLoad.cpus.map((cpu) =>
-            parseFloat(cpu.load.toFixed(1))
-          ),
-          cpu_count: os.cpus().length,
-          cpu_freq_current: os.cpus().map((cpu) => cpu.speed),
-          load_1: parseFloat(os.loadavg()[0].toFixed(2)),
-          load_5: parseFloat(os.loadavg()[1].toFixed(2)),
-          load_15: parseFloat(os.loadavg()[2].toFixed(2)),
-        },
-        memory: {
-          total: memInfo.total,
-          used: memInfo.active,
-          available: memInfo.available,
-          swap_total: memInfo.swaptotal,
-          swap_used: memInfo.swapused,
-          swap_percent: parseFloat(
-            ((memInfo.swapused / memInfo.swaptotal) * 100).toFixed(1)
-          ),
+          bytes_sent: mainNetwork.tx_bytes,
+          bytes_recv: mainNetwork.rx_bytes,
         },
       },
     };
