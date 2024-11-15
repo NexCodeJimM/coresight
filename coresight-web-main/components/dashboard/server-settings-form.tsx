@@ -78,7 +78,7 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     try {
       console.log("Submitting values:", values);
 
-      const response = await fetch(`/api/servers/${server.id}/config`, {
+      const response = await fetch(`/api/servers/${server.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

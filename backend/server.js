@@ -33,7 +33,7 @@ db.getConnection()
 
 const app = express();
 
-// Enable CORS
+// Enable CORS with specific options
 app.use(
   cors({
     origin: [
@@ -46,6 +46,10 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
+
+// Add preflight handling for all routes
+app.options("*", cors());
+
 app.use(express.json());
 
 // Debug middleware
@@ -787,76 +791,102 @@ app.post("/api/servers", express.json(), async (req, res) => {
 app.options("/api/servers/:id", cors());
 
 // Update the server configuration endpoint
-app.put("/api/servers/:id", express.json(), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      name,
-      description,
-      hostname,
-      ip_address,
-      port,
-      org,
-      bucket,
-      token,
-    } = req.body;
-
-    console.log("Received update request:", { id, ...req.body });
-
-    // Update server in MySQL
-    const [result] = await db.query(
-      `UPDATE servers 
-       SET name = ?, 
-           description = ?,
-           hostname = ?,
-           ip_address = ?,
-           port = ?,
-           org = ?,
-           bucket = ?,
-           token = ?,
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [
+app
+  .route("/api/servers/:id")
+  .options(cors()) // Handle preflight
+  .put(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
         name,
-        description || null,
+        description,
         hostname,
         ip_address,
         port,
         org,
         bucket,
         token,
-        id,
-      ]
-    );
+      } = req.body;
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
+      console.log("Received update request:", { id, ...req.body });
+
+      // Update server in MySQL
+      const [result] = await db.query(
+        `UPDATE servers 
+         SET name = ?, 
+             description = ?,
+             hostname = ?,
+             ip_address = ?,
+             port = ?,
+             org = ?,
+             bucket = ?,
+             token = ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [
+          name,
+          description || null,
+          hostname,
+          ip_address,
+          port,
+          org,
+          bucket,
+          token,
+          id,
+        ]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Server not found",
+        });
+      }
+
+      // Fetch updated server data
+      const [servers] = await db.query(
+        `SELECT id, name, description, hostname, ip_address, port, org, bucket, token, status
+         FROM servers WHERE id = ?`,
+        [id]
+      );
+
+      res.json({
+        success: true,
+        message: "Server settings updated successfully",
+        server: servers[0],
+      });
+    } catch (error) {
+      console.error("Error updating server:", error);
+      res.status(500).json({
         success: false,
-        error: "Server not found",
+        error: "Failed to update server configuration",
+        details: error.message,
       });
     }
+  })
+  .delete(async (req, res) => {
+    try {
+      const { id } = req.params;
 
-    // Fetch updated server data
-    const [servers] = await db.query(
-      `SELECT id, name, description, hostname, ip_address, port, org, bucket, token, status
-       FROM servers WHERE id = ?`,
-      [id]
-    );
+      const [result] = await db.query("DELETE FROM servers WHERE id = ?", [id]);
 
-    res.json({
-      success: true,
-      message: "Server settings updated successfully",
-      server: servers[0],
-    });
-  } catch (error) {
-    console.error("Error updating server:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to update server configuration",
-      details: error.message,
-    });
-  }
-});
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Server not found" });
+      }
+
+      res.json({
+        success: true,
+        message: "Server deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting server:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to delete server",
+        details: error.message,
+      });
+    }
+  });
 
 // Add a GET endpoint to fetch server configuration
 app.get("/api/servers/:id", async (req, res) => {
@@ -877,32 +907,6 @@ app.get("/api/servers/:id", async (req, res) => {
     console.error("Error fetching server:", error);
     res.status(500).json({
       error: "Failed to fetch server",
-      details: error.message,
-    });
-  }
-});
-
-// Add this with your other endpoints
-app.delete("/api/servers/:id", cors(), async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Delete server from MySQL database
-    const [result] = await db.query("DELETE FROM servers WHERE id = ?", [id]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Server not found" });
-    }
-
-    res.json({
-      success: true,
-      message: "Server deleted successfully",
-    });
-  } catch (error) {
-    console.error("Error deleting server:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to delete server",
       details: error.message,
     });
   }
