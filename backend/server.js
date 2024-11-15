@@ -547,8 +547,31 @@ app.use((err, req, res, next) => {
 });
 
 // Add this near your other endpoints
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+app.get("/health", async (req, res) => {
+  try {
+    // Get basic system info
+    const cpuLoad = await si.currentLoad();
+    const memInfo = await si.mem();
+
+    res.status(200).json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: os.uptime(),
+      system: {
+        platform: os.platform(),
+        arch: os.arch(),
+        version: os.version(),
+        cpu_usage: cpuLoad.currentLoad,
+        memory_usage: (memInfo.used / memInfo.total) * 100,
+      },
+    });
+  } catch (error) {
+    console.error("Health check error:", error);
+    res.status(500).json({
+      status: "error",
+      error: "Failed to get system health",
+    });
+  }
 });
 
 app.get("/", (req, res) => {
