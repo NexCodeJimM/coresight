@@ -108,11 +108,11 @@ export function ServerHealth({ serverId }: { serverId: string }) {
       const transformedData: ServerHealth = {
         cpu_usage: data.metrics?.cpu || 0,
         memory_usage: data.metrics?.memory || 0,
-        memory_total: data.metrics?.memory_total || 0,
-        memory_used: data.metrics?.memory_used || 0,
+        memory_total: data.metrics?.memory?.total || 0,
+        memory_used: data.metrics?.memory?.used || 0,
         disk_usage: data.metrics?.disk || 0,
-        disk_total: data.system?.disk_total || 0,
-        disk_used: data.system?.disk_used || 0,
+        disk_total: data.metrics?.disk?.total || 0,
+        disk_used: data.metrics?.disk?.used || 0,
         network: {
           bytes_sent: data.metrics?.network?.out || 0,
           bytes_recv: data.metrics?.network?.in || 0,
