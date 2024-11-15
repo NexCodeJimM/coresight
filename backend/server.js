@@ -782,6 +782,8 @@ app.put("/api/servers/:id/config", express.json(), async (req, res) => {
     const { name, description, hostname, host, port, org, bucket, token } =
       req.body;
 
+    console.log("Received update request:", { id, ...req.body }); // Add logging
+
     // Update server in MySQL
     const [result] = await db.query(
       `UPDATE servers 
@@ -795,27 +797,32 @@ app.put("/api/servers/:id/config", express.json(), async (req, res) => {
            token = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [name, description, hostname, host, port, org, bucket, token, id]
+      [name, description || null, hostname, host, port, org, bucket, token, id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Server not found" });
+      return res.status(404).json({
+        success: false,
+        error: "Server not found",
+      });
     }
 
     // Fetch updated server data
     const [servers] = await db.query(
-      `SELECT id, name, description, hostname, ip_address, port, org, bucket, token, status
+      `SELECT id, name, description, hostname, ip_address as host, port, org, bucket, token, status
        FROM servers WHERE id = ?`,
       [id]
     );
 
     res.json({
+      success: true,
       message: "Server configuration updated successfully",
       server: servers[0],
     });
   } catch (error) {
     console.error("Error updating server configuration:", error);
     res.status(500).json({
+      success: false,
       error: "Failed to update server configuration",
       details: error.message,
     });

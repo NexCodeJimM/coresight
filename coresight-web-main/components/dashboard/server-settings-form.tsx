@@ -76,7 +76,8 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     setIsLoading(true);
 
     try {
-      // Update server configuration in one request
+      console.log("Submitting values:", values);
+
       const response = await fetch(`/api/servers/${server.id}/config`, {
         method: "PUT",
         headers: {
@@ -84,7 +85,7 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
         },
         body: JSON.stringify({
           name: values.name,
-          description: values.description,
+          description: values.description || null,
           hostname: values.hostname,
           host: values.ip_address,
           port: parseInt(values.port || "3000"),
@@ -94,15 +95,21 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update server");
+        throw new Error(data.error || "Failed to update server");
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || "Update failed");
       }
 
       toast({
         title: "Success",
         description: "Server settings updated successfully",
       });
+
       router.refresh();
     } catch (error) {
       console.error("Error updating server:", error);
