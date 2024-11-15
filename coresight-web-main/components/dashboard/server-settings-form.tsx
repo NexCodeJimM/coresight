@@ -76,30 +76,16 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     setIsLoading(true);
 
     try {
-      // Update server in database
-      const response = await fetch(`/api/servers/${server.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...values,
-          port: values.port || "3000",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update server");
-      }
-
-      // Update server configuration in servers.json
-      const configResponse = await fetch(`/api/servers/${server.id}/config`, {
+      // Update server configuration in one request
+      const response = await fetch(`/api/servers/${server.id}/config`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: values.name,
+          description: values.description,
+          hostname: values.hostname,
           host: values.ip_address,
           port: parseInt(values.port || "3000"),
           org: values.org,
@@ -108,8 +94,9 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
         }),
       });
 
-      if (!configResponse.ok) {
-        throw new Error("Failed to update server configuration");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update server");
       }
 
       toast({
@@ -121,7 +108,10 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
       console.error("Error updating server:", error);
       toast({
         title: "Error",
-        description: "Failed to update server settings",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update server settings",
         variant: "destructive",
       });
     } finally {
