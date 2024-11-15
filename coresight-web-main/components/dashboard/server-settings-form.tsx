@@ -31,6 +31,9 @@ const formSchema = z.object({
   hostname: z.string().min(1, "Hostname is required"),
   ip_address: z.string().min(1, "IP address is required"),
   port: z.string().optional(),
+  org: z.string().min(1, "Organization is required"),
+  bucket: z.string().min(1, "Bucket is required"),
+  token: z.string().min(1, "Token is required"),
 });
 
 interface ServerSettingsFormProps {
@@ -41,6 +44,9 @@ interface ServerSettingsFormProps {
     hostname: string;
     ip_address: string;
     port?: string | null;
+    org?: string;
+    bucket?: string;
+    token?: string;
   };
 }
 
@@ -56,6 +62,9 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     hostname: server.hostname || "",
     ip_address: server.ip_address || "",
     port: server.port || "3000",
+    org: server.org || "",
+    bucket: server.bucket || "",
+    token: server.token || "",
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,6 +76,7 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     setIsLoading(true);
 
     try {
+      // Update server in database
       const response = await fetch(`/api/servers/${server.id}`, {
         method: "PUT",
         headers: {
@@ -80,6 +90,26 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
 
       if (!response.ok) {
         throw new Error("Failed to update server");
+      }
+
+      // Update server configuration in servers.json
+      const configResponse = await fetch(`/api/servers/${server.id}/config`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+          host: values.ip_address,
+          port: parseInt(values.port || "3000"),
+          org: values.org,
+          bucket: values.bucket,
+          token: values.token,
+        }),
+      });
+
+      if (!configResponse.ok) {
+        throw new Error("Failed to update server configuration");
       }
 
       toast({
@@ -180,6 +210,49 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
                       placeholder="3000"
                       min="1"
                       max="65535"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="org"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Organization</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter organization" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bucket"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bucket</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter bucket name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="token"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Token</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Enter InfluxDB token"
                       {...field}
                     />
                   </FormControl>

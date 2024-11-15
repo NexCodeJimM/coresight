@@ -1,25 +1,23 @@
+const fs = require("fs");
+const path = require("path");
+
+// Load servers from a JSON file
+const loadServers = () => {
+  try {
+    const serversPath = path.join(__dirname, "servers.json");
+    if (fs.existsSync(serversPath)) {
+      return JSON.parse(fs.readFileSync(serversPath, "utf8"));
+    }
+    return [];
+  } catch (error) {
+    console.error("Error loading servers:", error);
+    return [];
+  }
+};
+
 module.exports = {
   influxdb: {
-    servers: [
-      {
-        name: "AMD Test Server",
-        host: "143.198.84.214",
-        port: 8086,
-        org: "efi",
-        bucket: "efi_servers_amd",
-        token:
-          "m1glmI-4pzkHfmG0ly9xDkWEWbxZkIDbcTL8RPIAr7gO3lHNV55SvWjroCzu6YNDBqrtdXQht_KK1L9r95rTmQ==",
-      },
-      {
-        name: "Intel Test Server",
-        host: "165.22.237.60",
-        port: 8086,
-        org: "efi",
-        bucket: "efi_servers",
-        token:
-          "BoKMcC-PnSb5ugtlOZvhsuuQv_eEyjYkmN8l14Zw82oohHC4pz9z2_UCsK7StvaXg-vUdMR3b_jqYThsXV6X6g==",
-      },
-    ],
+    servers: loadServers(),
   },
   server: {
     port: 3000,
@@ -31,5 +29,18 @@ module.exports = {
       ],
       credentials: true,
     },
+  },
+  // Add function to update servers
+  updateServers: (newServers) => {
+    try {
+      fs.writeFileSync(
+        path.join(__dirname, "servers.json"),
+        JSON.stringify(newServers, null, 2)
+      );
+      module.exports.influxdb.servers = newServers;
+    } catch (error) {
+      console.error("Error updating servers:", error);
+      throw error;
+    }
   },
 };

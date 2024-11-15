@@ -729,6 +729,122 @@ app.get("/api/metrics/local/uptime", async (req, res) => {
   }
 });
 
+// Add this near your other imports
+const config = require("./config");
+
+// Add this with your other endpoints
+app.post("/api/servers", express.json(), async (req, res) => {
+  try {
+    const { name, host, port, org, bucket, token, hostname } = req.body;
+
+    // Validate required fields
+    if (!name || !host || !org || !bucket || !token) {
+      return res.status(400).json({
+        error: "Missing required fields",
+      });
+    }
+
+    // Insert into MySQL database
+    const [result] = await db.query(
+      `INSERT INTO servers 
+       (id, name, hostname, ip_address, port, org, bucket, token, status) 
+       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'active')`,
+      [name, hostname, host, port || 3000, org, bucket, token]
+    );
+
+    res.status(201).json({
+      message: "Server added successfully",
+      server: {
+        id: result.insertId,
+        name,
+        hostname,
+        ip_address: host,
+        port,
+        org,
+        bucket,
+        token,
+        status: "active",
+      },
+    });
+  } catch (error) {
+    console.error("Error adding server:", error);
+    res.status(500).json({
+      error: "Failed to add server",
+      details: error.message,
+    });
+  }
+});
+
+// Update the server configuration endpoint
+app.put("/api/servers/:id/config", express.json(), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, host, port, org, bucket, token, hostname } = req.body;
+
+    // Update server in MySQL
+    const [result] = await db.query(
+      `UPDATE servers 
+       SET name = ?, 
+           hostname = ?,
+           ip_address = ?,
+           port = ?,
+           org = ?,
+           bucket = ?,
+           token = ?
+       WHERE id = ?`,
+      [name, hostname, host, port, org, bucket, token, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Server not found" });
+    }
+
+    res.json({
+      message: "Server configuration updated successfully",
+      server: {
+        id,
+        name,
+        hostname,
+        ip_address: host,
+        port,
+        org,
+        bucket,
+        token,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating server configuration:", error);
+    res.status(500).json({
+      error: "Failed to update server configuration",
+      details: error.message,
+    });
+  }
+});
+
+// Add a GET endpoint to fetch server configuration
+app.get("/api/servers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [servers] = await db.query(
+      `SELECT id, name, hostname, ip_address, port, org, bucket, token, status, description
+       FROM servers WHERE id = ?`,
+      [id]
+    );
+
+    if (servers.length === 0) {
+      return res.status(404).json({ error: "Server not found" });
+    }
+
+    res.json(servers[0]);
+  } catch (error) {
+    console.error("Error fetching server:", error);
+    res.status(500).json({
+      error: "Failed to fetch server",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
