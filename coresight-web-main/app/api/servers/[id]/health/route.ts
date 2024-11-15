@@ -55,6 +55,7 @@ export async function GET(
 
       if (metricsResponse.ok) {
         const metrics = await metricsResponse.json();
+        console.log("Raw metrics from server:", metrics);
 
         return NextResponse.json({
           status: "online",
@@ -67,11 +68,14 @@ export async function GET(
           metrics: {
             cpu: metrics.summary?.cpu?.current_usage || 0,
             memory: metrics.summary?.memory?.percent_used || 0,
-            memory_total: metrics.summary?.memory?.total || 0,
-            memory_used: metrics.summary?.memory?.used || 0,
+            memory_total:
+              metrics.summary?.memory?.total_gb * 1024 * 1024 * 1024 || 0, // Convert GB to bytes
+            memory_used:
+              metrics.summary?.memory?.used_gb * 1024 * 1024 * 1024 || 0, // Convert GB to bytes
             disk: metrics.summary?.disk?.percent_used || 0,
-            disk_total: metrics.summary?.disk?.total || 0,
-            disk_used: metrics.summary?.disk?.used || 0,
+            disk_total:
+              metrics.summary?.disk?.total_gb * 1024 * 1024 * 1024 || 0, // Convert GB to bytes
+            disk_used: metrics.summary?.disk?.used_gb * 1024 * 1024 * 1024 || 0, // Convert GB to bytes
             network: {
               in: metrics.summary?.network?.bytes_recv_sec || 0,
               out: metrics.summary?.network?.bytes_sent_sec || 0,
