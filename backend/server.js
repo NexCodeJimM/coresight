@@ -34,7 +34,17 @@ db.getConnection()
 const app = express();
 
 // Enable CORS
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "http://165.22.237.60:3000",
+      "http://143.198.84.214:3000",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Debug middleware
@@ -771,6 +781,9 @@ app.post("/api/servers", express.json(), async (req, res) => {
     });
   }
 });
+
+// Add OPTIONS handler for the specific endpoint
+app.options("/api/servers/:id", cors());
 
 // Update the server configuration endpoint
 app.put("/api/servers/:id", express.json(), async (req, res) => {

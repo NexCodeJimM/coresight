@@ -82,7 +82,9 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           name: values.name,
           description: values.description || null,
@@ -95,12 +97,18 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
         }),
       });
 
+      console.log("Response status:", response.status);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update server");
+        const errorData = await response.json().catch(() => null);
+        console.error("Error response:", errorData);
+        throw new Error(
+          errorData?.error || `HTTP error! status: ${response.status}`
+        );
       }
 
       const data = await response.json();
+      console.log("Success response:", data);
 
       toast({
         title: "Success",
