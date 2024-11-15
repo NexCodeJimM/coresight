@@ -773,13 +773,21 @@ app.post("/api/servers", express.json(), async (req, res) => {
 });
 
 // Update the server configuration endpoint
-app.put("/api/servers/:id/config", express.json(), async (req, res) => {
+app.put("/api/servers/:id", express.json(), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, hostname, host, port, org, bucket, token } =
-      req.body;
+    const {
+      name,
+      description,
+      hostname,
+      ip_address,
+      port,
+      org,
+      bucket,
+      token,
+    } = req.body;
 
-    console.log("Received update request:", { id, ...req.body }); // Add logging
+    console.log("Received update request:", { id, ...req.body });
 
     // Update server in MySQL
     const [result] = await db.query(
@@ -794,7 +802,17 @@ app.put("/api/servers/:id/config", express.json(), async (req, res) => {
            token = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [name, description || null, hostname, host, port, org, bucket, token, id]
+      [
+        name,
+        description || null,
+        hostname,
+        ip_address,
+        port,
+        org,
+        bucket,
+        token,
+        id,
+      ]
     );
 
     if (result.affectedRows === 0) {
@@ -806,18 +824,18 @@ app.put("/api/servers/:id/config", express.json(), async (req, res) => {
 
     // Fetch updated server data
     const [servers] = await db.query(
-      `SELECT id, name, description, hostname, ip_address as host, port, org, bucket, token, status
+      `SELECT id, name, description, hostname, ip_address, port, org, bucket, token, status
        FROM servers WHERE id = ?`,
       [id]
     );
 
     res.json({
       success: true,
-      message: "Server configuration updated successfully",
+      message: "Server settings updated successfully",
       server: servers[0],
     });
   } catch (error) {
-    console.error("Error updating server configuration:", error);
+    console.error("Error updating server:", error);
     res.status(500).json({
       success: false,
       error: "Failed to update server configuration",

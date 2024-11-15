@@ -78,7 +78,7 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     try {
       console.log("Submitting values:", values);
 
-      const response = await fetch(`/api/servers/${server.id}/config`, {
+      const response = await fetch(`/api/servers/${server.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +87,7 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
           name: values.name,
           description: values.description || null,
           hostname: values.hostname,
-          host: values.ip_address,
+          ip_address: values.ip_address,
           port: parseInt(values.port || "3000"),
           org: values.org,
           bucket: values.bucket,
@@ -95,15 +95,12 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update server");
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update server");
       }
 
-      if (!data.success) {
-        throw new Error(data.error || "Update failed");
-      }
+      const data = await response.json();
 
       toast({
         title: "Success",
