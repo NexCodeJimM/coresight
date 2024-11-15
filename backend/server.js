@@ -603,6 +603,77 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "Server is running" });
 });
 
+// Add this near your other endpoints
+app.get("/api/metrics/:hostname/uptime", async (req, res) => {
+  try {
+    const { hostname } = req.params;
+
+    // Get all IPv4 addresses of the current server
+    const localIPs = Object.values(os.networkInterfaces())
+      .flat()
+      .filter((ip) => ip?.family === "IPv4")
+      .map((ip) => ip.address);
+
+    // Check if this is a local request
+    const isLocalRequest =
+      localIPs.includes(hostname) ||
+      hostname === "local" ||
+      hostname === "localhost";
+
+    if (isLocalRequest) {
+      // Return local server uptime
+      const uptime = os.uptime(); // Get system uptime in seconds
+
+      res.json({
+        status: "online",
+        uptime: uptime,
+        last_checked: new Date().toISOString(),
+        last_downtime: null, // You might want to store this in a database
+      });
+    } else {
+      // Forward request to remote server
+      try {
+        const response = await fetch(
+          `http://${hostname}:3000/api/metrics/local/uptime`
+        );
+        if (!response.ok) {
+          throw new Error(`Failed to fetch uptime from ${hostname}`);
+        }
+        const data = await response.json();
+        res.json(data);
+      } catch (error) {
+        console.error(`Error fetching uptime from ${hostname}:`, error);
+        res.status(503).json({
+          status: "offline",
+          uptime: 0,
+          last_checked: new Date().toISOString(),
+          error: `Failed to connect to ${hostname}`,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error getting uptime:", error);
+    res.status(500).json({ error: "Failed to get uptime" });
+  }
+});
+
+// Add local uptime endpoint
+app.get("/api/metrics/local/uptime", (req, res) => {
+  try {
+    const uptime = os.uptime(); // Get system uptime in seconds
+
+    res.json({
+      status: "online",
+      uptime: uptime,
+      last_checked: new Date().toISOString(),
+      last_downtime: null, // You might want to store this in a database
+    });
+  } catch (error) {
+    console.error("Error getting local uptime:", error);
+    res.status(500).json({ error: "Failed to get local uptime" });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
