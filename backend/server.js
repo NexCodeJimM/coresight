@@ -603,7 +603,7 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "Server is running" });
 });
 
-// Add this near your other endpoints
+// Update the uptime endpoint
 app.get("/api/metrics/:hostname/uptime", async (req, res) => {
   try {
     const { hostname } = req.params;
@@ -614,6 +614,9 @@ app.get("/api/metrics/:hostname/uptime", async (req, res) => {
       .filter((ip) => ip?.family === "IPv4")
       .map((ip) => ip.address);
 
+    console.log(`Checking uptime for ${hostname}`);
+    console.log(`Local IPs: ${localIPs.join(", ")}`);
+
     // Check if this is a local request
     const isLocalRequest =
       localIPs.includes(hostname) ||
@@ -621,14 +624,27 @@ app.get("/api/metrics/:hostname/uptime", async (req, res) => {
       hostname === "localhost";
 
     if (isLocalRequest) {
-      // Return local server uptime
-      const uptime = os.uptime(); // Get system uptime in seconds
+      // Get system uptime and load
+      const uptime = os.uptime();
+      const cpuLoad = await si.currentLoad();
+      const startTime = new Date(Date.now() - uptime * 1000);
+
+      console.log("Local uptime data:", {
+        uptime,
+        startTime: startTime.toISOString(),
+      });
 
       res.json({
         status: "online",
-        uptime: uptime,
+        uptime: Math.floor(uptime),
+        start_time: startTime.toISOString(),
         last_checked: new Date().toISOString(),
-        last_downtime: null, // You might want to store this in a database
+        last_downtime: null,
+        system_info: {
+          platform: os.platform(),
+          cpu_load: cpuLoad.currentLoad,
+          memory_used: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
+        },
       });
     } else {
       // Forward request to remote server
@@ -647,30 +663,45 @@ app.get("/api/metrics/:hostname/uptime", async (req, res) => {
           status: "offline",
           uptime: 0,
           last_checked: new Date().toISOString(),
+          last_downtime: new Date().toISOString(),
           error: `Failed to connect to ${hostname}`,
         });
       }
     }
   } catch (error) {
     console.error("Error getting uptime:", error);
-    res.status(500).json({ error: "Failed to get uptime" });
+    res.status(500).json({
+      error: "Failed to get uptime",
+      details: error.message,
+    });
   }
 });
 
-// Add local uptime endpoint
-app.get("/api/metrics/local/uptime", (req, res) => {
+// Update the local uptime endpoint
+app.get("/api/metrics/local/uptime", async (req, res) => {
   try {
-    const uptime = os.uptime(); // Get system uptime in seconds
+    const uptime = os.uptime();
+    const cpuLoad = await si.currentLoad();
+    const startTime = new Date(Date.now() - uptime * 1000);
 
     res.json({
       status: "online",
-      uptime: uptime,
+      uptime: Math.floor(uptime),
+      start_time: startTime.toISOString(),
       last_checked: new Date().toISOString(),
-      last_downtime: null, // You might want to store this in a database
+      last_downtime: null,
+      system_info: {
+        platform: os.platform(),
+        cpu_load: cpuLoad.currentLoad,
+        memory_used: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
+      },
     });
   } catch (error) {
     console.error("Error getting local uptime:", error);
-    res.status(500).json({ error: "Failed to get local uptime" });
+    res.status(500).json({
+      error: "Failed to get local uptime",
+      details: error.message,
+    });
   }
 });
 
