@@ -729,9 +729,6 @@ app.get("/api/metrics/local/uptime", async (req, res) => {
   }
 });
 
-// Add this near your other imports
-const config = require("./config");
-
 // Add this with your other endpoints
 app.post("/api/servers", express.json(), async (req, res) => {
   try {
