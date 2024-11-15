@@ -41,8 +41,9 @@ app.use(
       "http://165.22.237.60:3000",
       "http://143.198.84.214:3000",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
   })
 );
 app.use(express.json());
@@ -882,7 +883,7 @@ app.get("/api/servers/:id", async (req, res) => {
 });
 
 // Add this with your other endpoints
-app.delete("/api/servers/:id", async (req, res) => {
+app.delete("/api/servers/:id", cors(), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -894,11 +895,13 @@ app.delete("/api/servers/:id", async (req, res) => {
     }
 
     res.json({
+      success: true,
       message: "Server deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting server:", error);
     res.status(500).json({
+      success: false,
       error: "Failed to delete server",
       details: error.message,
     });

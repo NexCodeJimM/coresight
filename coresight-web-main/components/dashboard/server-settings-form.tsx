@@ -78,13 +78,12 @@ export function ServerSettingsForm({ server }: ServerSettingsFormProps) {
     try {
       console.log("Submitting values:", values);
 
-      const response = await fetch(`/api/servers/${server.id}`, {
+      const response = await fetch(`/api/servers/${server.id}/config`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        credentials: "include",
         body: JSON.stringify({
           name: values.name,
           description: values.description || null,

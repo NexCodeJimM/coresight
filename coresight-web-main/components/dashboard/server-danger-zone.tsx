@@ -41,10 +41,14 @@ export function ServerDangerZone({ server }: ServerDangerZoneProps) {
     try {
       const response = await fetch(`/api/servers/${server.id}`, {
         method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete server");
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Failed to delete server");
       }
 
       toast({
@@ -58,7 +62,8 @@ export function ServerDangerZone({ server }: ServerDangerZoneProps) {
       console.error("Error deleting server:", error);
       toast({
         title: "Error",
-        description: "Failed to delete server.",
+        description:
+          error instanceof Error ? error.message : "Failed to delete server",
         variant: "destructive",
       });
     } finally {
