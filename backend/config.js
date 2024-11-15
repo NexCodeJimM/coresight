@@ -1,4 +1,5 @@
 module.exports = {
+<<<<<<< HEAD
   influxdb: {
 <<<<<<< HEAD
     host: "143.198.84.214", // Replace the IP Address of the server
@@ -30,8 +31,10 @@ module.exports = {
     ],
 >>>>>>> 58139a10b08f31a7486f09e35d81ed5901f50e4f
   },
+=======
+>>>>>>> 179e004cedc6830e5d1535e302dfd4e53aed75cc
   server: {
-    port: 3000,
+    port: process.env.PORT || 3000,
     cors: {
 <<<<<<< HEAD
       // Replace the IP Address of the server and the port
@@ -45,5 +48,12 @@ module.exports = {
 >>>>>>> 58139a10b08f31a7486f09e35d81ed5901f50e4f
       credentials: true,
     },
+  },
+  db: {
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || "coresight",
+    port: process.env.DB_PORT || 3306,
   },
 };

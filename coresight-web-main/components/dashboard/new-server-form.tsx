@@ -25,7 +25,11 @@ export function NewServerForm() {
     const formData = new FormData(event.currentTarget);
     const data = {
       name: formData.get("name"),
-      ip_address: formData.get("ip_address"),
+      host: formData.get("ip_address"),
+      port: parseInt(formData.get("port") as string) || 8086,
+      org: formData.get("org"),
+      bucket: formData.get("bucket"),
+      token: formData.get("token"),
       hostname: formData.get("hostname"),
     };
 
@@ -90,6 +94,39 @@ export function NewServerForm() {
               id="hostname"
               name="hostname"
               placeholder="e.g., intel-test-server-ca"
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="port">Port</label>
+            <Input
+              id="port"
+              name="port"
+              type="number"
+              placeholder="8086"
+              defaultValue="8086"
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="org">Organization</label>
+            <Input id="org" name="org" placeholder="e.g., EFI" required />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="bucket">Bucket</label>
+            <Input
+              id="bucket"
+              name="bucket"
+              placeholder="e.g., efi_servers"
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="token">Token</label>
+            <Input
+              id="token"
+              name="token"
+              type="password"
+              placeholder="Your InfluxDB token"
               required
             />
           </div>
