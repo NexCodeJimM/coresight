@@ -106,21 +106,23 @@ export function ServerHealth({ serverId }: { serverId: string }) {
       }
 
       const transformedData: ServerHealth = {
-        cpu_usage: data.cpu_usage || 0,
-        memory_usage: data.memory_usage || 0,
-        memory_total: data.memory_total || 0,
-        memory_used: data.memory_used || 0,
-        disk_usage: data.disk_usage || 0,
-        disk_total: data.disk_total || 0,
-        disk_used: data.disk_used || 0,
+        cpu_usage: data.metrics?.cpu || 0,
+        memory_usage: data.metrics?.memory || 0,
+        memory_total: data.metrics?.memory_total || 0,
+        memory_used: data.metrics?.memory_used || 0,
+        disk_usage: data.metrics?.disk || 0,
+        disk_total: data.system?.disk_total || 0,
+        disk_used: data.system?.disk_used || 0,
         network: {
-          bytes_sent: data.network?.bytes_sent || 0,
-          bytes_recv: data.network?.bytes_recv || 0,
+          bytes_sent: data.metrics?.network?.out || 0,
+          bytes_recv: data.metrics?.network?.in || 0,
         },
-        uptime: data.uptime || 0,
-        is_connected: data.is_connected || false,
-        last_seen: data.last_seen || new Date().toISOString(),
+        uptime: data.system?.uptime || 0,
+        is_connected: data.status === "online",
+        last_seen: data.lastChecked || new Date().toISOString(),
       };
+
+      console.log("Transformed health data:", transformedData);
 
       setHealth(transformedData);
       checkThresholds(transformedData);
@@ -215,17 +217,17 @@ export function ServerHealth({ serverId }: { serverId: string }) {
           <CardContent>
             <div className="space-y-2">
               <Progress
-                value={health.cpu_usage}
+                value={health?.cpu_usage || 0}
                 className={cn(
-                  health.cpu_usage >= thresholds.cpu.critical
+                  health?.cpu_usage >= thresholds.cpu.critical
                     ? "[&>div]:bg-red-500"
-                    : health.cpu_usage >= thresholds.cpu.warning
+                    : health?.cpu_usage >= thresholds.cpu.warning
                     ? "[&>div]:bg-yellow-500"
                     : "[&>div]:bg-green-500"
                 )}
               />
               <p className="text-xs text-muted-foreground">
-                {health.cpu_usage.toFixed(1)}% utilized
+                {health?.cpu_usage.toFixed(1)}% utilized
               </p>
             </div>
           </CardContent>
@@ -240,18 +242,18 @@ export function ServerHealth({ serverId }: { serverId: string }) {
           <CardContent>
             <div className="space-y-2">
               <Progress
-                value={health.memory_usage}
+                value={health?.memory_usage || 0}
                 className={cn(
-                  health.memory_usage >= thresholds.memory.critical
+                  health?.memory_usage >= thresholds.memory.critical
                     ? "[&>div]:bg-red-500"
-                    : health.memory_usage >= thresholds.memory.warning
+                    : health?.memory_usage >= thresholds.memory.warning
                     ? "[&>div]:bg-yellow-500"
                     : "[&>div]:bg-green-500"
                 )}
               />
               <p className="text-xs text-muted-foreground">
-                {formatBytes(health.memory_used)} /{" "}
-                {formatBytes(health.memory_total)}
+                {formatBytes(health?.memory_used || 0)} /{" "}
+                {formatBytes(health?.memory_total || 0)}
               </p>
             </div>
           </CardContent>
@@ -266,18 +268,18 @@ export function ServerHealth({ serverId }: { serverId: string }) {
           <CardContent>
             <div className="space-y-2">
               <Progress
-                value={health.disk_usage}
+                value={health?.disk_usage || 0}
                 className={cn(
-                  health.disk_usage >= thresholds.disk.critical
+                  health?.disk_usage >= thresholds.disk.critical
                     ? "[&>div]:bg-red-500"
-                    : health.disk_usage >= thresholds.disk.warning
+                    : health?.disk_usage >= thresholds.disk.warning
                     ? "[&>div]:bg-yellow-500"
                     : "[&>div]:bg-green-500"
                 )}
               />
               <p className="text-xs text-muted-foreground">
-                {formatBytes(health.disk_used)} /{" "}
-                {formatBytes(health.disk_total)}
+                {formatBytes(health?.disk_used || 0)} /{" "}
+                {formatBytes(health?.disk_total || 0)}
               </p>
             </div>
           </CardContent>
@@ -292,10 +294,10 @@ export function ServerHealth({ serverId }: { serverId: string }) {
           <CardContent>
             <div className="space-y-2">
               <div className="text-xs text-muted-foreground">
-                ↑ {formatBytes(health.network.bytes_sent)}/s
+                ↑ {formatBytes(health?.network.bytes_sent || 0)}/s
               </div>
               <div className="text-xs text-muted-foreground">
-                ↓ {formatBytes(health.network.bytes_recv)}/s
+                ↓ {formatBytes(health?.network.bytes_recv || 0)}/s
               </div>
             </div>
           </CardContent>
