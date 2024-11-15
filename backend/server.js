@@ -297,6 +297,9 @@ app.get("/api/metrics/:hostname", async (req, res) => {
 // Add a local metrics endpoint that doesn't do proxying
 app.get("/api/metrics/local", async (req, res) => {
   try {
+    // Get current system metrics using systeminformation
+    const cpuLoad = await si.currentLoad();
+    const memInfo = await si.mem();
     const disks = await diskinfo.getDiskInfo();
     const mainDisk = disks[0];
     const networkStats = await si.networkStats();
@@ -306,41 +309,74 @@ app.get("/api/metrics/local", async (req, res) => {
       summary: {
         lastUpdate: new Date().toLocaleString(),
         cpu: {
-          current_usage: (os.loadavg()[0] * 100) / os.cpus().length,
+          current_usage: cpuLoad.currentLoad || 0, // Use actual CPU load instead of loadavg
           count: os.cpus().length,
         },
         memory: {
-          percent_used: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
-          total_gb: os.totalmem() / (1024 * 1024 * 1024),
+          percent_used: (memInfo.used / memInfo.total) * 100,
+          total_gb: memInfo.total / (1024 * 1024 * 1024),
+          used_gb: memInfo.used / (1024 * 1024 * 1024),
+          available_gb: memInfo.available / (1024 * 1024 * 1024),
         },
         disk: {
-          percent_used: 100 - (mainDisk.available / mainDisk.blocks) * 100,
-          total_gb: mainDisk.blocks / (1024 * 1024 * 1024),
+          percent_used: mainDisk
+            ? 100 - (mainDisk.available / mainDisk.blocks) * 100
+            : 0,
+          total_gb: mainDisk ? mainDisk.blocks / (1024 * 1024 * 1024) : 0,
+          used_gb: mainDisk
+            ? (mainDisk.blocks - mainDisk.available) / (1024 * 1024 * 1024)
+            : 0,
+          available_gb: mainDisk
+            ? mainDisk.available / (1024 * 1024 * 1024)
+            : 0,
         },
         network: {
-          bytes_sent_mb: mainNetwork.tx_bytes / (1024 * 1024),
-          bytes_recv_mb: mainNetwork.rx_bytes / (1024 * 1024),
+          bytes_sent_mb: mainNetwork ? mainNetwork.tx_bytes / (1024 * 1024) : 0,
+          bytes_recv_mb: mainNetwork ? mainNetwork.rx_bytes / (1024 * 1024) : 0,
+          bytes_sent_sec: mainNetwork ? mainNetwork.tx_sec : 0,
+          bytes_recv_sec: mainNetwork ? mainNetwork.rx_sec : 0,
         },
       },
       details: {
         cpu: {
-          cpu_percent: os.cpus().map((cpu) => cpu.times),
+          cpu_percent: cpuLoad.cpus.map((cpu) => cpu.load),
           cpu_count: os.cpus().length,
           cpu_freq_current: os.cpus().map((cpu) => cpu.speed),
+          load_1: os.loadavg()[0],
+          load_5: os.loadavg()[1],
+          load_15: os.loadavg()[2],
         },
         memory: {
-          total: os.totalmem(),
-          used: os.totalmem() - os.freemem(),
-          available: os.freemem(),
-          percent: ((os.totalmem() - os.freemem()) / os.totalmem()) * 100,
+          total: memInfo.total,
+          used: memInfo.used,
+          available: memInfo.available,
+          swap_total: memInfo.swaptotal,
+          swap_used: memInfo.swapused,
+          swap_percent: (memInfo.swapused / memInfo.swaptotal) * 100,
         },
       },
     };
 
+    // Add debug logging
+    console.log("Current metrics:", {
+      cpu: realData.summary.cpu.current_usage,
+      memory: realData.summary.memory.percent_used,
+      disk: realData.summary.disk.percent_used,
+      network: {
+        in: realData.summary.network.bytes_recv_sec,
+        out: realData.summary.network.bytes_sent_sec,
+      },
+    });
+
     res.json(realData);
   } catch (error) {
     console.error("Error getting local metrics:", error);
-    res.status(500).json({ error: "Failed to get local metrics" });
+    console.error(error.stack); // Add stack trace
+    res.status(500).json({
+      error: "Failed to get local metrics",
+      details: error.message,
+      stack: error.stack,
+    });
   }
 });
 
