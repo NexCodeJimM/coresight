@@ -305,12 +305,14 @@ app.get("/api/metrics/local", async (req, res) => {
     const mainNetwork = networkStats[0];
     const mainDisk = fsSize[0]; // Get the first disk
 
-    // Debug log the raw values
-    console.log("Raw metrics:", {
-      cpu: cpuLoad,
-      memory: memInfo,
+    // Debug log raw values
+    console.log("Raw system info:", {
+      memory: {
+        total: memInfo.total,
+        used: memInfo.active,
+        free: memInfo.free,
+      },
       disk: mainDisk,
-      network: mainNetwork,
     });
 
     const realData = {
@@ -322,59 +324,36 @@ app.get("/api/metrics/local", async (req, res) => {
         },
         memory: {
           percent_used: parseFloat(
-            ((memInfo.used / memInfo.total) * 100).toFixed(1)
+            ((memInfo.active / memInfo.total) * 100).toFixed(1)
           ),
-          total: memInfo.total, // Raw bytes value
-          used: memInfo.used, // Raw bytes value
-          available: memInfo.available,
-          total_gb: parseFloat(
-            (memInfo.total / (1024 * 1024 * 1024)).toFixed(2)
-          ),
-          used_gb: parseFloat((memInfo.used / (1024 * 1024 * 1024)).toFixed(2)),
-          available_gb: parseFloat(
-            (memInfo.available / (1024 * 1024 * 1024)).toFixed(2)
-          ),
+          total: memInfo.total, // Total memory in bytes
+          used: memInfo.active, // Used memory in bytes
+          available: memInfo.available, // Available memory in bytes
         },
         disk: {
           percent_used: mainDisk ? parseFloat(mainDisk.use.toFixed(1)) : 0,
-          total: mainDisk ? mainDisk.size : 0, // Raw bytes value
-          used: mainDisk ? mainDisk.used : 0, // Raw bytes value
-          available: mainDisk ? mainDisk.available : 0,
-          total_gb: mainDisk
-            ? parseFloat((mainDisk.size / (1024 * 1024 * 1024)).toFixed(2))
-            : 0,
-          used_gb: mainDisk
-            ? parseFloat((mainDisk.used / (1024 * 1024 * 1024)).toFixed(2))
-            : 0,
-          available_gb: mainDisk
-            ? parseFloat((mainDisk.available / (1024 * 1024 * 1024)).toFixed(2))
-            : 0,
+          total: mainDisk ? mainDisk.size : 0, // Total disk space in bytes
+          used: mainDisk ? mainDisk.used : 0, // Used disk space in bytes
+          available: mainDisk ? mainDisk.available : 0, // Available disk space in bytes
         },
         network: {
           bytes_sent_sec: parseFloat(mainNetwork.tx_sec.toFixed(2)),
           bytes_recv_sec: parseFloat(mainNetwork.rx_sec.toFixed(2)),
-          bytes_sent: mainNetwork.tx_bytes,
-          bytes_recv: mainNetwork.rx_bytes,
         },
       },
     };
 
-    // Debug log the processed metrics
+    // Debug log processed metrics
     console.log("Processed metrics:", {
-      cpu: realData.summary.cpu.current_usage,
       memory: {
         percent: realData.summary.memory.percent_used,
-        total: realData.summary.memory.total,
-        used: realData.summary.memory.used,
+        total_bytes: realData.summary.memory.total,
+        used_bytes: realData.summary.memory.used,
       },
       disk: {
         percent: realData.summary.disk.percent_used,
-        total: realData.summary.disk.total,
-        used: realData.summary.disk.used,
-      },
-      network: {
-        in: realData.summary.network.bytes_recv_sec,
-        out: realData.summary.network.bytes_sent_sec,
+        total_bytes: realData.summary.disk.total,
+        used_bytes: realData.summary.disk.used,
       },
     });
 

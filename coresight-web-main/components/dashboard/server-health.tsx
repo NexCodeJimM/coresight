@@ -146,7 +146,7 @@ export function ServerHealth({ serverId }: { serverId: string }) {
 
   useEffect(() => {
     fetchHealthData();
-    const interval = setInterval(fetchHealthData, 5000);
+    const interval = setInterval(fetchHealthData, 60000);
 
     return () => clearInterval(interval);
   }, [serverId]);
