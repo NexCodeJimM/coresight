@@ -49,33 +49,34 @@ export function NewServerForm() {
       description: (formData.get("description") as string) || null,
       hostname: formData.get("hostname") as string,
       ip_address: formData.get("ip_address") as string,
-      port: parseInt(formData.get("port") as string) || 8086,
+      port: parseInt(formData.get("port") as string) || 3000,
       org: (formData.get("org") as string) || influxDefaults.org,
       bucket: (formData.get("bucket") as string) || influxDefaults.bucket,
       token: (formData.get("token") as string) || influxDefaults.token,
-      status: "active",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
 
-    console.log("Form values before submission:", {
-      ...formValues,
-      token: formValues.token ? "***" : "not set",
-    });
+    // Validate required fields
+    if (!formValues.name || !formValues.hostname || !formValues.ip_address) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/servers", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
         },
         body: JSON.stringify(formValues),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Server error response:", errorData);
         throw new Error(errorData.error || "Failed to create server");
       }
 

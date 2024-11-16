@@ -143,79 +143,41 @@ app.post("/api/servers", async (req, res) => {
       token,
     } = req.body;
 
-    console.log("Received server creation request:", {
-      name,
-      description,
-      hostname,
-      ip_address,
-      port,
-      org,
-      bucket,
-      tokenLength: token ? token.length : 0,
-    });
+    console.log("Received server creation request:", req.body);
 
     // Validate required fields
-    if (!name || !hostname || !ip_address || !org || !bucket || !token) {
+    if (!name || !hostname || !ip_address) {
       return res.status(400).json({
         success: false,
         error: "Required fields missing",
-        receivedData: {
-          name: !!name,
-          description: !!description,
-          hostname: !!hostname,
-          ip_address: !!ip_address,
-          port: !!port,
-          org: !!org,
-          bucket: !!bucket,
-          token: !!token,
-        },
+        receivedData: req.body,
       });
     }
 
-    // Insert into MySQL database - Match exact column order
+    // Insert into MySQL database with explicit values for each column
     const [result] = await db.query(
       `INSERT INTO servers 
-       (id, name, ip_address, status, last_seen, created_at, updated_at, hostname, description, port, org, bucket, token) 
-       VALUES (UUID(), ?, ?, 'active', NOW(), NOW(), NOW(), ?, ?, ?, ?, ?, ?)`,
+       (id, name, description, hostname, ip_address, port, org, bucket, token, status, last_seen, created_at, updated_at) 
+       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW(), NOW())`,
       [
-        name, // name
-        ip_address, // ip_address
-        hostname, // hostname
-        description, // description
-        port || 3000, // port
-        org, // org
-        bucket, // bucket
-        token, // token
+        name,
+        description || null,
+        hostname,
+        ip_address,
+        port || 3000,
+        org || null,
+        bucket || null,
+        token || null,
       ]
     );
 
-    // Log the SQL and values for debugging
-    console.log("SQL Values:", [
-      name,
-      ip_address,
-      hostname,
-      description,
-      port || 3000,
-      org,
-      bucket,
-      token,
+    // Fetch the created server
+    const [servers] = await db.query(`SELECT * FROM servers WHERE id = ?`, [
+      result.insertId,
     ]);
 
-    // Fetch the created server immediately using the UUID
-    const [servers] = await db.query(
-      `SELECT * FROM servers WHERE name = ? ORDER BY created_at DESC LIMIT 1`,
-      [name]
-    );
-
-    if (!servers.length) {
-      throw new Error("Server was created but could not be retrieved");
-    }
-
     const createdServer = servers[0];
-    console.log("Created server data:", {
-      ...createdServer,
-      token: "***", // Hide token in logs
-    });
+    console.log("Created server:", { ...createdServer, token: "***" });
 
     res.status(201).json({
       success: true,
@@ -228,7 +190,6 @@ app.post("/api/servers", async (req, res) => {
       success: false,
       error: "Failed to create server",
       details: error.message,
-      stack: error.stack,
     });
   }
 });
