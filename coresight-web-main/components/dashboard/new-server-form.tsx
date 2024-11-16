@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -17,6 +17,26 @@ export function NewServerForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [influxDefaults, setInfluxDefaults] = useState({
+    org: "",
+    bucket: "",
+    token: "",
+  });
+
+  useEffect(() => {
+    async function fetchDefaults() {
+      try {
+        const response = await fetch("/api/influxdb/defaults");
+        if (response.ok) {
+          const data = await response.json();
+          setInfluxDefaults(data);
+        }
+      } catch (error) {
+        console.error("Error fetching InfluxDB defaults:", error);
+      }
+    }
+    fetchDefaults();
+  }, []);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,18 +44,24 @@ export function NewServerForm() {
 
     const formData = new FormData(event.currentTarget);
 
-    // Log each field individually to verify values
     const formValues = {
-      name: formData.get("name"),
-      hostname: formData.get("hostname"),
-      ip_address: formData.get("ip_address"),
-      port: formData.get("port"),
-      org: formData.get("org"),
-      bucket: formData.get("bucket"),
-      token: formData.get("token"),
+      name: formData.get("name") as string,
+      description: (formData.get("description") as string) || null,
+      hostname: formData.get("hostname") as string,
+      ip_address: formData.get("ip_address") as string,
+      port: parseInt(formData.get("port") as string) || 8086,
+      org: (formData.get("org") as string) || influxDefaults.org,
+      bucket: (formData.get("bucket") as string) || influxDefaults.bucket,
+      token: (formData.get("token") as string) || influxDefaults.token,
+      status: "active",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
-    console.log("Form values before submission:", formValues);
+    console.log("Form values before submission:", {
+      ...formValues,
+      token: formValues.token ? "***" : "not set",
+    });
 
     try {
       const response = await fetch("/api/servers", {
@@ -44,15 +70,7 @@ export function NewServerForm() {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          name: formValues.name,
-          hostname: formValues.hostname,
-          ip_address: formValues.ip_address,
-          port: parseInt(formValues.port as string) || 8086,
-          org: formValues.org,
-          bucket: formValues.bucket,
-          token: formValues.token,
-        }),
+        body: JSON.stringify(formValues),
       });
 
       if (!response.ok) {
@@ -104,6 +122,14 @@ export function NewServerForm() {
             />
           </div>
           <div className="grid gap-2">
+            <label htmlFor="description">Description</label>
+            <Input
+              id="description"
+              name="description"
+              placeholder="e.g., Main production database server"
+            />
+          </div>
+          <div className="grid gap-2">
             <label htmlFor="hostname">Hostname</label>
             <Input
               id="hostname"
@@ -128,7 +154,6 @@ export function NewServerForm() {
               name="port"
               type="number"
               placeholder="8086"
-              defaultValue="8086"
               required
             />
           </div>
@@ -139,7 +164,7 @@ export function NewServerForm() {
               name="org"
               placeholder="e.g., EFI"
               required
-              defaultValue="EFI" // Add default value
+              defaultValue={influxDefaults.org}
             />
           </div>
           <div className="grid gap-2">
@@ -149,7 +174,7 @@ export function NewServerForm() {
               name="bucket"
               placeholder="e.g., efi_servers"
               required
-              defaultValue="efi_servers" // Add default value
+              defaultValue={influxDefaults.bucket}
             />
           </div>
           <div className="grid gap-2">
@@ -160,6 +185,7 @@ export function NewServerForm() {
               type="password"
               placeholder="Your InfluxDB token"
               required
+              defaultValue={influxDefaults.token}
             />
           </div>
           <Button type="submit" disabled={loading}>
