@@ -175,14 +175,14 @@ app.post("/api/servers", async (req, res) => {
     // Insert into MySQL database with description
     const [result] = await db.query(
       `INSERT INTO servers 
-       (id, name, description, hostname, ip_address, port, org, bucket, token, status, created_at, updated_at) 
-       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())`,
-      [name, description, hostname, ip_address, port, org, bucket, token]
+       (id, name, ip_address, status, created_at, updated_at, hostname, description, port, org, bucket, token) 
+       VALUES (UUID(), ?, ?, 'active', NOW(), NOW(), ?, ?, ?, ?, ?, ?)`,
+      [name, ip_address, hostname, description, port, org, bucket, token]
     );
 
     // Fetch the created server to return
     const [servers] = await db.query(
-      `SELECT id, name, description, hostname, ip_address, port, org, bucket, token, status, created_at, updated_at
+      `SELECT id, name, ip_address, status, created_at, updated_at, hostname,description, port, org, bucket, token
        FROM servers 
        WHERE id = LAST_INSERT_ID()`
     );
