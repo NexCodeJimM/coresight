@@ -129,6 +129,56 @@ app.put("/api/servers/:id", async (req, res) => {
   }
 });
 
+// Add this POST endpoint for creating new servers
+app.post("/api/servers", async (req, res) => {
+  try {
+    const {
+      name,
+      hostname,
+      host, // This is the ip_address from the form
+      port,
+      org,
+      bucket,
+      token,
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !hostname || !host) {
+      return res.status(400).json({
+        success: false,
+        error: "Name, hostname, and IP address are required",
+      });
+    }
+
+    // Insert into MySQL database
+    const [result] = await db.query(
+      `INSERT INTO servers 
+       (id, name, hostname, ip_address, port, org, bucket, token, status) 
+       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'active')`,
+      [name, hostname, host, port || 8086, org, bucket, token]
+    );
+
+    // Fetch the created server
+    const [servers] = await db.query(
+      `SELECT id, name, hostname, ip_address, port, org, bucket, token, status
+       FROM servers WHERE id = LAST_INSERT_ID()`
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Server created successfully",
+      server: servers[0],
+    });
+  } catch (error) {
+    console.error("Error creating server:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to create server",
+      details: error.message,
+    });
+  }
+});
+
 // Keep your other routes...
 
 // Start server

@@ -25,22 +25,33 @@ export function NewServerForm() {
     const formData = new FormData(event.currentTarget);
     const data = {
       name: formData.get("name"),
+      hostname: formData.get("hostname"),
       host: formData.get("ip_address"),
       port: parseInt(formData.get("port") as string) || 8086,
       org: formData.get("org"),
       bucket: formData.get("bucket"),
       token: formData.get("token"),
-      hostname: formData.get("hostname"),
     };
 
     try {
+      console.log("Submitting data:", data);
+
       const response = await fetch("/api/servers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error("Failed to create server");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create server");
+      }
+
+      const result = await response.json();
+      console.log("Server response:", result);
 
       toast({
         title: "Success",
@@ -50,9 +61,11 @@ export function NewServerForm() {
       router.push("/dashboard/servers");
       router.refresh();
     } catch (error) {
+      console.error("Error creating server:", error);
       toast({
         title: "Error",
-        description: "Failed to create server.",
+        description:
+          error instanceof Error ? error.message : "Failed to create server.",
         variant: "destructive",
       });
     } finally {
@@ -80,20 +93,20 @@ export function NewServerForm() {
             />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="ip_address">IP Address</label>
-            <Input
-              id="ip_address"
-              name="ip_address"
-              placeholder="e.g., 192.168.1.100"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
             <label htmlFor="hostname">Hostname</label>
             <Input
               id="hostname"
               name="hostname"
               placeholder="e.g., intel-test-server-ca"
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <label htmlFor="ip_address">IP Address</label>
+            <Input
+              id="ip_address"
+              name="ip_address"
+              placeholder="e.g., 192.168.1.100"
               required
             />
           </div>
