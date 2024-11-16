@@ -129,7 +129,7 @@ app.put("/api/servers/:id", async (req, res) => {
   }
 });
 
-// Add this POST endpoint for creating new servers
+// Update the POST endpoint for creating new servers
 app.post("/api/servers", async (req, res) => {
   try {
     const { name, hostname, ip_address, port, org, bucket, token } = req.body;
@@ -137,26 +137,28 @@ app.post("/api/servers", async (req, res) => {
     console.log("Received data:", req.body);
 
     // Validate required fields
-    if (!name || !hostname || !ip_address) {
+    if (!name || !hostname || !ip_address || !org || !bucket || !token) {
       return res.status(400).json({
         success: false,
-        error: "Name, hostname, and IP address are required",
+        error:
+          "All fields are required (name, hostname, IP address, organization, bucket, and token)",
         receivedData: req.body,
       });
     }
 
-    // Insert into MySQL database
+    // Insert into MySQL database with all fields
     const [result] = await db.query(
       `INSERT INTO servers 
-       (id, name, hostname, ip_address, port, org, bucket, token, status) 
-       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'active')`,
+       (id, name, hostname, ip_address, port, org, bucket, token, status, created_at, updated_at) 
+       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())`,
       [name, hostname, ip_address, port || 8086, org, bucket, token]
     );
 
     // Fetch the created server
     const [servers] = await db.query(
-      `SELECT id, name, hostname, ip_address, port, org, bucket, token, status
-       FROM servers WHERE id = LAST_INSERT_ID()`
+      `SELECT id, name, hostname, ip_address, port, org, bucket, token, status, created_at, updated_at
+       FROM servers 
+       WHERE id = LAST_INSERT_ID()`
     );
 
     res.status(201).json({
