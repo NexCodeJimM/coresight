@@ -57,6 +57,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add this near the top of your file, after other middleware
+app.use((req, res, next) => {
+  if (req.method === "POST") {
+    console.log("Request body:", {
+      ...req.body,
+      token: req.body.token ? "***" : "not set",
+    });
+  }
+  next();
+});
+
 // Server routes
 app.put("/api/servers/:id", async (req, res) => {
   try {
@@ -175,23 +186,39 @@ app.post("/api/servers", async (req, res) => {
     const [uuidResult] = await db.query("SELECT UUID() as uuid");
     const newId = uuidResult[0].uuid;
 
+    // Debug log the exact values being inserted
+    console.log("Values being inserted:", {
+      id: newId,
+      name,
+      description,
+      hostname,
+      ip_address,
+      port,
+      org,
+      bucket,
+      token: token ? "***" : "not set",
+    });
+
     // Insert with explicit UUID and all fields
     const [result] = await db.query(
       `INSERT INTO servers 
        (id, name, description, hostname, ip_address, port, org, bucket, token, status, last_seen, created_at, updated_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW(), NOW())`,
       [
-        newId,
-        name,
-        description || "", // Use empty string instead of null
-        hostname,
-        ip_address,
-        port || 3000,
-        org,
-        bucket,
-        token,
+        newId, // id
+        name, // name
+        description, // description
+        hostname, // hostname
+        ip_address, // ip_address
+        port || 3000, // port
+        org, // org
+        bucket, // bucket
+        token, // token
       ]
     );
+
+    // Log the query result
+    console.log("Insert result:", result);
 
     // Fetch the created server using the UUID
     const [servers] = await db.query(`SELECT * FROM servers WHERE id = ?`, [
