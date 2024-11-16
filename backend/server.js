@@ -134,9 +134,13 @@ app.post("/api/servers", async (req, res) => {
   try {
     const {
       name,
-      description,
-      hostname,
       ip_address,
+      status,
+      last_seen,
+      created_at,
+      updated_at,
+      hostname,
+      description,
       port,
       org,
       bucket,
@@ -145,9 +149,9 @@ app.post("/api/servers", async (req, res) => {
 
     console.log("Received server creation request:", {
       name,
-      description,
-      hostname,
       ip_address,
+      hostname,
+      description,
       port,
       org,
       bucket,
@@ -155,34 +159,39 @@ app.post("/api/servers", async (req, res) => {
     });
 
     // Validate required fields
-    if (!name || !hostname || !ip_address || !org || !bucket || !token) {
+    if (!name || !hostname || !ip_address) {
       return res.status(400).json({
         success: false,
-        error: "All fields are required",
+        error: "Required fields missing",
         receivedData: {
           name: !!name,
-          description: !!description,
-          hostname: !!hostname,
           ip_address: !!ip_address,
-          port: !!port,
-          org: !!org,
-          bucket: !!bucket,
-          token: !!token,
+          hostname: !!hostname,
         },
       });
     }
 
-    // Insert into MySQL database with description
+    // Insert into MySQL database - Match exact column order
     const [result] = await db.query(
       `INSERT INTO servers 
-       (id, name, ip_address, status, created_at, updated_at, hostname, description, port, org, bucket, token) 
-       VALUES (UUID(), ?, ?, 'active', NOW(), NOW(), ?, ?, ?, ?, ?, ?)`,
-      [name, ip_address, hostname, description, port, org, bucket, token]
+       (id, name, ip_address, status, last_seen, created_at, updated_at, hostname, description, port, org, bucket, token) 
+       VALUES (UUID(), ?, ?, 'active', NOW(), NOW(), NOW(), ?, ?, ?, ?, ?, ?)`,
+      [
+        name, // name
+        ip_address, // ip_address
+        hostname, // hostname
+        description, // description
+        port || 3000, // port
+        org, // org
+        bucket, // bucket
+        token, // token
+      ]
     );
 
     // Fetch the created server to return
     const [servers] = await db.query(
-      `SELECT id, name, ip_address, status, created_at, updated_at, hostname,description, port, org, bucket, token
+      `SELECT id, name, ip_address, status, last_seen, created_at, updated_at, 
+              hostname, description, port, org, bucket, token
        FROM servers 
        WHERE id = LAST_INSERT_ID()`
     );
