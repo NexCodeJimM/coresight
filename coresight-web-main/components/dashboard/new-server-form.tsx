@@ -23,10 +23,21 @@ export function NewServerForm() {
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
+
+    console.log({
+      name: formData.get("name"),
+      hostname: formData.get("hostname"),
+      ip_address: formData.get("ip_address"),
+      port: formData.get("port"),
+      org: formData.get("org"),
+      bucket: formData.get("bucket"),
+      token: formData.get("token"),
+    });
+
     const data = {
       name: formData.get("name"),
       hostname: formData.get("hostname"),
-      host: formData.get("ip_address"),
+      ip_address: formData.get("ip_address"),
       port: parseInt(formData.get("port") as string) || 8086,
       org: formData.get("org"),
       bucket: formData.get("bucket"),
@@ -47,6 +58,7 @@ export function NewServerForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Server error response:", errorData);
         throw new Error(errorData.error || "Failed to create server");
       }
 

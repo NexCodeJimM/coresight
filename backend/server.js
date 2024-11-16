@@ -132,21 +132,16 @@ app.put("/api/servers/:id", async (req, res) => {
 // Add this POST endpoint for creating new servers
 app.post("/api/servers", async (req, res) => {
   try {
-    const {
-      name,
-      hostname,
-      host, // This is the ip_address from the form
-      port,
-      org,
-      bucket,
-      token,
-    } = req.body;
+    const { name, hostname, ip_address, port, org, bucket, token } = req.body;
+
+    console.log("Received data:", req.body);
 
     // Validate required fields
-    if (!name || !hostname || !host) {
+    if (!name || !hostname || !ip_address) {
       return res.status(400).json({
         success: false,
         error: "Name, hostname, and IP address are required",
+        receivedData: req.body,
       });
     }
 
@@ -155,7 +150,7 @@ app.post("/api/servers", async (req, res) => {
       `INSERT INTO servers 
        (id, name, hostname, ip_address, port, org, bucket, token, status) 
        VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [name, hostname, host, port || 8086, org, bucket, token]
+      [name, hostname, ip_address, port || 8086, org, bucket, token]
     );
 
     // Fetch the created server
