@@ -434,6 +434,95 @@ app.get("/api/metrics/local/current", async (req, res) => {
   }
 });
 
+// Update the server health endpoint to match frontend expectations
+app.get("/api/servers/:id/health", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // First check if server exists
+    const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [
+      id,
+    ]);
+
+    if (!servers.length) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found",
+      });
+    }
+
+    const server = servers[0];
+
+    // Get system metrics using systeminformation
+    const cpuLoad = await si.currentLoad();
+    const memory = await si.mem();
+    const disk = await si.fsSize();
+    const networkStats = await si.networkStats();
+    const uptime = os.uptime();
+
+    // Format the health data to match frontend expectations
+    const healthData = {
+      metrics: {
+        cpu: cpuLoad.currentLoad,
+        memory: (memory.used / memory.total) * 100,
+        memory_total: memory.total,
+        memory_used: memory.used,
+        disk: (disk[0].used / disk[0].size) * 100,
+        disk_total: disk[0].size,
+        disk_used: disk[0].used,
+        network: {
+          in: networkStats[0] ? networkStats[0].rx_sec : 0,
+          out: networkStats[0] ? networkStats[0].tx_sec : 0,
+        },
+      },
+      status: "online",
+      system: {
+        uptime: uptime,
+      },
+      lastChecked: new Date().toISOString(),
+    };
+
+    // Update last_seen timestamp
+    await db.query("UPDATE servers SET last_seen = NOW() WHERE id = ?", [id]);
+
+    res.json({
+      success: true,
+      ...healthData,
+    });
+  } catch (error) {
+    console.error("Error fetching server health:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch server health",
+      details: error.message,
+    });
+  }
+});
+
+// Add alerts table if it doesn't exist
+const createAlertsTable = async () => {
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS alerts (
+        id VARCHAR(255) PRIMARY KEY,
+        server_id VARCHAR(255) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        message TEXT NOT NULL,
+        status ENUM('active', 'resolved') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    `);
+    console.log("Alerts table created or already exists");
+  } catch (error) {
+    console.error("Error creating alerts table:", error);
+  }
+};
+
+// Call this when your server starts
+createAlertsTable();
+
 // Keep your other routes...
 
 // Add this function to collect and store metrics
