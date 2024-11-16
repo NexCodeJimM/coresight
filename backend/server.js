@@ -143,41 +143,70 @@ app.post("/api/servers", async (req, res) => {
       token,
     } = req.body;
 
-    console.log("Received server creation request:", req.body);
+    // Debug log to verify received values
+    console.log("Received server creation request:", {
+      name,
+      description,
+      hostname,
+      ip_address,
+      port,
+      org,
+      bucket,
+      token: token ? "***" : "not set",
+    });
 
-    // Validate required fields
-    if (!name || !hostname || !ip_address) {
+    // Validate all required fields
+    if (!name || !hostname || !ip_address || !org || !bucket || !token) {
       return res.status(400).json({
         success: false,
         error: "Required fields missing",
-        receivedData: req.body,
+        receivedData: {
+          name: !!name,
+          hostname: !!hostname,
+          ip_address: !!ip_address,
+          org: !!org,
+          bucket: !!bucket,
+          token: !!token,
+        },
       });
     }
 
-    // Insert into MySQL database with explicit values for each column
+    // First, create the UUID
+    const [uuidResult] = await db.query("SELECT UUID() as uuid");
+    const newId = uuidResult[0].uuid;
+
+    // Insert with explicit UUID and all fields
     const [result] = await db.query(
       `INSERT INTO servers 
        (id, name, description, hostname, ip_address, port, org, bucket, token, status, last_seen, created_at, updated_at) 
-       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW(), NOW())`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW(), NOW())`,
       [
+        newId,
         name,
-        description || null,
+        description || "", // Use empty string instead of null
         hostname,
         ip_address,
         port || 3000,
-        org || null,
-        bucket || null,
-        token || null,
+        org,
+        bucket,
+        token,
       ]
     );
 
-    // Fetch the created server
+    // Fetch the created server using the UUID
     const [servers] = await db.query(`SELECT * FROM servers WHERE id = ?`, [
-      result.insertId,
+      newId,
     ]);
 
+    if (!servers.length) {
+      throw new Error("Server was created but could not be retrieved");
+    }
+
     const createdServer = servers[0];
-    console.log("Created server:", { ...createdServer, token: "***" });
+    console.log("Created server:", {
+      ...createdServer,
+      token: "***",
+    });
 
     res.status(201).json({
       success: true,
@@ -190,6 +219,7 @@ app.post("/api/servers", async (req, res) => {
       success: false,
       error: "Failed to create server",
       details: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 });

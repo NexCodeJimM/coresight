@@ -45,18 +45,30 @@ export function NewServerForm() {
     const formData = new FormData(event.currentTarget);
 
     const formValues = {
-      name: formData.get("name") as string,
-      description: (formData.get("description") as string) || null,
-      hostname: formData.get("hostname") as string,
-      ip_address: formData.get("ip_address") as string,
-      port: parseInt(formData.get("port") as string) || 3000,
-      org: (formData.get("org") as string) || influxDefaults.org,
-      bucket: (formData.get("bucket") as string) || influxDefaults.bucket,
-      token: (formData.get("token") as string) || influxDefaults.token,
+      name: formData.get("name")?.toString().trim() || "",
+      description: formData.get("description")?.toString().trim() || "",
+      hostname: formData.get("hostname")?.toString().trim() || "",
+      ip_address: formData.get("ip_address")?.toString().trim() || "",
+      port: parseInt(formData.get("port")?.toString() || "3000"),
+      org: formData.get("org")?.toString().trim() || influxDefaults.org,
+      bucket:
+        formData.get("bucket")?.toString().trim() || influxDefaults.bucket,
+      token: formData.get("token")?.toString().trim() || influxDefaults.token,
     };
 
-    // Validate required fields
-    if (!formValues.name || !formValues.hostname || !formValues.ip_address) {
+    console.log("Sending form values:", {
+      ...formValues,
+      token: formValues.token ? "***" : "not set",
+    });
+
+    if (
+      !formValues.name ||
+      !formValues.hostname ||
+      !formValues.ip_address ||
+      !formValues.org ||
+      !formValues.bucket ||
+      !formValues.token
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -75,13 +87,12 @@ export function NewServerForm() {
         body: JSON.stringify(formValues),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create server");
-      }
-
       const result = await response.json();
       console.log("Server response:", result);
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create server");
+      }
 
       toast({
         title: "Success",
