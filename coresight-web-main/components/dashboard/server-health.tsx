@@ -87,8 +87,7 @@ export function ServerHealth({ serverId }: { serverId: string }) {
 
   const fetchHealthData = async () => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://165.22.237.60:3000";
+      const apiUrl = "http://165.22.237.60:3000";
       console.log(
         "Attempting to fetch from:",
         `${apiUrl}/api/servers/${serverId}/health`

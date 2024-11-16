@@ -50,8 +50,7 @@ export function ServerMetrics() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://165.22.237.60:3000";
+        const apiUrl = "http://165.22.237.60:3000";
         const response = await fetch(`${apiUrl}/api/dashboard/metrics`, {
           headers: {
             Accept: "application/json",
