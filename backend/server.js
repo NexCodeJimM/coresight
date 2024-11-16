@@ -16,6 +16,7 @@ const corsOptions = {
     "http://localhost:3000",
     "http://165.22.237.60:3000",
     "http://143.198.84.214:3000",
+    "http://your-frontend-domain.com",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
@@ -143,6 +144,8 @@ app.put("/api/servers/:id", async (req, res) => {
 // Update the POST endpoint for creating new servers
 app.post("/api/servers", async (req, res) => {
   try {
+    console.log("Raw request body:", req.body);
+
     const {
       name,
       description,
@@ -155,7 +158,7 @@ app.post("/api/servers", async (req, res) => {
     } = req.body;
 
     // Debug log to verify received values
-    console.log("Received server creation request:", {
+    console.log("Parsed server creation request:", {
       name,
       description,
       hostname,
@@ -166,19 +169,21 @@ app.post("/api/servers", async (req, res) => {
       token: token ? "***" : "not set",
     });
 
-    // Validate all required fields
-    if (!name || !hostname || !ip_address || !org || !bucket || !token) {
+    // Validate all required fields with detailed logging
+    const missingFields = [];
+    if (!name) missingFields.push("name");
+    if (!hostname) missingFields.push("hostname");
+    if (!ip_address) missingFields.push("ip_address");
+    if (!org) missingFields.push("org");
+    if (!bucket) missingFields.push("bucket");
+    if (!token) missingFields.push("token");
+
+    if (missingFields.length > 0) {
+      console.log("Missing required fields:", missingFields);
       return res.status(400).json({
         success: false,
-        error: "Required fields missing",
-        receivedData: {
-          name: !!name,
-          hostname: !!hostname,
-          ip_address: !!ip_address,
-          org: !!org,
-          bucket: !!bucket,
-          token: !!token,
-        },
+        error: `Required fields missing: ${missingFields.join(", ")}`,
+        receivedData: req.body,
       });
     }
 

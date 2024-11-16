@@ -43,6 +43,7 @@ export function NewServerForm() {
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
     const formValues = {
       name: formData.get("name")?.toString().trim() || "",
@@ -61,25 +62,8 @@ export function NewServerForm() {
       token: formValues.token ? "***" : "not set",
     });
 
-    if (
-      !formValues.name ||
-      !formValues.hostname ||
-      !formValues.ip_address ||
-      !formValues.org ||
-      !formValues.bucket ||
-      !formValues.token
-    ) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch("/api/servers", {
+      const response = await fetch(`${apiUrl}/api/servers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,12 +71,13 @@ export function NewServerForm() {
         body: JSON.stringify(formValues),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create server");
+      }
+
       const result = await response.json();
       console.log("Server response:", result);
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to create server");
-      }
 
       toast({
         title: "Success",
