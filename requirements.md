@@ -95,3 +95,33 @@ bind-address = 0.0.0.0
 <!-- Restart MySQL -->
 
 sudo systemctl restart mysql
+
+-- Create server_metrics table
+CREATE TABLE IF NOT EXISTS server_metrics (
+id VARCHAR(255) PRIMARY KEY,
+server_id VARCHAR(255) NOT NULL,
+cpu_usage FLOAT,
+memory_usage FLOAT,
+disk_usage FLOAT,
+network_in FLOAT,
+network_out FLOAT,
+temperature FLOAT,
+timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (server_id) REFERENCES servers(id)
+);
+
+-- Create server_processes table
+CREATE TABLE IF NOT EXISTS server_processes (
+id VARCHAR(255) PRIMARY KEY,
+server_id VARCHAR(255) NOT NULL,
+pid INT,
+name VARCHAR(255),
+cpu_usage FLOAT,
+memory_usage FLOAT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (server_id) REFERENCES servers(id)
+);
+
+-- Add indexes for better performance
+CREATE INDEX idx_server_metrics_timestamp ON server_metrics(server_id, timestamp);
+CREATE INDEX idx_server_processes_usage ON server_processes(server_id, cpu_usage);

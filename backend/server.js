@@ -265,6 +265,107 @@ app.get("/api/influxdb/defaults", (req, res) => {
   });
 });
 
+// Add these new endpoints for metrics
+
+// Get metrics history for a specific server
+app.get("/api/servers/:id/metrics/history", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const hours = parseInt(req.query.hours) || 24; // Convert to number safely
+
+    const [results] = await db.query(
+      `SELECT 
+        timestamp,
+        cpu_usage,
+        memory_usage,
+        disk_usage,
+        network_in,
+        network_out,
+        temperature
+       FROM server_metrics
+       WHERE server_id = ? 
+       AND timestamp >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+       ORDER BY timestamp DESC`,
+      [id, hours]
+    );
+
+    res.json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    console.error("Error fetching server metrics history:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch server metrics history",
+      details: error.message,
+    });
+  }
+});
+
+// Get current metrics for a specific server
+app.get("/api/servers/:id/metrics/current", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [results] = await db.query(
+      `SELECT 
+        cpu_usage,
+        memory_usage,
+        disk_usage,
+        network_in,
+        network_out,
+        temperature,
+        timestamp
+       FROM server_metrics
+       WHERE server_id = ?
+       ORDER BY timestamp DESC
+       LIMIT 1`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      data: results[0] || null,
+    });
+  } catch (error) {
+    console.error("Error fetching current server metrics:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch current server metrics",
+      details: error.message,
+    });
+  }
+});
+
+// Get server processes
+app.get("/api/servers/:id/processes", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [results] = await db.query(
+      `SELECT *
+       FROM server_processes
+       WHERE server_id = ?
+       ORDER BY cpu_usage DESC
+       LIMIT 10`,
+      [id]
+    );
+
+    res.json({
+      success: true,
+      data: results,
+    });
+  } catch (error) {
+    console.error("Error fetching server processes:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch server processes",
+      details: error.message,
+    });
+  }
+});
+
 // Keep your other routes...
 
 // Start server
