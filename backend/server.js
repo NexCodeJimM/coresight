@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const mysql = require("mysql2");
 const config = require("./config");
 require("dotenv").config();
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
@@ -366,7 +367,116 @@ app.get("/api/servers/:id/processes", async (req, res) => {
   }
 });
 
+// Add this new endpoint for local metrics history
+app.get("/api/metrics/local/history", async (req, res) => {
+  try {
+    // Get system metrics using systeminformation
+    const cpuLoad = await si.currentLoad();
+    const memory = await si.mem();
+    const disk = await si.fsSize();
+    const networkStats = await si.networkStats();
+
+    // Create metrics data point
+    const metrics = {
+      timestamp: new Date(),
+      cpu_usage: cpuLoad.currentLoad,
+      memory_usage: (memory.used / memory.total) * 100,
+      disk_usage: disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+      network_in: networkStats[0] ? networkStats[0].rx_sec : 0,
+      network_out: networkStats[0] ? networkStats[0].tx_sec : 0,
+      temperature: 0, // You can add CPU temperature if available
+    };
+
+    // Return the metrics
+    res.json({
+      success: true,
+      data: [metrics], // Wrap in array to match history format
+    });
+  } catch (error) {
+    console.error("Error fetching local metrics:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch local metrics",
+      details: error.message,
+    });
+  }
+});
+
+// Add endpoint for current local metrics
+app.get("/api/metrics/local/current", async (req, res) => {
+  try {
+    const cpuLoad = await si.currentLoad();
+    const memory = await si.mem();
+    const disk = await si.fsSize();
+    const networkStats = await si.networkStats();
+
+    const metrics = {
+      cpu_usage: cpuLoad.currentLoad,
+      memory_usage: (memory.used / memory.total) * 100,
+      disk_usage: disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+      network_in: networkStats[0] ? networkStats[0].rx_sec : 0,
+      network_out: networkStats[0] ? networkStats[0].tx_sec : 0,
+      temperature: 0,
+      timestamp: new Date(),
+    };
+
+    res.json({
+      success: true,
+      data: metrics,
+    });
+  } catch (error) {
+    console.error("Error fetching current local metrics:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch current local metrics",
+      details: error.message,
+    });
+  }
+});
+
 // Keep your other routes...
+
+// Add this function to collect and store metrics
+async function collectAndStoreMetrics() {
+  try {
+    const cpuLoad = await si.currentLoad();
+    const memory = await si.mem();
+    const disk = await si.fsSize();
+    const networkStats = await si.networkStats();
+
+    // Get all active servers
+    const [servers] = await db.query(
+      'SELECT id FROM servers WHERE status = "active"'
+    );
+
+    // Store metrics for each server
+    for (const server of servers) {
+      await db.query(
+        `INSERT INTO server_metrics 
+         (id, server_id, cpu_usage, memory_usage, disk_usage, network_in, network_out, temperature, timestamp)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          uuidv4(),
+          server.id,
+          cpuLoad.currentLoad,
+          (memory.used / memory.total) * 100,
+          disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+          networkStats[0] ? networkStats[0].rx_sec : 0,
+          networkStats[0] ? networkStats[0].tx_sec : 0,
+          0, // temperature
+        ]
+      );
+    }
+  } catch (error) {
+    console.error("Error collecting metrics:", error);
+  }
+}
+
+// Collect metrics every minute
+setInterval(collectAndStoreMetrics, 60000);
+
+// Also collect metrics on startup
+collectAndStoreMetrics();
 
 // Start server
 const PORT = process.env.PORT || 3000;
