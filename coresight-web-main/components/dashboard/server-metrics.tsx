@@ -50,16 +50,33 @@ export function ServerMetrics() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const response = await fetch("/api/dashboard/metrics");
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://165.22.237.60:3000";
+        const response = await fetch(`${apiUrl}/api/dashboard/metrics`, {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        });
+
         if (!response.ok) {
-          throw new Error("Failed to fetch metrics");
+          const errorText = await response.text();
+          console.error("Server response:", {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText,
+          });
+          throw new Error(`Failed to fetch metrics: ${response.statusText}`);
         }
+
         const data = await response.json();
         setMetrics(data);
         setError(null);
       } catch (error) {
         console.error("Failed to fetch metrics:", error);
-        setError("Failed to load metrics");
+        setError(
+          error instanceof Error ? error.message : "Failed to load metrics"
+        );
       }
     };
 

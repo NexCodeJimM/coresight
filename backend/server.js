@@ -567,8 +567,46 @@ setInterval(collectAndStoreMetrics, 60000);
 // Also collect metrics on startup
 collectAndStoreMetrics();
 
+// Add this new endpoint for dashboard metrics
+app.get("/api/dashboard/metrics", async (req, res) => {
+  try {
+    // Get total servers count
+    const [totalServersResult] = await db.query(
+      "SELECT COUNT(*) as count FROM servers"
+    );
+
+    // Get active servers count
+    const [activeServersResult] = await db.query(
+      'SELECT COUNT(*) as count FROM servers WHERE status = "active"'
+    );
+
+    // Get total alerts count
+    const [totalAlertsResult] = await db.query(
+      'SELECT COUNT(*) as count FROM alerts WHERE status = "active"'
+    );
+
+    // Get critical alerts count
+    const [criticalAlertsResult] = await db.query(
+      'SELECT COUNT(*) as count FROM alerts WHERE status = "active" AND type = "critical"'
+    );
+
+    res.json({
+      totalServers: totalServersResult[0].count,
+      activeServers: activeServersResult[0].count,
+      totalAlerts: totalAlertsResult[0].count,
+      criticalAlerts: criticalAlertsResult[0].count,
+    });
+  } catch (error) {
+    console.error("Error fetching dashboard metrics:", error);
+    res.status(500).json({
+      error: "Failed to fetch dashboard metrics",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

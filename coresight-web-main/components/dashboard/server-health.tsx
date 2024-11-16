@@ -87,15 +87,28 @@ export function ServerHealth({ serverId }: { serverId: string }) {
 
   const fetchHealthData = async () => {
     try {
-      const timestamp = new Date().getTime();
-      const response = await fetch(
-        `/api/servers/${serverId}/health?t=${timestamp}`,
-        {
-          cache: "no-store",
-        }
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://165.22.237.60:3000";
+      console.log(
+        "Attempting to fetch from:",
+        `${apiUrl}/api/servers/${serverId}/health`
       );
 
+      const response = await fetch(`${apiUrl}/api/servers/${serverId}/health`, {
+        cache: "no-store",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Server response:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        });
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -123,25 +136,28 @@ export function ServerHealth({ serverId }: { serverId: string }) {
         last_seen: data.lastChecked || new Date().toISOString(),
       };
 
-      console.log("Transformed health data:", transformedData);
-      console.log("Memory values:", {
-        total: formatBytes(transformedData.memory_total),
-        used: formatBytes(transformedData.memory_used),
-        percentage: transformedData.memory_usage,
-      });
-
       setHealth(transformedData);
       checkThresholds(transformedData);
       setError(null);
     } catch (error) {
-      console.error("Failed to fetch health data:", error);
-      setError(error instanceof Error ? error.message : "Failed to fetch data");
+      console.error("Failed to fetch health data:", {
+        error,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      setError(
+        error instanceof Error
+          ? `Connection failed: ${error.message}`
+          : "Failed to connect to server"
+      );
 
       addNotification({
         type: "error",
-        title: "Error Fetching Data",
+        title: "Connection Error",
         message:
-          error instanceof Error ? error.message : "Failed to fetch data",
+          error instanceof Error
+            ? error.message
+            : "Failed to connect to server",
         duration: 5000,
       });
     } finally {
