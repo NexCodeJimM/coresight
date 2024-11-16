@@ -189,40 +189,38 @@ app.post("/api/servers", async (req, res) => {
       ]
     );
 
-    // Fetch the created server to verify all fields
+    // Log the SQL and values for debugging
+    console.log("SQL Values:", [
+      name,
+      ip_address,
+      hostname,
+      description,
+      port || 3000,
+      org,
+      bucket,
+      token,
+    ]);
+
+    // Fetch the created server immediately using the UUID
     const [servers] = await db.query(
-      `SELECT 
-        id,
-        name,
-        ip_address,
-        status,
-        last_seen,
-        created_at,
-        updated_at,
-        hostname,
-        description,
-        port,
-        org,
-        bucket,
-        token
-       FROM servers 
-       WHERE id = (SELECT id FROM servers WHERE name = ? ORDER BY created_at DESC LIMIT 1)`,
+      `SELECT * FROM servers WHERE name = ? ORDER BY created_at DESC LIMIT 1`,
       [name]
     );
 
+    if (!servers.length) {
+      throw new Error("Server was created but could not be retrieved");
+    }
+
     const createdServer = servers[0];
-    console.log("Created server (without token):", {
+    console.log("Created server data:", {
       ...createdServer,
-      token: createdServer.token ? "***" : null,
+      token: "***", // Hide token in logs
     });
 
     res.status(201).json({
       success: true,
       message: "Server created successfully",
-      server: {
-        ...createdServer,
-        token: createdServer.token ? "***" : null,
-      },
+      server: createdServer,
     });
   } catch (error) {
     console.error("Error creating server:", error);
