@@ -134,7 +134,15 @@ app.post("/api/servers", async (req, res) => {
   try {
     const { name, hostname, ip_address, port, org, bucket, token } = req.body;
 
-    console.log("Received data:", req.body);
+    console.log("Received server creation request:", {
+      name,
+      hostname,
+      ip_address,
+      port,
+      org,
+      bucket,
+      tokenLength: token ? token.length : 0,
+    });
 
     // Validate required fields
     if (!name || !hostname || !ip_address || !org || !bucket || !token) {

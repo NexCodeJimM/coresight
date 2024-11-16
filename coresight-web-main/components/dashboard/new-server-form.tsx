@@ -24,7 +24,8 @@ export function NewServerForm() {
 
     const formData = new FormData(event.currentTarget);
 
-    console.log({
+    // Log each field individually to verify values
+    const formValues = {
       name: formData.get("name"),
       hostname: formData.get("hostname"),
       ip_address: formData.get("ip_address"),
@@ -32,28 +33,26 @@ export function NewServerForm() {
       org: formData.get("org"),
       bucket: formData.get("bucket"),
       token: formData.get("token"),
-    });
-
-    const data = {
-      name: formData.get("name"),
-      hostname: formData.get("hostname"),
-      ip_address: formData.get("ip_address"),
-      port: parseInt(formData.get("port") as string) || 8086,
-      org: formData.get("org"),
-      bucket: formData.get("bucket"),
-      token: formData.get("token"),
     };
 
-    try {
-      console.log("Submitting data:", data);
+    console.log("Form values before submission:", formValues);
 
+    try {
       const response = await fetch("/api/servers", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          name: formValues.name,
+          hostname: formValues.hostname,
+          ip_address: formValues.ip_address,
+          port: parseInt(formValues.port as string) || 8086,
+          org: formValues.org,
+          bucket: formValues.bucket,
+          token: formValues.token,
+        }),
       });
 
       if (!response.ok) {
@@ -130,11 +129,18 @@ export function NewServerForm() {
               type="number"
               placeholder="8086"
               defaultValue="8086"
+              required
             />
           </div>
           <div className="grid gap-2">
             <label htmlFor="org">Organization</label>
-            <Input id="org" name="org" placeholder="e.g., EFI" required />
+            <Input
+              id="org"
+              name="org"
+              placeholder="e.g., EFI"
+              required
+              defaultValue="EFI" // Add default value
+            />
           </div>
           <div className="grid gap-2">
             <label htmlFor="bucket">Bucket</label>
@@ -143,6 +149,7 @@ export function NewServerForm() {
               name="bucket"
               placeholder="e.g., efi_servers"
               required
+              defaultValue="efi_servers" // Add default value
             />
           </div>
           <div className="grid gap-2">
