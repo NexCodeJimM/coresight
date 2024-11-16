@@ -134,13 +134,9 @@ app.post("/api/servers", async (req, res) => {
   try {
     const {
       name,
-      ip_address,
-      status,
-      last_seen,
-      created_at,
-      updated_at,
-      hostname,
       description,
+      hostname,
+      ip_address,
       port,
       org,
       bucket,
@@ -149,9 +145,9 @@ app.post("/api/servers", async (req, res) => {
 
     console.log("Received server creation request:", {
       name,
-      ip_address,
-      hostname,
       description,
+      hostname,
+      ip_address,
       port,
       org,
       bucket,
@@ -159,14 +155,19 @@ app.post("/api/servers", async (req, res) => {
     });
 
     // Validate required fields
-    if (!name || !hostname || !ip_address) {
+    if (!name || !hostname || !ip_address || !org || !bucket || !token) {
       return res.status(400).json({
         success: false,
         error: "Required fields missing",
         receivedData: {
           name: !!name,
-          ip_address: !!ip_address,
+          description: !!description,
           hostname: !!hostname,
+          ip_address: !!ip_address,
+          port: !!port,
+          org: !!org,
+          bucket: !!bucket,
+          token: !!token,
         },
       });
     }
@@ -188,21 +189,40 @@ app.post("/api/servers", async (req, res) => {
       ]
     );
 
-    // Fetch the created server to return
+    // Fetch the created server to verify all fields
     const [servers] = await db.query(
-      `SELECT id, name, ip_address, status, last_seen, created_at, updated_at, 
-              hostname, description, port, org, bucket, token
+      `SELECT 
+        id,
+        name,
+        ip_address,
+        status,
+        last_seen,
+        created_at,
+        updated_at,
+        hostname,
+        description,
+        port,
+        org,
+        bucket,
+        token
        FROM servers 
-       WHERE id = LAST_INSERT_ID()`
+       WHERE id = (SELECT id FROM servers WHERE name = ? ORDER BY created_at DESC LIMIT 1)`,
+      [name]
     );
 
     const createdServer = servers[0];
-    console.log("Created server:", { ...createdServer, token: "***" });
+    console.log("Created server (without token):", {
+      ...createdServer,
+      token: createdServer.token ? "***" : null,
+    });
 
     res.status(201).json({
       success: true,
       message: "Server created successfully",
-      server: createdServer,
+      server: {
+        ...createdServer,
+        token: createdServer.token ? "***" : null,
+      },
     });
   } catch (error) {
     console.error("Error creating server:", error);
@@ -210,6 +230,7 @@ app.post("/api/servers", async (req, res) => {
       success: false,
       error: "Failed to create server",
       details: error.message,
+      stack: error.stack,
     });
   }
 });
