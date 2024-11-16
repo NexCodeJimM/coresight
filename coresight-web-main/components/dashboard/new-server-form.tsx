@@ -43,7 +43,8 @@ export function NewServerForm() {
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://165.22.237.60:3000";
 
     const formValues = {
       name: formData.get("name")?.toString().trim() || "",
