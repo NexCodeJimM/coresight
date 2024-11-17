@@ -15,11 +15,9 @@ const app = express();
 const corsOptions = {
   origin: [
     "http://localhost:3000",
-    "http://localhost:8080",
-    "http://165.22.237.60:3000",
-    "http://165.22.237.60:8080",
+    "http://localhost:3036",
     "http://143.198.84.214:3000",
-    "http://143.198.84.214:8080",
+    "http://143.198.84.214:3036",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
@@ -38,7 +36,8 @@ app.use(express.json());
 // Your existing database connection setup...
 const db = mysql
   .createPool({
-    host: process.env.DB_HOST || "localhost",
+    host: process.env.DB_HOST || "143.198.84.214",
+    port: parseInt(process.env.DB_PORT || "3036"),
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "efi",
@@ -740,7 +739,7 @@ app.get("/api/dashboard/metrics", async (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3036;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

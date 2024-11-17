@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
+const BACKEND_URL = process.env.BACKEND_URL;
+
+if (!BACKEND_URL) {
+  throw new Error("BACKEND_URL environment variable is not set");
+}
 
 export async function GET(
   request: Request,
@@ -8,12 +12,19 @@ export async function GET(
 ) {
   try {
     const id = params.id;
+    console.log(
+      `Fetching health from: ${BACKEND_URL}/api/servers/${id}/health`
+    );
     const response = await fetch(`${BACKEND_URL}/api/servers/${id}/health`, {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
     const data = await response.json();
     return NextResponse.json(data);
