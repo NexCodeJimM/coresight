@@ -5,7 +5,6 @@ const si = require("systeminformation");
 const diskinfo = require("node-disk-info");
 const nodemailer = require("nodemailer");
 const mysql = require("mysql2");
-const config = require("./config");
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
 

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-const BACKEND_URL = "http://165.22.237.60:3000";
+const BACKEND_URL = process.env.BACKEND_URL;
+
+if (!BACKEND_URL) {
+  throw new Error("BACKEND_URL environment variable is not set");
+}
 
 export async function GET(
   request: Request,

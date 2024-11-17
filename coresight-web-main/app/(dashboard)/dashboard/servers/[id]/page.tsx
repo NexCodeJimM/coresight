@@ -8,6 +8,7 @@ import { ServerMetricsGraphs } from "@/components/dashboard/server-metrics-graph
 import { ServerHealth } from "@/components/dashboard/server-health";
 import { ServerProcesses } from "@/components/dashboard/server-processes";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { db } from "@/lib/db";
 
 async function getServer(id: string) {
@@ -62,51 +63,68 @@ export default async function ServerPage({
     <DashboardShell>
       <ServerHeader server={server} />
       <div className="grid gap-6">
-        <Suspense>
-          <ServerHealth serverId={server.id} />
-        </Suspense>
+        <ErrorBoundary fallback={<div>Error loading server health</div>}>
+          <Suspense fallback={<div>Loading server health...</div>}>
+            <ServerHealth serverId={server.id} />
+          </Suspense>
+        </ErrorBoundary>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Suspense>
-            <ServerMetricsGraphs
-              serverId={server.id}
-              type="network"
-              title="Network Traffic"
-              description="Inbound and outbound network traffic"
-            />
-          </Suspense>
-          <Suspense>
-            <ServerMetricsGraphs
-              serverId={server.id}
-              type="temperature"
-              title="CPU Temperature"
-              description="CPU temperature over time"
-            />
-          </Suspense>
+          <ErrorBoundary fallback={<div>Error loading network metrics</div>}>
+            <Suspense fallback={<div>Loading network metrics...</div>}>
+              <ServerMetricsGraphs
+                serverId={server.id}
+                type="network"
+                title="Network Traffic"
+                description="Inbound and outbound network traffic"
+              />
+            </Suspense>
+          </ErrorBoundary>
+
+          <ErrorBoundary
+            fallback={<div>Error loading temperature metrics</div>}
+          >
+            <Suspense fallback={<div>Loading temperature metrics...</div>}>
+              <ServerMetricsGraphs
+                serverId={server.id}
+                type="temperature"
+                title="CPU Temperature"
+                description="CPU temperature over time"
+              />
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Suspense>
-            <ServerMetricsGraphs
-              serverId={server.id}
-              type="memory"
-              title="Memory Usage"
-              description="Active memory and swap usage"
-            />
-          </Suspense>
-          <Suspense>
-            <ServerMetricsGraphs
-              serverId={server.id}
-              type="performance"
-              title="System Performance"
-              description="CPU, Memory, and Disk usage"
-            />
-          </Suspense>
+          <ErrorBoundary fallback={<div>Error loading memory metrics</div>}>
+            <Suspense fallback={<div>Loading memory metrics...</div>}>
+              <ServerMetricsGraphs
+                serverId={server.id}
+                type="memory"
+                title="Memory Usage"
+                description="Active memory and swap usage"
+              />
+            </Suspense>
+          </ErrorBoundary>
+          <ErrorBoundary
+            fallback={<div>Error loading performance metrics</div>}
+          >
+            <Suspense fallback={<div>Loading performance metrics...</div>}>
+              <ServerMetricsGraphs
+                serverId={server.id}
+                type="performance"
+                title="System Performance"
+                description="CPU, Memory, and Disk usage"
+              />
+            </Suspense>
+          </ErrorBoundary>
         </div>
 
-        <Suspense>
-          <ServerProcesses serverId={server.id} />
-        </Suspense>
+        <ErrorBoundary fallback={<div>Error loading server processes</div>}>
+          <Suspense fallback={<div>Loading server processes...</div>}>
+            <ServerProcesses serverId={server.id} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </DashboardShell>
   );

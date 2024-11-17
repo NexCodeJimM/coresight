@@ -42,24 +42,42 @@ export function ServerMetricsChart({
 }: ServerMetricsChartProps) {
   const [data, setData] = useState<MetricsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
+        setLoading(true);
+        console.log(`Requesting metrics history for server: ${serverId}`);
+
         const response = await fetch(
           `/api/servers/${serverId}/metrics/history?hours=24&type=${type}`
         );
-        const metrics = await response.json();
-        setData(metrics);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        setData(result.data || []);
+        setError(null);
       } catch (error) {
         console.error("Failed to fetch metrics:", error);
+        setError(
+          error instanceof Error ? error.message : "Failed to load metrics"
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 60000); // Update every minute
+    const interval = setInterval(fetchMetrics, 60000);
 
     return () => clearInterval(interval);
   }, [serverId, type]);
