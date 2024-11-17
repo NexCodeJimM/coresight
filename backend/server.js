@@ -11,6 +11,14 @@ const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
+// Add this near the top of your file, after loading dotenv
+console.log("Environment variables loaded:", {
+  DB_HOST: process.env.DB_HOST,
+  DB_PORT: process.env.DB_PORT,
+  DB_NAME: process.env.DB_NAME,
+  PORT: process.env.PORT,
+});
+
 // CORS configuration
 const corsOptions = {
   origin: [
@@ -36,16 +44,37 @@ app.use(express.json());
 // Your existing database connection setup...
 const db = mysql
   .createPool({
-    host: process.env.DB_HOST || "143.198.84.214",
+    host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT || "3036"),
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "efi",
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
   })
   .promise();
+
+// Add debug logging for database connection
+db.getConnection()
+  .then((connection) => {
+    console.log("Successfully connected to database:", {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+    });
+    connection.release();
+  })
+  .catch((err) => {
+    console.error("Error connecting to database:", {
+      error: err.message,
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+    });
+  });
 
 // Debug middleware
 app.use((req, res, next) => {
