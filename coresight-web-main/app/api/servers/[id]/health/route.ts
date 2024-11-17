@@ -1,43 +1,26 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 
-const BACKEND_URL = "http://165.22.237.60:3000"; // Use your backend URL
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const url = `${BACKEND_URL}/api/servers/${params.id}/health`;
-    console.log(`Checking health from: ${url}`);
-
-    const response = await fetch(url, {
+    const id = params.id;
+    const response = await fetch(`${BACKEND_URL}/api/servers/${id}/health`, {
       headers: {
         Accept: "application/json",
-        "Cache-Control": "no-cache",
+        "Content-Type": "application/json",
       },
-      cache: "no-store",
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Health check failed:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-      });
-      throw new Error(`Health check failed: ${response.statusText}`);
-    }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Failed to check server health:", error);
+    console.error("Error proxying health request:", error);
     return NextResponse.json(
-      {
-        error: "Failed to check server health",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to fetch server health" },
       { status: 500 }
     );
   }

@@ -15,9 +15,11 @@ const app = express();
 const corsOptions = {
   origin: [
     "http://localhost:3000",
+    "http://localhost:8080",
+    "http://165.22.237.60:3000",
     "http://165.22.237.60:8080",
     "http://143.198.84.214:3000",
-    "http://your-frontend-domain.com",
+    "http://143.198.84.214:8080",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
@@ -738,7 +740,7 @@ app.get("/api/dashboard/metrics", async (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

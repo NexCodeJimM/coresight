@@ -87,13 +87,7 @@ export function ServerHealth({ serverId }: { serverId: string }) {
 
   const fetchHealthData = async () => {
     try {
-      const apiUrl = "http://165.22.237.60:3000";
-      console.log(
-        "Attempting to fetch from:",
-        `${apiUrl}/api/servers/${serverId}/health`
-      );
-
-      const response = await fetch(`${apiUrl}/api/servers/${serverId}/health`, {
+      const response = await fetch(`/api/servers/${serverId}/health`, {
         cache: "no-store",
         headers: {
           Accept: "application/json",

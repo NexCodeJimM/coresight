@@ -46,12 +46,13 @@ export function ServerMetrics() {
     criticalAlerts: 0,
   });
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const apiUrl = "http://165.22.237.60:3000";
-        const response = await fetch(`${apiUrl}/api/dashboard/metrics`, {
+        setIsLoading(true);
+        const response = await fetch("/api/dashboard/metrics", {
           headers: {
             Accept: "application/json",
             "Content-Type": "application/json",
@@ -59,13 +60,7 @@ export function ServerMetrics() {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Server response:", {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText,
-          });
-          throw new Error(`Failed to fetch metrics: ${response.statusText}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -76,14 +71,40 @@ export function ServerMetrics() {
         setError(
           error instanceof Error ? error.message : "Failed to load metrics"
         );
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 30000); // Update every 30 seconds
+    const interval = setInterval(fetchMetrics, 30000);
 
     return () => clearInterval(interval);
   }, []);
+
+  if (isLoading) {
+    return (
+      <>
+        <MetricCard
+          title="Total Servers"
+          value="..."
+          description="Loading..."
+        />
+        <MetricCard
+          title="Active Servers"
+          value="..."
+          description="Loading..."
+        />
+        <MetricCard title="Total Alerts" value="..." description="Loading..." />
+        <MetricCard
+          title="Critical Alerts"
+          value="..."
+          description="Loading..."
+          className="border-destructive"
+        />
+      </>
+    );
+  }
 
   if (error) {
     return (
