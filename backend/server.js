@@ -434,7 +434,7 @@ app.get("/api/metrics/local/current", async (req, res) => {
   }
 });
 
-// Update the server health endpoint to match frontend expectations
+// Update the server health endpoint to collect real-time metrics
 app.get("/api/servers/:id/health", async (req, res) => {
   try {
     const { id } = req.params;
@@ -453,23 +453,23 @@ app.get("/api/servers/:id/health", async (req, res) => {
 
     const server = servers[0];
 
-    // Get system metrics using systeminformation
+    // Collect real-time metrics using systeminformation
     const cpuLoad = await si.currentLoad();
     const memory = await si.mem();
     const disk = await si.fsSize();
     const networkStats = await si.networkStats();
     const uptime = os.uptime();
 
-    // Format the health data to match frontend expectations
+    // Format the health data
     const healthData = {
       metrics: {
         cpu: cpuLoad.currentLoad,
         memory: (memory.used / memory.total) * 100,
         memory_total: memory.total,
         memory_used: memory.used,
-        disk: (disk[0].used / disk[0].size) * 100,
-        disk_total: disk[0].size,
-        disk_used: disk[0].used,
+        disk: disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+        disk_total: disk[0] ? disk[0].size : 0,
+        disk_used: disk[0] ? disk[0].used : 0,
         network: {
           in: networkStats[0] ? networkStats[0].rx_sec : 0,
           out: networkStats[0] ? networkStats[0].tx_sec : 0,
@@ -482,8 +482,72 @@ app.get("/api/servers/:id/health", async (req, res) => {
       lastChecked: new Date().toISOString(),
     };
 
-    // Update last_seen timestamp
-    await db.query("UPDATE servers SET last_seen = NOW() WHERE id = ?", [id]);
+    // Store the metrics in the database
+    await db.query(
+      `INSERT INTO server_metrics 
+       (id, server_id, cpu_usage, memory_usage, memory_total, memory_used,
+        disk_usage, disk_total, disk_used, network_in, network_out, 
+        temperature, timestamp)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        uuidv4(),
+        server.id,
+        healthData.metrics.cpu,
+        healthData.metrics.memory,
+        healthData.metrics.memory_total,
+        healthData.metrics.memory_used,
+        healthData.metrics.disk,
+        healthData.metrics.disk_total,
+        healthData.metrics.disk_used,
+        healthData.metrics.network.in,
+        healthData.metrics.network.out,
+        0, // temperature
+      ]
+    );
+
+    // Update server's last_seen and current metrics
+    await db.query(
+      `UPDATE servers 
+       SET last_seen = NOW(),
+           cpu_usage = ?,
+           memory_usage = ?,
+           disk_usage = ?
+       WHERE id = ?`,
+      [
+        healthData.metrics.cpu,
+        healthData.metrics.memory,
+        healthData.metrics.disk,
+        server.id,
+      ]
+    );
+
+    // Check for threshold alerts
+    if (
+      healthData.metrics.cpu >= 90 ||
+      healthData.metrics.memory >= 90 ||
+      healthData.metrics.disk >= 90
+    ) {
+      await db.query(
+        `INSERT INTO alerts (id, server_id, type, message, status)
+         VALUES (?, ?, ?, ?, 'active')`,
+        [
+          uuidv4(),
+          server.id,
+          healthData.metrics.cpu >= 90
+            ? "cpu"
+            : healthData.metrics.memory >= 90
+            ? "memory"
+            : "disk",
+          `High ${
+            healthData.metrics.cpu >= 90
+              ? "CPU"
+              : healthData.metrics.memory >= 90
+              ? "memory"
+              : "disk"
+          } usage detected`,
+        ]
+      );
+    }
 
     res.json({
       success: true,
@@ -523,6 +587,52 @@ const createAlertsTable = async () => {
 // Call this when your server starts
 createAlertsTable();
 
+// Add this function near your createAlertsTable function
+const createMetricsTables = async () => {
+  try {
+    // Create server_metrics table
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS server_metrics (
+        id VARCHAR(255) PRIMARY KEY,
+        server_id VARCHAR(255) NOT NULL,
+        cpu_usage FLOAT,
+        memory_usage FLOAT,
+        memory_total BIGINT,
+        memory_used BIGINT,
+        disk_usage FLOAT,
+        disk_total BIGINT,
+        disk_used BIGINT,
+        network_in FLOAT,
+        network_out FLOAT,
+        temperature FLOAT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    `);
+
+    // Create server_processes table if you need it
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS server_processes (
+        id VARCHAR(255) PRIMARY KEY,
+        server_id VARCHAR(255) NOT NULL,
+        pid INT,
+        name VARCHAR(255),
+        cpu_usage FLOAT,
+        memory_usage FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+    `);
+
+    console.log("Metrics tables created or already exist");
+  } catch (error) {
+    console.error("Error creating metrics tables:", error);
+  }
+};
+
+// Call this when your server starts
+createMetricsTables();
+
 // Keep your other routes...
 
 // Add this function to collect and store metrics
@@ -542,17 +652,39 @@ async function collectAndStoreMetrics() {
     for (const server of servers) {
       await db.query(
         `INSERT INTO server_metrics 
-         (id, server_id, cpu_usage, memory_usage, disk_usage, network_in, network_out, temperature, timestamp)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         (id, server_id, cpu_usage, memory_usage, memory_total, memory_used,
+          disk_usage, disk_total, disk_used, network_in, network_out, 
+          temperature, timestamp)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           uuidv4(),
           server.id,
           cpuLoad.currentLoad,
           (memory.used / memory.total) * 100,
+          memory.total,
+          memory.used,
           disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+          disk[0] ? disk[0].size : 0,
+          disk[0] ? disk[0].used : 0,
           networkStats[0] ? networkStats[0].rx_sec : 0,
           networkStats[0] ? networkStats[0].tx_sec : 0,
           0, // temperature
+        ]
+      );
+
+      // Update the server's current metrics
+      await db.query(
+        `UPDATE servers 
+         SET last_seen = NOW(),
+             cpu_usage = ?,
+             memory_usage = ?,
+             disk_usage = ?
+         WHERE id = ?`,
+        [
+          cpuLoad.currentLoad,
+          (memory.used / memory.total) * 100,
+          disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+          server.id,
         ]
       );
     }
