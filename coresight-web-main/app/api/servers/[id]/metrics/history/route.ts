@@ -1,50 +1,44 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 
-const BACKEND_URL = "http://165.22.237.60:3000"; // Use your backend URL
+const BACKEND_URL = process.env.BACKEND_URL;
+
+if (!BACKEND_URL) {
+  throw new Error("BACKEND_URL environment variable is not set");
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const url = `${BACKEND_URL}/api/servers/${params.id}/metrics/history`;
-    console.log("Requesting metrics history from:", url);
+    const id = params.id;
+    const { searchParams } = new URL(request.url);
+    const hours = searchParams.get("hours") || "24";
 
-    const response = await fetch(url, {
-      headers: {
-        "Cache-Control": "no-cache",
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    });
+    console.log(
+      `Fetching metrics history from: ${BACKEND_URL}/api/servers/${id}/metrics/history?hours=${hours}`
+    );
+
+    const response = await fetch(
+      `${BACKEND_URL}/api/servers/${id}/metrics/history?hours=${hours}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Backend error response:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-        url,
-      });
-      throw new Error(
-        `Backend responded with ${response.status}: ${errorText}`
-      );
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    return NextResponse.json(data.data || []);
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Failed to fetch metrics history:", {
-      error: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-
+    console.error("Error proxying metrics history request:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch metrics history",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to fetch metrics history" },
       { status: 500 }
     );
   }

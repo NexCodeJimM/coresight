@@ -273,7 +273,9 @@ app.get("/api/influxdb/defaults", (req, res) => {
 app.get("/api/servers/:id/metrics/history", async (req, res) => {
   try {
     const { id } = req.params;
-    const hours = parseInt(req.query.hours) || 24; // Convert to number safely
+    const hours = parseInt(req.query.hours) || 24;
+
+    console.log(`Fetching ${hours}h metrics history for server ${id}`);
 
     const [results] = await db.query(
       `SELECT 

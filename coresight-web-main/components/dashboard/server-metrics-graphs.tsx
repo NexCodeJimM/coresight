@@ -19,7 +19,7 @@ import {
 } from "recharts";
 import { formatBytes } from "@/lib/utils";
 
-interface MetricsData {
+interface MetricDataPoint {
   timestamp: string;
   cpu_usage: number;
   memory_usage: number;
@@ -44,34 +44,49 @@ export function ServerMetricsGraphs({
   title = "Performance Metrics",
   description = "Server resource utilization over time",
 }: ServerMetricsGraphsProps) {
-  const [data, setData] = useState<MetricsData[]>([]);
+  const [data, setData] = useState<MetricDataPoint[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
+    const fetchMetricsHistory = async () => {
       try {
-        const timestamp = new Date().getTime();
+        setLoading(true);
+        console.log(`Requesting metrics history for server: ${serverId}`);
+
         const response = await fetch(
-          `/api/servers/${serverId}/metrics/history?type=${type}&t=${timestamp}`,
-          {
-            cache: "no-store",
-          }
+          `/api/servers/${serverId}/metrics/history?hours=24`
         );
-        if (!response.ok) throw new Error("Failed to fetch metrics");
-        const metrics = await response.json();
-        setData(metrics);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        setData(result.data || []);
+        setError(null);
       } catch (error) {
-        console.error("Failed to fetch metrics:", error);
+        console.error("Failed to fetch metrics history:", error);
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load metrics history"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 5000); // Update every 5 seconds
+    fetchMetricsHistory();
+    const interval = setInterval(fetchMetricsHistory, 60000); // Update every minute
 
     return () => clearInterval(interval);
-  }, [serverId, type]);
+  }, [serverId]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -240,6 +255,22 @@ export function ServerMetricsGraphs({
         <CardContent>
           <div className="h-[400px] flex items-center justify-center">
             Loading...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] flex items-center justify-center">
+            {error}
           </div>
         </CardContent>
       </Card>
