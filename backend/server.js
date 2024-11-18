@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const mysql = require("mysql2");
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
+const fetch = require("node-fetch");
 
 const app = express();
 
@@ -846,6 +847,79 @@ app.post("/api/servers", async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || "Failed to create server",
+    });
+  }
+});
+
+// Add this endpoint for checking server health
+app.get("/api/servers/:id/health", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get server details
+    const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [
+      id,
+    ]);
+
+    if (servers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found",
+      });
+    }
+
+    const server = servers[0];
+
+    // Try to ping the server
+    try {
+      const response = await fetch(
+        `http://${server.ip_address}:${server.port}/health`,
+        {
+          timeout: 5000, // 5 seconds timeout
+        }
+      );
+
+      if (response.ok) {
+        // Update server status in database
+        await db.query(
+          `UPDATE server_uptime 
+           SET status = 'online', last_checked = NOW(), uptime = uptime + ?
+           WHERE server_id = ?`,
+          [60, id] // Assuming we check every minute
+        );
+
+        const systemInfo = await response.json();
+
+        return res.json({
+          success: true,
+          status: "online",
+          lastChecked: new Date(),
+          system: systemInfo,
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to ping server ${id}:`, error);
+    }
+
+    // If we reach here, server is offline
+    await db.query(
+      `UPDATE server_uptime 
+       SET status = 'offline', last_checked = NOW()
+       WHERE server_id = ?`,
+      [id]
+    );
+
+    return res.json({
+      success: true,
+      status: "offline",
+      lastChecked: new Date(),
+      system: null,
+    });
+  } catch (error) {
+    console.error("Error checking server health:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to check server health",
     });
   }
 });

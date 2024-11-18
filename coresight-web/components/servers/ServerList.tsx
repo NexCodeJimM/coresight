@@ -24,6 +24,7 @@ interface Server {
   status: "active" | "inactive" | "maintenance";
   last_seen: string;
   uptime: number;
+  current_status?: "online" | "offline";
 }
 
 export function ServerList() {
@@ -31,12 +32,38 @@ export function ServerList() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  const checkServerStatus = async (server: Server) => {
+    try {
+      const response = await fetch(`/api/servers/${server.id}/health`);
+      if (!response.ok) throw new Error("Server health check failed");
+      const data = await response.json();
+      return {
+        ...server,
+        current_status: data.status,
+        last_seen: data.lastChecked,
+        uptime: data.system?.uptime || 0,
+      };
+    } catch (error) {
+      console.error(`Error checking server ${server.id} status:`, error);
+      return {
+        ...server,
+        current_status: "offline",
+      };
+    }
+  };
+
   const fetchServers = async () => {
     try {
       const response = await fetch("/api/servers");
       if (!response.ok) throw new Error("Failed to fetch servers");
       const data = await response.json();
-      setServers(data);
+
+      // Check status for each server
+      const serversWithStatus = await Promise.all(
+        data.map((server: Server) => checkServerStatus(server))
+      );
+
+      setServers(serversWithStatus);
     } catch (error) {
       console.error("Error fetching servers:", error);
     } finally {
@@ -49,17 +76,6 @@ export function ServerList() {
     // Poll for updates every 30 seconds
     const interval = setInterval(fetchServers, 30000);
     return () => clearInterval(interval);
-  }, []);
-
-  // Use a mutation observer to detect DOM changes that might indicate route changes
-  useEffect(() => {
-    const observer = new MutationObserver(fetchServers);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    return () => observer.disconnect();
   }, []);
 
   if (isLoading) {
@@ -91,7 +107,7 @@ export function ServerList() {
                 </div>
               </TableCell>
               <TableCell>
-                <StatusBadge status={server.status} />
+                <StatusBadge status={server.current_status || "offline"} />
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 {server.ip_address}
@@ -126,17 +142,15 @@ export function ServerList() {
   );
 }
 
-function StatusBadge({ status }: { status: Server["status"] }) {
+function StatusBadge({ status }: { status: "online" | "offline" }) {
   const variants = {
-    active: "bg-green-100 text-green-800",
-    inactive: "bg-red-100 text-red-800",
-    maintenance: "bg-yellow-100 text-yellow-800",
+    online: "bg-green-100 text-green-800",
+    offline: "bg-red-100 text-red-800",
   };
 
   const labels = {
-    active: "Online",
-    inactive: "Offline",
-    maintenance: "Maintenance",
+    online: "Online",
+    offline: "Offline",
   };
 
   return (
