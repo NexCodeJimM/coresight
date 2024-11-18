@@ -16,7 +16,73 @@ export async function GET(
 
     const { id } = params;
 
-    // Get current metrics
+    // Get server details
+    const [servers] = await pool.query("SELECT * FROM servers WHERE id = ?", [
+      id,
+    ]);
+
+    if (!(servers as any[]).length) {
+      return NextResponse.json({ error: "Server not found" }, { status: 404 });
+    }
+
+    const server = (servers as any[])[0];
+
+    // Try to get real-time metrics from the server
+    try {
+      const response = await fetch(
+        `http://${server.ip_address}:${server.port}/health`,
+        {
+          next: { revalidate: 0 },
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const healthData = await response.json();
+
+        // Store the new metrics
+        await pool.query(
+          `INSERT INTO server_metrics (
+            id, server_id, cpu_usage, memory_usage, 
+            disk_usage, network_usage, timestamp
+          ) VALUES (UUID(), ?, ?, ?, ?, ?, NOW())`,
+          [
+            id,
+            healthData.cpu.usage,
+            healthData.memory.usage,
+            healthData.disk.usage,
+            healthData.network?.usage || 0,
+          ]
+        );
+
+        // Get historical metrics (last 24 hours)
+        const [historicalMetrics] = await pool.query(
+          `SELECT * FROM server_metrics 
+           WHERE server_id = ? 
+           AND timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+           ORDER BY timestamp ASC`,
+          [id]
+        );
+
+        return NextResponse.json({
+          success: true,
+          current: {
+            cpu_usage: healthData.cpu.usage,
+            memory_usage: healthData.memory.usage,
+            disk_usage: healthData.disk.usage,
+            network_usage: healthData.network?.usage || 0,
+            timestamp: new Date(),
+          },
+          history: historicalMetrics,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching real-time metrics:", error);
+    }
+
+    // If we reach here, return the latest stored metrics
     const [currentMetrics] = await pool.query(
       `SELECT * FROM server_metrics 
        WHERE server_id = ? 
@@ -25,7 +91,6 @@ export async function GET(
       [id]
     );
 
-    // Get historical metrics (last 24 hours)
     const [historicalMetrics] = await pool.query(
       `SELECT * FROM server_metrics 
        WHERE server_id = ? 
