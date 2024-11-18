@@ -7,6 +7,6 @@ module.exports = {
     database: process.env.DB_NAME || "efi",
   },
   server: {
-    port: parseInt(process.env.PORT || "3036"),
+    port: parseInt(process.env.PORT || "3000"),
   },
 };
