@@ -221,9 +221,10 @@ class SystemMonitor:
             logger.error("No server ID available. Skipping metrics collection.")
             return None
 
-        # Collect metrics in the format that works with the endpoint
+        # Add timestamp to metrics
         metrics = {
             "server_id": self.server_id,
+            "timestamp": datetime.now().isoformat(),  # Add timestamp here
             "cpu": {
                 "cpu_percent": psutil.cpu_percent(interval=1)
             },
@@ -253,7 +254,11 @@ class SystemMonitor:
                 headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
-            logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
+            # Only log timestamp if metrics contains it
+            if 'timestamp' in metrics:
+                logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
+            else:
+                logger.info("Metrics sent successfully")
         except requests.exceptions.RequestException as e:
             logger.error(f"Error sending metrics: {e}")
             if hasattr(e.response, 'text'):

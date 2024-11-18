@@ -358,3 +358,6 @@ CREATE INDEX idx_server_processes_usage ON server_processes(server_id, cpu_usage
 # Activate the virtual environment
 
 source venv/bin/activate
+
+#Monitor Logs
+tail -f /root/coresight/coresight-agent/agent.log
