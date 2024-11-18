@@ -1,44 +1,47 @@
 import { NextResponse } from "next/server";
-
-const BACKEND_URL = process.env.BACKEND_URL;
-
-if (!BACKEND_URL) {
-  throw new Error("BACKEND_URL environment variable is not set");
-}
+import { db } from "@/lib/db";
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
     const { searchParams } = new URL(request.url);
-    const hours = searchParams.get("hours") || "24";
+    const hours = parseInt(searchParams.get("hours") || "24");
 
     console.log(
-      `Fetching metrics history from: ${BACKEND_URL}/api/servers/${id}/metrics/history?hours=${hours}`
+      `Fetching ${hours}h metrics history for server ${params.id} from database`
     );
 
-    const response = await fetch(
-      `${BACKEND_URL}/api/servers/${id}/metrics/history?hours=${hours}`,
-      {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
+    const [results] = await db.query(
+      `SELECT 
+        timestamp,
+        cpu_usage,
+        memory_usage,
+        disk_usage,
+        network_in,
+        network_out,
+        temperature as cpu_temp,
+        memory_used as memory_active,
+        disk_used as swap_used
+       FROM server_metrics
+       WHERE server_id = ? 
+       AND timestamp >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+       ORDER BY timestamp ASC`,
+      [params.id, hours]
     );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json({
+      success: true,
+      data: results,
+    });
   } catch (error) {
-    console.error("Error proxying metrics history request:", error);
+    console.error("Error fetching metrics history:", error);
     return NextResponse.json(
-      { error: "Failed to fetch metrics history" },
+      {
+        error: "Failed to fetch metrics history",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

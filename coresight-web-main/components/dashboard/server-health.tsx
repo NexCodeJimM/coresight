@@ -27,6 +27,11 @@ interface ServerHealth {
   last_seen: string;
 }
 
+interface ServerInfo {
+  ip_address: string;
+  port: string;
+}
+
 export function ServerHealth({ serverId }: { serverId: string }) {
   const [health, setHealth] = useState<ServerHealth | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +39,7 @@ export function ServerHealth({ serverId }: { serverId: string }) {
   const [thresholds, setThresholds] =
     useState<ThresholdConfig>(DEFAULT_THRESHOLDS);
   const { addNotification } = useNotifications();
+  const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null);
 
   const checkThresholds = (data: ServerHealth) => {
     if (data.cpu_usage >= thresholds.cpu.critical) {
@@ -85,9 +91,25 @@ export function ServerHealth({ serverId }: { serverId: string }) {
     }
   };
 
-  const fetchHealthData = async () => {
+  const fetchServerInfo = async () => {
     try {
-      const response = await fetch(`/api/servers/${serverId}/health`, {
+      const response = await fetch(`/api/servers/${serverId}`);
+      if (!response.ok) throw new Error("Failed to fetch server info");
+      const data = await response.json();
+      setServerInfo(data);
+    } catch (error) {
+      console.error("Failed to fetch server info:", error);
+    }
+  };
+
+  const fetchHealthData = async () => {
+    if (!serverInfo) return;
+
+    try {
+      const url = `http://${serverInfo.ip_address}:${serverInfo.port}/api/servers/${serverId}/health`;
+      console.log(`Fetching health from: ${url}`);
+
+      const response = await fetch(url, {
         cache: "no-store",
         headers: {
           Accept: "application/json",
@@ -159,11 +181,16 @@ export function ServerHealth({ serverId }: { serverId: string }) {
   };
 
   useEffect(() => {
-    fetchHealthData();
-    const interval = setInterval(fetchHealthData, 60000);
-
-    return () => clearInterval(interval);
+    fetchServerInfo();
   }, [serverId]);
+
+  useEffect(() => {
+    if (serverInfo) {
+      fetchHealthData();
+      const interval = setInterval(fetchHealthData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [serverId, serverInfo]);
 
   if (loading) {
     return (

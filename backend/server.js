@@ -665,69 +665,59 @@ createMetricsTables();
 
 // Keep your other routes...
 
-// Add this function to collect and store metrics
+// Add or update the collectAndStoreMetrics function
 async function collectAndStoreMetrics() {
   try {
-    const cpuLoad = await si.currentLoad();
-    const memory = await si.mem();
-    const disk = await si.fsSize();
-    const networkStats = await si.networkStats();
-
     // Get all active servers
     const [servers] = await db.query(
       'SELECT id FROM servers WHERE status = "active"'
     );
 
-    // Store metrics for each server
     for (const server of servers) {
-      await db.query(
-        `INSERT INTO server_metrics 
-         (id, server_id, cpu_usage, memory_usage, memory_total, memory_used,
-          disk_usage, disk_total, disk_used, network_in, network_out, 
-          temperature, timestamp)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          uuidv4(),
-          server.id,
-          cpuLoad.currentLoad,
-          (memory.used / memory.total) * 100,
-          memory.total,
-          memory.used,
-          disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
-          disk[0] ? disk[0].size : 0,
-          disk[0] ? disk[0].used : 0,
-          networkStats[0] ? networkStats[0].rx_sec : 0,
-          networkStats[0] ? networkStats[0].tx_sec : 0,
-          0, // temperature
-        ]
-      );
+      try {
+        // Collect system metrics
+        const cpuLoad = await si.currentLoad();
+        const memory = await si.mem();
+        const disk = await si.fsSize();
+        const networkStats = await si.networkStats();
+        const temp = await si.cpuTemperature();
 
-      // Update the server's current metrics
-      await db.query(
-        `UPDATE servers 
-         SET last_seen = NOW(),
-             cpu_usage = ?,
-             memory_usage = ?,
-             disk_usage = ?
-         WHERE id = ?`,
-        [
-          cpuLoad.currentLoad,
-          (memory.used / memory.total) * 100,
-          disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
-          server.id,
-        ]
-      );
+        // Store metrics in database
+        await db.query(
+          `INSERT INTO server_metrics 
+           (id, server_id, cpu_usage, memory_usage, memory_total, memory_used,
+            disk_usage, disk_total, disk_used, network_in, network_out, 
+            temperature, timestamp)
+           VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            server.id,
+            cpuLoad.currentLoad,
+            (memory.used / memory.total) * 100,
+            memory.total,
+            memory.used,
+            disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
+            disk[0] ? disk[0].size : 0,
+            disk[0] ? disk[0].used : 0,
+            networkStats[0] ? networkStats[0].rx_sec : 0,
+            networkStats[0] ? networkStats[0].tx_sec : 0,
+            temp.main || 0,
+          ]
+        );
+      } catch (error) {
+        console.error(
+          `Failed to collect metrics for server ${server.id}:`,
+          error
+        );
+      }
     }
   } catch (error) {
-    console.error("Error collecting metrics:", error);
+    console.error("Failed to collect metrics:", error);
   }
 }
 
-// Collect metrics every minute
+// Make sure metrics collection is running
 setInterval(collectAndStoreMetrics, 60000);
-
-// Also collect metrics on startup
-collectAndStoreMetrics();
+collectAndStoreMetrics(); // Initial collection
 
 // Add this new endpoint for dashboard metrics
 app.get("/api/dashboard/metrics", async (req, res) => {

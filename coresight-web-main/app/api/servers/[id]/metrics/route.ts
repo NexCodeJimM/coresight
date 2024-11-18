@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-const BACKEND_URL = process.env.BACKEND_URL;
-
-if (!BACKEND_URL) {
-  throw new Error("BACKEND_URL environment variable is not set");
-}
-
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const url = `${BACKEND_URL}/api/servers/${params.id}/metrics/current`;
+    // First get the server info
+    const [servers] = await db.query(
+      `SELECT ip_address, port FROM servers WHERE id = ?`,
+      [params.id]
+    );
+
+    const server = (servers as any[])[0];
+    if (!server) {
+      throw new Error("Server not found");
+    }
+
+    const url = `http://${server.ip_address}:${server.port}/api/servers/${params.id}/metrics/current`;
     console.log(`Fetching metrics from: ${url}`);
 
     const response = await fetch(url, {

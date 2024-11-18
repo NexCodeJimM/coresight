@@ -38,6 +38,11 @@ interface ServerMetricsGraphsProps {
   description?: string;
 }
 
+interface ServerInfo {
+  ip_address: string;
+  port: string;
+}
+
 export function ServerMetricsGraphs({
   serverId,
   type = "performance",
@@ -64,11 +69,25 @@ export function ServerMetricsGraphs({
 
         const result = await response.json();
 
-        if (result.error) {
-          throw new Error(result.error);
+        if (!result.success) {
+          throw new Error(result.error || "Failed to fetch metrics");
         }
 
-        setData(result.data || []);
+        // Transform the data if needed
+        const transformedData = result.data.map((item: any) => ({
+          ...item,
+          timestamp: new Date(item.timestamp).toISOString(),
+          cpu_usage: parseFloat(item.cpu_usage || 0),
+          memory_usage: parseFloat(item.memory_usage || 0),
+          disk_usage: parseFloat(item.disk_usage || 0),
+          network_in: parseFloat(item.network_in || 0),
+          network_out: parseFloat(item.network_out || 0),
+          cpu_temp: parseFloat(item.cpu_temp || 0),
+          memory_active: parseFloat(item.memory_active || 0),
+          swap_used: parseFloat(item.swap_used || 0),
+        }));
+
+        setData(transformedData);
         setError(null);
       } catch (error) {
         console.error("Failed to fetch metrics history:", error);
@@ -83,7 +102,7 @@ export function ServerMetricsGraphs({
     };
 
     fetchMetricsHistory();
-    const interval = setInterval(fetchMetricsHistory, 60000); // Update every minute
+    const interval = setInterval(fetchMetricsHistory, 60000);
 
     return () => clearInterval(interval);
   }, [serverId]);
@@ -269,7 +288,7 @@ export function ServerMetricsGraphs({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px] flex items-center justify-center">
+          <div className="h-[400px] flex items-center justify-center text-destructive">
             {error}
           </div>
         </CardContent>

@@ -7,33 +7,21 @@ export async function GET(
 ) {
   try {
     const [servers] = await db.query(
-      `SELECT 
-        s.*,
-        (
-          SELECT COUNT(*) 
-          FROM alerts 
-          WHERE server_id = s.id AND status = 'active'
-        ) as active_alerts,
-        COALESCE(s.status, 'inactive') as status
-      FROM servers s 
-      WHERE s.id = ?`,
+      `SELECT id, name, ip_address, port, hostname 
+       FROM servers WHERE id = ?`,
       [params.id]
     );
 
     const server = (servers as any[])[0];
-
     if (!server) {
       return NextResponse.json({ error: "Server not found" }, { status: 404 });
     }
 
-    return NextResponse.json({
-      ...server,
-      status: server.status || "inactive",
-    });
+    return NextResponse.json(server);
   } catch (error) {
     console.error("Failed to fetch server:", error);
     return NextResponse.json(
-      { error: "Failed to fetch server data" },
+      { error: "Failed to fetch server information" },
       { status: 500 }
     );
   }
