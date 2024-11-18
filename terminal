@@ -1,0 +1,26 @@
+npx create-next-app@latest coresight-web --typescript --tailwind --app --use-npm
+cd coresight-web 
+
+npm install bcrypt @types/bcrypt
+npm install @radix-ui/react-dropdown-menu @radix-ui/react-dialog
+npm install @radix-ui/react-label @radix-ui/react-avatar
+npm install class-variance-authority clsx tailwind-merge 
+
+npx shadcn-ui@latest init
+npx shadcn-ui@latest add button
+npx shadcn-ui@latest add avatar
+npx shadcn-ui@latest add dialog
+npx shadcn-ui@latest add dropdown-menu
+npx shadcn-ui@latest add input
+npx shadcn-ui@latest add label
+npx shadcn-ui@latest add textarea
+npx shadcn-ui@latest add table
+npx shadcn-ui@latest add badge 
+
+npm install next-auth@latest @auth/core
+npm install lucide-react 
+npm install @radix-ui/react-toast 
+
+npx shadcn-ui@latest add card
+npx shadcn-ui@latest add progress 
+npx shadcn-ui@latest add scroll-area 
