@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const [servers] = await db.query(
-      `SELECT id, name, ip_address, port, hostname 
+      `SELECT id, name, ip_address, port, hostname, status, last_seen 
        FROM servers WHERE id = ?`,
       [params.id]
     );
@@ -16,6 +16,12 @@ export async function GET(
     if (!server) {
       return NextResponse.json({ error: "Server not found" }, { status: 404 });
     }
+
+    console.log("Server info:", {
+      id: server.id,
+      ip: server.ip_address,
+      port: server.port,
+    });
 
     return NextResponse.json(server);
   } catch (error) {

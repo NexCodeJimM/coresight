@@ -38,11 +38,6 @@ interface ServerMetricsGraphsProps {
   description?: string;
 }
 
-interface ServerInfo {
-  ip_address: string;
-  port: string;
-}
-
 export function ServerMetricsGraphs({
   serverId,
   type = "performance",
@@ -57,11 +52,10 @@ export function ServerMetricsGraphs({
     const fetchMetricsHistory = async () => {
       try {
         setLoading(true);
-        console.log(`Requesting metrics history for server: ${serverId}`);
+        const url = `/api/servers/${serverId}/metrics/history?hours=24`;
+        console.log(`Requesting metrics history from: ${url}`);
 
-        const response = await fetch(
-          `/api/servers/${serverId}/metrics/history?hours=24`
-        );
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -73,7 +67,6 @@ export function ServerMetricsGraphs({
           throw new Error(result.error || "Failed to fetch metrics");
         }
 
-        // Transform the data if needed
         const transformedData = result.data.map((item: any) => ({
           ...item,
           timestamp: new Date(item.timestamp).toISOString(),

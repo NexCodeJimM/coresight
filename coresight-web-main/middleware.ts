@@ -1,25 +1,25 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const path = req.nextUrl.pathname;
+export function middleware(request: NextRequest) {
+  // Get hostname of request (e.g. localhost:3000, example.com, etc.)
+  const { pathname } = request.nextUrl;
 
-    // Protect admin routes
-    if (path.startsWith("/admin") && !token?.isAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+  // If it's an API request, rewrite to the backend URL
+  if (pathname.startsWith("/api/")) {
+    const backendUrl = process.env.BACKEND_URL;
+    if (backendUrl) {
+      // Remove /api from the pathname when forwarding to backend
+      const apiPath = pathname.replace(/^\/api/, "");
+      const url = new URL(apiPath, backendUrl);
+      url.search = request.nextUrl.search;
+      return NextResponse.rewrite(url);
     }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
   }
-);
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/api/admin/:path*"],
+  matcher: "/api/:path*",
 };

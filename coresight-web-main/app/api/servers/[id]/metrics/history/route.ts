@@ -9,10 +9,9 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const hours = parseInt(searchParams.get("hours") || "24");
 
-    console.log(
-      `Fetching ${hours}h metrics history for server ${params.id} from database`
-    );
+    console.log(`Fetching ${hours}h metrics history for server ${params.id}`);
 
+    // Query metrics directly from the database
     const [results] = await db.query(
       `SELECT 
         timestamp,
@@ -27,7 +26,8 @@ export async function GET(
        FROM server_metrics
        WHERE server_id = ? 
        AND timestamp >= DATE_SUB(NOW(), INTERVAL ? HOUR)
-       ORDER BY timestamp ASC`,
+       ORDER BY timestamp ASC
+       LIMIT 1000`,
       [params.id, hours]
     );
 
@@ -38,10 +38,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching metrics history:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch metrics history",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to fetch metrics history" },
       { status: 500 }
     );
   }
