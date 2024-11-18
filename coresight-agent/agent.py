@@ -20,13 +20,12 @@ class SystemMonitor:
     def __init__(self):
         self.hostname = socket.gethostname()
         logger.info(f"Agent running with hostname: {self.hostname}")
-        # Replace The IP Address of the server
-        self.backend_url = "http://143.198.84.214:3000/api/metrics"  
+        self.backend_url = "http://143.198.84.214:3000/api/metrics"
+        self.server_id = "YOUR_SERVER_ID"  # Set this to your server's ID
     
     def get_cpu_metrics(self):
         try:
             cpu_percent = psutil.cpu_percent(interval=1)
-            # Ensure we have a valid float value
             if cpu_percent is None or not isinstance(cpu_percent, (int, float)):
                 cpu_percent = 0.0
                 
@@ -37,8 +36,8 @@ class SystemMonitor:
                 cpu_freq_dict = cpu_freq._asdict()
 
             return {
-                "cpu_percent": float(cpu_percent),  # Ensure it's a float
-                "cpu_count": psutil.cpu_count() or 1,  # Fallback to 1 if None
+                "cpu_percent": float(cpu_percent),
+                "cpu_count": psutil.cpu_count() or 1,
                 "cpu_freq": cpu_freq_dict
             }
         except Exception as e:
@@ -125,6 +124,7 @@ class SystemMonitor:
     
     def collect_metrics(self):
         metrics = {
+            "server_id": self.server_id,  # Add server_id to metrics
             "timestamp": datetime.now().isoformat(),
             "hostname": self.hostname,
             "cpu": self.get_cpu_metrics(),
@@ -133,13 +133,16 @@ class SystemMonitor:
             "network": self.get_network_metrics(),
             "processes": self.get_process_info()
         }
-        # Print metrics for debugging
         logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
         return metrics
     
     def send_metrics(self, metrics):
         try:
-            response = requests.post(self.backend_url, json=metrics)
+            response = requests.post(
+                self.backend_url,
+                json=metrics,
+                headers={"Content-Type": "application/json"}
+            )
             response.raise_for_status()
             logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
         except requests.exceptions.RequestException as e:
@@ -154,7 +157,7 @@ class SystemMonitor:
                 self.send_metrics(metrics)
             except Exception as e:
                 logger.error(f"Error in main loop: {e}")
-            time.sleep(10)
+            time.sleep(10)  # Send metrics every 10 seconds
 
 if __name__ == "__main__":
     monitor = SystemMonitor()

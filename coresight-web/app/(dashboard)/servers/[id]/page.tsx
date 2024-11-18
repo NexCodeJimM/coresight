@@ -34,7 +34,11 @@ interface Metrics {
   cpu_usage: number;
   memory_usage: number;
   disk_usage: number;
-  network_usage: number;
+  network: {
+    upload_rate: number;
+    download_rate: number;
+    total_rate: number;
+  };
   timestamp: string;
 }
 
@@ -92,6 +96,45 @@ export default function ServerInformation({
     return () => clearInterval(interval);
   }, [params.id]);
 
+  // Format timestamp for graphs
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Manila", // Set to your local timezone
+    });
+  };
+
+  // Format tooltip values
+  const formatTooltipValue = (value: number, type: string) => {
+    switch (type) {
+      case "network":
+        return `${value.toFixed(1)} MB/s`;
+      default:
+        return `${value.toFixed(1)}%`;
+    }
+  };
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload, label, type }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 rounded-lg shadow border">
+          <p className="font-medium">{formatTimestamp(label)}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }}>
+              {entry.name}: {formatTooltipValue(entry.value, type)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-8 p-8">
       {/* Current Metrics */}
@@ -113,7 +156,17 @@ export default function ServerInformation({
         />
         <MetricCard
           title="Network Usage"
-          value={`${currentMetrics?.network_usage?.toFixed(1) || "0"} MB/s`}
+          value={
+            <div className="flex flex-col gap-1">
+              <span className="text-sm text-muted-foreground">
+                ↑ {currentMetrics?.network?.upload_rate?.toFixed(1) || "0"} MB/s
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ↓ {currentMetrics?.network?.download_rate?.toFixed(1) || "0"}{" "}
+                MB/s
+              </span>
+            </div>
+          }
           icon={<AiOutlineNodeIndex className="h-4 w-4" />}
         />
       </div>
@@ -127,10 +180,27 @@ export default function ServerInformation({
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={metrics}>
-                <XAxis dataKey="timestamp" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="cpu_usage" stroke="#8884d8" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={formatTimestamp}
+                  interval="preserveStartEnd"
+                  minTickGap={50}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip
+                  content={(props) => <CustomTooltip {...props} type="cpu" />}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cpu_usage"
+                  stroke="#8884d8"
+                  strokeWidth={2}
+                  dot={false}
+                  name="CPU"
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -143,10 +213,65 @@ export default function ServerInformation({
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={metrics}>
-                <XAxis dataKey="timestamp" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="memory_usage" stroke="#82ca9d" />
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={formatTimestamp}
+                  interval="preserveStartEnd"
+                  minTickGap={50}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="memory_usage"
+                  stroke="#82ca9d"
+                  strokeWidth={2}
+                  dot={false}
+                  name="Memory"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Network History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={metrics}>
+                <XAxis
+                  dataKey="timestamp"
+                  tickFormatter={formatTimestamp}
+                  interval="preserveStartEnd"
+                  minTickGap={50}
+                />
+                <YAxis tickFormatter={(value) => `${value.toFixed(1)} MB/s`} />
+                <Tooltip
+                  content={(props) => (
+                    <CustomTooltip {...props} type="network" />
+                  )}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="network.upload_rate"
+                  stroke="#8884d8"
+                  strokeWidth={2}
+                  dot={false}
+                  name="Upload"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="network.download_rate"
+                  stroke="#82ca9d"
+                  strokeWidth={2}
+                  dot={false}
+                  name="Download"
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -195,7 +320,7 @@ function MetricCard({
   icon,
 }: {
   title: string;
-  value: string;
+  value: string | React.ReactNode;
   icon: React.ReactNode;
 }) {
   return (

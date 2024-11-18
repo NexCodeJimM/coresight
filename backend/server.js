@@ -893,6 +893,55 @@ app.get("/api/servers/:id/metrics", async (req, res) => {
   }
 });
 
+// Add this endpoint to receive metrics from Python agent
+app.post("/api/metrics", async (req, res) => {
+  try {
+    const metrics = req.body;
+    const serverId = metrics.server_id; // Add server_id to Python agent's metrics
+
+    // Store metrics in database
+    await db.query(
+      `INSERT INTO server_metrics (
+        id, server_id, cpu_usage, memory_usage, 
+        disk_usage, network_usage, timestamp
+      ) VALUES (UUID(), ?, ?, ?, ?, ?, NOW())`,
+      [
+        serverId,
+        metrics.cpu.cpu_percent,
+        metrics.memory.percent,
+        metrics.disk.percent,
+        (metrics.network.bytes_sent + metrics.network.bytes_recv) /
+          (1024 * 1024), // Convert to MB
+      ]
+    );
+
+    // Store process information
+    for (const process of metrics.processes) {
+      await db.query(
+        `INSERT INTO server_processes (
+          server_id, pid, name, cpu_usage, memory_usage, timestamp
+        ) VALUES (?, ?, ?, ?, ?, NOW())`,
+        [
+          serverId,
+          process.pid,
+          process.name,
+          process.cpu_percent,
+          process.memory_percent,
+        ]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error storing metrics:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to store metrics",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
