@@ -10,10 +10,11 @@ app.use(cors());
 app.get("/health", async (req, res) => {
   try {
     // Get system information
-    const [cpu, mem, disk] = await Promise.all([
+    const [cpu, mem, disk, processes] = await Promise.all([
       si.currentLoad(),
       si.mem(),
       si.fsSize(),
+      si.processes(),
     ]);
 
     // Calculate metrics
@@ -34,6 +35,14 @@ app.get("/health", async (req, res) => {
         used: disk[0].used,
         usage: (disk[0].used / disk[0].size) * 100,
       },
+      processes: processes.list
+        .map((proc) => ({
+          pid: proc.pid,
+          name: proc.name,
+          cpu_usage: proc.cpu,
+          memory_usage: (proc.mem / mem.total) * 100,
+        }))
+        .slice(0, 50), // Top 50 processes
       timestamp: new Date(),
     };
 

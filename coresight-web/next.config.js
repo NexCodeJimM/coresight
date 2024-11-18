@@ -3,12 +3,16 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/servers",
-        destination: "http://143.198.84.214:3000/api/servers",
+        source: "/health",
+        destination: "http://143.198.84.214:3000/health",
       },
       {
         source: "/api/servers/:id/health",
         destination: "http://143.198.84.214:3000/api/servers/:id/health",
+      },
+      {
+        source: "/api/servers",
+        destination: "http://143.198.84.214:3000/api/servers",
       },
       {
         source: "/api/:path*",

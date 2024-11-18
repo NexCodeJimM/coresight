@@ -25,6 +25,7 @@ interface Server {
   last_seen: string;
   uptime: number;
   current_status?: "online" | "offline";
+  port: string | number;
 }
 
 export function ServerList() {
@@ -33,6 +34,35 @@ export function ServerList() {
   const router = useRouter();
 
   const checkServerStatus = async (server: Server) => {
+    try {
+      // First try to directly access the server's health endpoint
+      const healthResponse = await fetch(
+        `http://${server.ip_address}:${server.port}/health`,
+        {
+          next: { revalidate: 0 },
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        }
+      );
+
+      if (healthResponse.ok) {
+        const healthData = await healthResponse.json();
+        return {
+          ...server,
+          current_status: "online",
+          last_seen: new Date().toISOString(),
+          uptime: healthData.uptime || 0,
+        };
+      }
+    } catch (error) {
+      console.error(
+        `Error checking direct health for server ${server.id}:`,
+        error
+      );
+    }
+
+    // If direct access fails, try through the backend
     try {
       const response = await fetch(`/api/servers/${server.id}/health`);
       if (!response.ok) throw new Error("Server health check failed");

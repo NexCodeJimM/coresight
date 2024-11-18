@@ -10,7 +10,7 @@ export function Navbar() {
       <div className="flex h-16 items-center px-4">
         <div className="flex items-center space-x-4">
           <Link href="/" className="font-bold text-xl">
-            Coresight
+            CORESIGHT
           </Link>
           <nav className="flex items-center space-x-4">
             <Link href="/dashboard" className="text-sm font-medium">
