@@ -471,12 +471,12 @@ app.get("/api/servers/:id/health", async (req, res) => {
   try {
     const { id } = req.params;
 
-    // First check if server exists
+    // Get server details
     const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [
       id,
     ]);
 
-    if (!servers.length) {
+    if (servers.length === 0) {
       return res.status(404).json({
         success: false,
         error: "Server not found",
@@ -485,111 +485,73 @@ app.get("/api/servers/:id/health", async (req, res) => {
 
     const server = servers[0];
 
-    // Collect real-time metrics using systeminformation
-    const cpuLoad = await si.currentLoad();
-    const memory = await si.mem();
-    const disk = await si.fsSize();
-    const networkStats = await si.networkStats();
-    const uptime = os.uptime();
-
-    // Format the health data
-    const healthData = {
-      metrics: {
-        cpu: cpuLoad.currentLoad,
-        memory: (memory.used / memory.total) * 100,
-        memory_total: memory.total,
-        memory_used: memory.used,
-        disk: disk[0] ? (disk[0].used / disk[0].size) * 100 : 0,
-        disk_total: disk[0] ? disk[0].size : 0,
-        disk_used: disk[0] ? disk[0].used : 0,
-        network: {
-          in: networkStats[0] ? networkStats[0].rx_sec : 0,
-          out: networkStats[0] ? networkStats[0].tx_sec : 0,
-        },
-      },
-      status: "online",
-      system: {
-        uptime: uptime,
-      },
-      lastChecked: new Date().toISOString(),
-    };
-
-    // Store the metrics in the database
-    await db.query(
-      `INSERT INTO server_metrics 
-       (id, server_id, cpu_usage, memory_usage, memory_total, memory_used,
-        disk_usage, disk_total, disk_used, network_in, network_out, 
-        temperature, timestamp)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [
-        uuidv4(),
-        server.id,
-        healthData.metrics.cpu,
-        healthData.metrics.memory,
-        healthData.metrics.memory_total,
-        healthData.metrics.memory_used,
-        healthData.metrics.disk,
-        healthData.metrics.disk_total,
-        healthData.metrics.disk_used,
-        healthData.metrics.network.in,
-        healthData.metrics.network.out,
-        0, // temperature
-      ]
-    );
-
-    // Update server's last_seen and current metrics
-    await db.query(
-      `UPDATE servers 
-       SET last_seen = NOW(),
-           cpu_usage = ?,
-           memory_usage = ?,
-           disk_usage = ?
-       WHERE id = ?`,
-      [
-        healthData.metrics.cpu,
-        healthData.metrics.memory,
-        healthData.metrics.disk,
-        server.id,
-      ]
-    );
-
-    // Check for threshold alerts
-    if (
-      healthData.metrics.cpu >= 90 ||
-      healthData.metrics.memory >= 90 ||
-      healthData.metrics.disk >= 90
-    ) {
-      await db.query(
-        `INSERT INTO alerts (id, server_id, type, message, status)
-         VALUES (?, ?, ?, ?, 'active')`,
-        [
-          uuidv4(),
-          server.id,
-          healthData.metrics.cpu >= 90
-            ? "cpu"
-            : healthData.metrics.memory >= 90
-            ? "memory"
-            : "disk",
-          `High ${
-            healthData.metrics.cpu >= 90
-              ? "CPU"
-              : healthData.metrics.memory >= 90
-              ? "memory"
-              : "disk"
-          } usage detected`,
-        ]
+    // Try to ping the server
+    try {
+      const response = await fetch(
+        `http://${server.ip_address}:${server.port}/health`,
+        {
+          timeout: 5000, // 5 seconds timeout
+        }
       );
+
+      if (response.ok) {
+        // Get the current metrics
+        const [metrics] = await db.query(
+          `SELECT * FROM server_metrics 
+           WHERE server_id = ? 
+           ORDER BY timestamp DESC 
+           LIMIT 1`,
+          [id]
+        );
+
+        // Update server status in database
+        await db.query(
+          `UPDATE server_uptime 
+           SET status = 'online', last_checked = NOW()
+           WHERE server_id = ?`,
+          [id]
+        );
+
+        return res.json({
+          success: true,
+          status: "online",
+          lastChecked: new Date(),
+          metrics: metrics[0] || {
+            cpu_usage: 0,
+            memory_usage: 0,
+            disk_usage: 0,
+            network_usage: 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to ping server ${id}:`, error);
     }
 
-    res.json({
+    // If we reach here, server is offline
+    await db.query(
+      `UPDATE server_uptime 
+       SET status = 'offline', last_checked = NOW()
+       WHERE server_id = ?`,
+      [id]
+    );
+
+    return res.json({
       success: true,
-      ...healthData,
+      status: "offline",
+      lastChecked: new Date(),
+      metrics: {
+        cpu_usage: 0,
+        memory_usage: 0,
+        disk_usage: 0,
+        network_usage: 0,
+      },
     });
   } catch (error) {
-    console.error("Error fetching server health:", error);
+    console.error("Error checking server health:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to fetch server health",
+      error: "Failed to check server health",
       details: error.message,
     });
   }
