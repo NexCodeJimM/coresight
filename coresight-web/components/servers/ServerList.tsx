@@ -35,9 +35,9 @@ export function ServerList() {
 
   const checkServerStatus = async (server: Server) => {
     try {
-      // First try to directly access the server's health endpoint
+      // First try to directly access the server's health endpoint using port 3001
       const healthResponse = await fetch(
-        `http://${server.ip_address}:${server.port}/health`,
+        `http://${server.ip_address}:3001/health`,
         {
           next: { revalidate: 0 },
           headers: {

@@ -60,8 +60,10 @@ export default function ServerInformation({
       try {
         const response = await fetch(`/api/servers/${params.id}/metrics`);
         const data = await response.json();
-        setMetrics(data.history);
-        setCurrentMetrics(data.current);
+        if (data.success) {
+          setMetrics(data.history || []);
+          setCurrentMetrics(data.current || null);
+        }
       } catch (error) {
         console.error("Error fetching metrics:", error);
       }
@@ -71,9 +73,14 @@ export default function ServerInformation({
       try {
         const response = await fetch(`/api/servers/${params.id}/processes`);
         const data = await response.json();
-        setProcesses(data);
+        if (data.success && Array.isArray(data.data)) {
+          setProcesses(data.data);
+        } else {
+          setProcesses([]);
+        }
       } catch (error) {
         console.error("Error fetching processes:", error);
+        setProcesses([]);
       }
     };
 
@@ -91,22 +98,22 @@ export default function ServerInformation({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="CPU Usage"
-          value={`${currentMetrics?.cpu_usage.toFixed(1)}%`}
+          value={`${currentMetrics?.cpu_usage?.toFixed(1) || "0"}%`}
           icon={<FiCpu className="h-4 w-4" />}
         />
         <MetricCard
           title="Memory Usage"
-          value={`${currentMetrics?.memory_usage.toFixed(1)}%`}
+          value={`${currentMetrics?.memory_usage?.toFixed(1) || "0"}%`}
           icon={<BiMemoryCard className="h-4 w-4" />}
         />
         <MetricCard
           title="Disk Usage"
-          value={`${currentMetrics?.disk_usage.toFixed(1)}%`}
+          value={`${currentMetrics?.disk_usage?.toFixed(1) || "0"}%`}
           icon={<FiHardDrive className="h-4 w-4" />}
         />
         <MetricCard
           title="Network Usage"
-          value={`${currentMetrics?.network_usage.toFixed(1)} MB/s`}
+          value={`${currentMetrics?.network_usage?.toFixed(1) || "0"} MB/s`}
           icon={<AiOutlineNodeIndex className="h-4 w-4" />}
         />
       </div>
@@ -165,14 +172,15 @@ export default function ServerInformation({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {processes.map((process) => (
-                <TableRow key={process.pid}>
-                  <TableCell>{process.pid}</TableCell>
-                  <TableCell>{process.name}</TableCell>
-                  <TableCell>{process.cpu_usage.toFixed(1)}%</TableCell>
-                  <TableCell>{process.memory_usage.toFixed(1)}%</TableCell>
-                </TableRow>
-              ))}
+              {Array.isArray(processes) &&
+                processes.map((process) => (
+                  <TableRow key={process.pid}>
+                    <TableCell>{process.pid}</TableCell>
+                    <TableCell>{process.name}</TableCell>
+                    <TableCell>{process.cpu_usage?.toFixed(1)}%</TableCell>
+                    <TableCell>{process.memory_usage?.toFixed(1)}%</TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </DialogContent>
