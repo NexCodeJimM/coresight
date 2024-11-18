@@ -469,6 +469,7 @@ app.get("/api/metrics/local/current", async (req, res) => {
 // Update the server health endpoint to collect real-time metrics
 app.get("/api/servers/:id/health", async (req, res) => {
   try {
+    console.log("Health check requested for server:", req.params.id);
     const { id } = req.params;
 
     // Get server details
@@ -477,6 +478,7 @@ app.get("/api/servers/:id/health", async (req, res) => {
     ]);
 
     if (servers.length === 0) {
+      console.log("Server not found:", id);
       return res.status(404).json({
         success: false,
         error: "Server not found",
@@ -484,9 +486,13 @@ app.get("/api/servers/:id/health", async (req, res) => {
     }
 
     const server = servers[0];
+    console.log("Checking health for server:", server);
 
     // Try to ping the server
     try {
+      console.log(
+        `Attempting to connect to http://${server.ip_address}:${server.port}/health`
+      );
       const response = await fetch(
         `http://${server.ip_address}:${server.port}/health`,
         {
@@ -494,34 +500,25 @@ app.get("/api/servers/:id/health", async (req, res) => {
         }
       );
 
+      console.log("Health check response status:", response.status);
+
       if (response.ok) {
-        // Get the current metrics
-        const [metrics] = await db.query(
-          `SELECT * FROM server_metrics 
-           WHERE server_id = ? 
-           ORDER BY timestamp DESC 
-           LIMIT 1`,
-          [id]
-        );
+        const healthData = await response.json();
+        console.log("Health data received:", healthData);
 
         // Update server status in database
         await db.query(
           `UPDATE server_uptime 
-           SET status = 'online', last_checked = NOW()
+           SET status = 'online', last_checked = NOW(), uptime = uptime + ?
            WHERE server_id = ?`,
-          [id]
+          [60, id]
         );
 
         return res.json({
           success: true,
           status: "online",
           lastChecked: new Date(),
-          metrics: metrics[0] || {
-            cpu_usage: 0,
-            memory_usage: 0,
-            disk_usage: 0,
-            network_usage: 0,
-          },
+          system: healthData,
         });
       }
     } catch (error) {
@@ -529,6 +526,7 @@ app.get("/api/servers/:id/health", async (req, res) => {
     }
 
     // If we reach here, server is offline
+    console.log("Server is offline, updating status");
     await db.query(
       `UPDATE server_uptime 
        SET status = 'offline', last_checked = NOW()
@@ -540,12 +538,7 @@ app.get("/api/servers/:id/health", async (req, res) => {
       success: true,
       status: "offline",
       lastChecked: new Date(),
-      metrics: {
-        cpu_usage: 0,
-        memory_usage: 0,
-        disk_usage: 0,
-        network_usage: 0,
-      },
+      system: null,
     });
   } catch (error) {
     console.error("Error checking server health:", error);
@@ -809,79 +802,6 @@ app.post("/api/servers", async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || "Failed to create server",
-    });
-  }
-});
-
-// Add this endpoint for checking server health
-app.get("/api/servers/:id/health", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Get server details
-    const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [
-      id,
-    ]);
-
-    if (servers.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "Server not found",
-      });
-    }
-
-    const server = servers[0];
-
-    // Try to ping the server
-    try {
-      const response = await fetch(
-        `http://${server.ip_address}:${server.port}/health`,
-        {
-          timeout: 5000, // 5 seconds timeout
-        }
-      );
-
-      if (response.ok) {
-        // Update server status in database
-        await db.query(
-          `UPDATE server_uptime 
-           SET status = 'online', last_checked = NOW(), uptime = uptime + ?
-           WHERE server_id = ?`,
-          [60, id] // Assuming we check every minute
-        );
-
-        const systemInfo = await response.json();
-
-        return res.json({
-          success: true,
-          status: "online",
-          lastChecked: new Date(),
-          system: systemInfo,
-        });
-      }
-    } catch (error) {
-      console.error(`Failed to ping server ${id}:`, error);
-    }
-
-    // If we reach here, server is offline
-    await db.query(
-      `UPDATE server_uptime 
-       SET status = 'offline', last_checked = NOW()
-       WHERE server_id = ?`,
-      [id]
-    );
-
-    return res.json({
-      success: true,
-      status: "offline",
-      lastChecked: new Date(),
-      system: null,
-    });
-  } catch (error) {
-    console.error("Error checking server health:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to check server health",
     });
   }
 });
