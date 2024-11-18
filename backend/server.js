@@ -893,17 +893,22 @@ app.get("/api/servers/:id/metrics", async (req, res) => {
   }
 });
 
-// Add this endpoint to receive metrics from Python agent
+// Update the metrics endpoint
 app.post("/api/metrics", async (req, res) => {
   try {
     const metrics = req.body;
-    const serverId = metrics.server_id; // Add server_id to Python agent's metrics
+    const serverId = metrics.server_id;
 
     // Store metrics in database
     await db.query(
       `INSERT INTO server_metrics (
-        id, server_id, cpu_usage, memory_usage, 
-        disk_usage, network_usage, timestamp
+        id, 
+        server_id, 
+        cpu_usage, 
+        memory_usage, 
+        disk_usage, 
+        network_usage,
+        timestamp
       ) VALUES (UUID(), ?, ?, ?, ?, ?, NOW())`,
       [
         serverId,
@@ -919,7 +924,12 @@ app.post("/api/metrics", async (req, res) => {
     for (const process of metrics.processes) {
       await db.query(
         `INSERT INTO server_processes (
-          server_id, pid, name, cpu_usage, memory_usage, timestamp
+          server_id, 
+          pid, 
+          name, 
+          cpu_usage, 
+          memory_usage,
+          timestamp
         ) VALUES (?, ?, ?, ?, ?, NOW())`,
         [
           serverId,
