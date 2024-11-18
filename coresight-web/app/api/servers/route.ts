@@ -66,7 +66,15 @@ export async function POST(req: Request) {
       [serverId]
     );
 
-    return new NextResponse("Server created successfully", { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Server created successfully",
+      },
+      {
+        status: 201,
+      }
+    );
   } catch (error) {
     console.error("Error creating server:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Settings, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface Server {
   id: string;
@@ -28,36 +29,38 @@ interface Server {
 export function ServerList() {
   const [servers, setServers] = useState<Server[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  const fetchServers = async () => {
+    try {
+      const response = await fetch("/api/servers");
+      if (!response.ok) throw new Error("Failed to fetch servers");
+      const data = await response.json();
+      setServers(data);
+    } catch (error) {
+      console.error("Error fetching servers:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchServers = async () => {
-      try {
-        const response = await fetch("/api/servers");
-        if (!response.ok) throw new Error("Failed to fetch servers");
-        const data = await response.json();
-        setServers(data);
-      } catch (error) {
-        console.error("Error fetching servers:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchServers();
     // Poll for updates every 30 seconds
     const interval = setInterval(fetchServers, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const formatUptime = (uptime: number) => {
-    const days = Math.floor(uptime / 86400);
-    const hours = Math.floor((uptime % 86400) / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
+  // Use a mutation observer to detect DOM changes that might indicate route changes
+  useEffect(() => {
+    const observer = new MutationObserver(fetchServers);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
 
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-  };
+    return () => observer.disconnect();
+  }, []);
 
   if (isLoading) {
     return <ServerListSkeleton />;
@@ -141,6 +144,16 @@ function StatusBadge({ status }: { status: Server["status"] }) {
       {labels[status]}
     </Badge>
   );
+}
+
+function formatUptime(uptime: number) {
+  const days = Math.floor(uptime / 86400);
+  const hours = Math.floor((uptime % 86400) / 3600);
+  const minutes = Math.floor((uptime % 3600) / 60);
+
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 function ServerListSkeleton() {
