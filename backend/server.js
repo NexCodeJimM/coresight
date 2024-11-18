@@ -7,7 +7,6 @@ const nodemailer = require("nodemailer");
 const mysql = require("mysql2");
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
-const fetch = require("node-fetch");
 
 const app = express();
 
