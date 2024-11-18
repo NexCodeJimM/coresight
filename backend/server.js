@@ -893,13 +893,14 @@ app.get("/api/servers/:id/metrics", async (req, res) => {
   }
 });
 
-// Update the metrics endpoint
+// Update the metrics endpoint to handle ID generation
 app.post("/api/metrics", async (req, res) => {
   try {
     const metrics = req.body;
     const serverId = metrics.server_id;
+    const metricId = require("crypto").randomUUID(); // Generate UUID for the metric
 
-    // Store metrics in database
+    // Store metrics in database with generated ID
     await db.query(
       `INSERT INTO server_metrics (
         id, 
@@ -909,8 +910,9 @@ app.post("/api/metrics", async (req, res) => {
         disk_usage, 
         network_usage,
         timestamp
-      ) VALUES (UUID(), ?, ?, ?, ?, ?, NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [
+        metricId, // Use the generated UUID
         serverId,
         metrics.cpu.cpu_percent,
         metrics.memory.percent,
@@ -920,18 +922,21 @@ app.post("/api/metrics", async (req, res) => {
       ]
     );
 
-    // Store process information
+    // Store process information with generated IDs
     for (const process of metrics.processes) {
+      const processId = require("crypto").randomUUID(); // Generate UUID for each process
       await db.query(
         `INSERT INTO server_processes (
+          id,
           server_id, 
           pid, 
           name, 
           cpu_usage, 
           memory_usage,
           timestamp
-        ) VALUES (?, ?, ?, ?, ?, NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
         [
+          processId, // Use the generated UUID
           serverId,
           process.pid,
           process.name,
