@@ -758,6 +758,98 @@ app.get("/api/dashboard/metrics", async (req, res) => {
   }
 });
 
+// Add this endpoint for fetching servers
+app.get("/api/servers", async (req, res) => {
+  try {
+    console.log("Fetching servers...");
+
+    const [servers] = await db.query(`
+      SELECT 
+        s.*,
+        su.uptime,
+        su.status as current_status,
+        su.last_checked as last_seen
+      FROM servers s
+      LEFT JOIN server_uptime su ON s.id = su.server_id
+      ORDER BY s.created_at DESC
+    `);
+
+    console.log("Servers fetched:", servers);
+
+    res.json({
+      success: true,
+      data: servers,
+    });
+  } catch (error) {
+    console.error("Error fetching servers:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to fetch servers",
+    });
+  }
+});
+
+// Add this endpoint for creating servers
+app.post("/api/servers", async (req, res) => {
+  try {
+    console.log("Creating server with data:", req.body);
+
+    const {
+      name,
+      ip_address,
+      hostname,
+      description,
+      port,
+      org,
+      bucket,
+      token,
+    } = req.body;
+
+    // Generate UUID for server ID
+    const serverId = uuidv4();
+
+    // Insert server into database
+    await db.query(
+      `INSERT INTO servers (
+        id, name, ip_address, hostname, description, 
+        port, org, bucket, token, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW())`,
+      [
+        serverId,
+        name,
+        ip_address,
+        hostname,
+        description,
+        port,
+        org,
+        bucket,
+        token,
+      ]
+    );
+
+    // Initialize server uptime record
+    await db.query(
+      `INSERT INTO server_uptime (server_id, status, last_checked, uptime)
+       VALUES (?, 'offline', NOW(), 0)`,
+      [serverId]
+    );
+
+    console.log("Server created successfully with ID:", serverId);
+
+    res.status(201).json({
+      success: true,
+      message: "Server created successfully",
+      serverId,
+    });
+  } catch (error) {
+    console.error("Error creating server:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to create server",
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
