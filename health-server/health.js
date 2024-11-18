@@ -1,1 +1,1 @@
-const PORT = process.env.HEALTH_PORT || 3001;
+const PORT = process.env.HEALTH_PORT || 3002;
