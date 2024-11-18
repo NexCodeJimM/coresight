@@ -218,23 +218,27 @@ class SystemMonitor:
     
     def collect_metrics(self):
         if not self.server_id:
-            logger.error("No server ID available. Attempting to fetch...")
-            self.fetch_server_id()
-            if not self.server_id:
-                logger.error("Still no server ID. Skipping metrics collection.")
-                return None
+            logger.error("No server ID available. Skipping metrics collection.")
+            return None
 
+        # Collect metrics in the format that works with the endpoint
         metrics = {
             "server_id": self.server_id,
-            "timestamp": datetime.now().isoformat(),
-            "hostname": self.hostname,
-            "ip_address": self.ip_address,
-            "cpu": self.get_cpu_metrics(),
-            "memory": self.get_memory_metrics(),
-            "disk": self.get_disk_metrics(),
-            "network": self.get_network_metrics(),
-            "processes": self.get_process_info()
+            "cpu": {
+                "cpu_percent": psutil.cpu_percent(interval=1)
+            },
+            "memory": {
+                "percent": psutil.virtual_memory().percent
+            },
+            "disk": {
+                "percent": psutil.disk_usage('/').percent
+            },
+            "network": {
+                "bytes_sent": psutil.net_io_counters().bytes_sent,
+                "bytes_recv": psutil.net_io_counters().bytes_recv
+            }
         }
+        
         logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
         return metrics
     
