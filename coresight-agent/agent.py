@@ -1,6 +1,5 @@
 import psutil
 import socket
-import netifaces
 import json
 import time
 import requests
@@ -10,42 +9,75 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from dotenv import load_dotenv
+import sys
 
 # Load environment variables
 load_dotenv()
 
-# Set up logging
+# Set up logging with more detailed format
 logging.basicConfig(
-    handlers=[RotatingFileHandler('agent.log', maxBytes=1000000, backupCount=5)],
+    handlers=[
+        RotatingFileHandler(
+            'agent.log', 
+            maxBytes=1000000, 
+            backupCount=5,
+            mode='a'  # Append mode
+        )
+    ],
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
 )
 logger = logging.getLogger('CoreSightAgent')
 
+# Add console handler for immediate feedback
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+logger.addHandler(console_handler)
+
 class SystemMonitor:
     def __init__(self):
-        self.hostname = socket.gethostname()
-        self.ip_address = self.get_ip_address()
-        self.server_id = None
-        
-        # Get backend URL from environment variables
-        backend_host = os.getenv('BACKEND_HOST', '143.198.84.214')
-        backend_port = os.getenv('BACKEND_PORT', '3000')
-        self.backend_url = f"http://{backend_host}:{backend_port}/api/metrics"
-        
-        logger.info(f"Agent running with hostname: {self.hostname}, IP: {self.ip_address}")
-        logger.info(f"Using backend URL: {self.backend_url}")
-        
-        # Initialize database connection
-        self.db_config = {
-            'host': os.getenv('DB_HOST', '143.198.84.214'),
-            'user': os.getenv('DB_USER', 'coresight'),
-            'password': os.getenv('DB_PASSWORD', 'RJmendoza21!'),
-            'database': os.getenv('DB_NAME', 'efi')
-        }
-        
-        # Get server ID on startup
-        self.fetch_server_id()
+        try:
+            self.hostname = socket.gethostname()
+            self.ip_address = self.get_ip_address()
+            self.server_id = None
+            
+            # Get backend URL from environment variables with defaults
+            backend_host = os.getenv('BACKEND_HOST', '143.198.84.214')
+            backend_port = os.getenv('BACKEND_PORT', '3000')
+            self.backend_url = f"http://{backend_host}:{backend_port}/api/metrics"
+            
+            logger.info(f"Initializing agent with hostname: {self.hostname}, IP: {self.ip_address}")
+            logger.info(f"Using backend URL: {self.backend_url}")
+            
+            # Initialize database connection config
+            self.db_config = {
+                'host': os.getenv('DB_HOST', '143.198.84.214'),
+                'user': os.getenv('DB_USER', 'coresight'),
+                'password': os.getenv('DB_PASSWORD', 'RJmendoza21!'),
+                'database': os.getenv('DB_NAME', 'efi'),
+                'port': int(os.getenv('DB_PORT', '3306'))
+            }
+            
+            logger.info("Database configuration loaded")
+            
+            # Test database connection
+            self.test_db_connection()
+            
+            # Get server ID on startup
+            self.fetch_server_id()
+            
+        except Exception as e:
+            logger.error(f"Error initializing SystemMonitor: {e}", exc_info=True)
+            raise
+
+    def test_db_connection(self):
+        try:
+            conn = mysql.connector.connect(**self.db_config)
+            logger.info("Database connection test successful")
+            conn.close()
+        except Exception as e:
+            logger.error(f"Database connection test failed: {e}", exc_info=True)
+            raise
 
     def get_ip_address(self):
         try:
@@ -240,9 +272,14 @@ class SystemMonitor:
                     self.send_metrics(metrics)
                 time.sleep(10)  # Send metrics every 10 seconds
             except Exception as e:
-                logger.error(f"Error in main loop: {e}")
-                time.sleep(10)
+                logger.error(f"Error in main loop: {e}", exc_info=True)
+                time.sleep(10)  # Wait before retrying
 
 if __name__ == "__main__":
-    monitor = SystemMonitor()
-    monitor.run()
+    try:
+        logger.info("Starting CoreSight Agent...")
+        monitor = SystemMonitor()
+        monitor.run()
+    except Exception as e:
+        logger.error(f"Fatal error in CoreSight Agent: {e}", exc_info=True)
+        sys.exit(1)
