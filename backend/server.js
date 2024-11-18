@@ -893,12 +893,12 @@ app.get("/api/servers/:id/metrics", async (req, res) => {
   }
 });
 
-// Update the metrics endpoint to handle ID generation
+// Update the metrics endpoint to handle missing processes
 app.post("/api/metrics", async (req, res) => {
   try {
     const metrics = req.body;
     const serverId = metrics.server_id;
-    const metricId = require("crypto").randomUUID(); // Generate UUID for the metric
+    const metricId = require("crypto").randomUUID();
 
     // Store metrics in database with generated ID
     await db.query(
@@ -912,38 +912,40 @@ app.post("/api/metrics", async (req, res) => {
         timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
       [
-        metricId, // Use the generated UUID
+        metricId,
         serverId,
         metrics.cpu.cpu_percent,
         metrics.memory.percent,
         metrics.disk.percent,
         (metrics.network.bytes_sent + metrics.network.bytes_recv) /
-          (1024 * 1024), // Convert to MB
+          (1024 * 1024),
       ]
     );
 
-    // Store process information with generated IDs
-    for (const process of metrics.processes) {
-      const processId = require("crypto").randomUUID(); // Generate UUID for each process
-      await db.query(
-        `INSERT INTO server_processes (
-          id,
-          server_id, 
-          pid, 
-          name, 
-          cpu_usage, 
-          memory_usage,
-          timestamp
-        ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          processId, // Use the generated UUID
-          serverId,
-          process.pid,
-          process.name,
-          process.cpu_percent,
-          process.memory_percent,
-        ]
-      );
+    // Only store processes if they exist
+    if (metrics.processes && Array.isArray(metrics.processes)) {
+      for (const process of metrics.processes) {
+        const processId = require("crypto").randomUUID();
+        await db.query(
+          `INSERT INTO server_processes (
+            id,
+            server_id, 
+            pid, 
+            name, 
+            cpu_usage, 
+            memory_usage,
+            timestamp
+          ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            processId,
+            serverId,
+            process.pid,
+            process.name,
+            process.cpu_percent,
+            process.memory_percent,
+          ]
+        );
+      }
     }
 
     res.json({ success: true });

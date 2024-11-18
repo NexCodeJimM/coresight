@@ -354,3 +354,7 @@ FOREIGN KEY (server_id) REFERENCES servers(id)
 -- Add indexes for better performance
 CREATE INDEX idx_server_metrics_timestamp ON server_metrics(server_id, timestamp);
 CREATE INDEX idx_server_processes_usage ON server_processes(server_id, cpu_usage);
+
+# Activate the virtual environment
+
+source venv/bin/activate
