@@ -19,7 +19,7 @@ app.get("/health", async (req, res) => {
       si.currentLoad(),
       si.mem(),
       si.fsSize(),
-      si.networkStats(),
+      si.networkStats("eth0"), // Specify the network interface
       si.processes(),
     ]);
 
@@ -31,6 +31,8 @@ app.get("/health", async (req, res) => {
 
     if (previousNetworkStats && networkStats[0]) {
       const timeDiff = (currentTimestamp - previousTimestamp) / 1000; // Convert to seconds
+
+      // Calculate bytes transferred since last check
       const bytesIn = networkStats[0].rx_bytes - previousNetworkStats.rx_bytes;
       const bytesOut = networkStats[0].tx_bytes - previousNetworkStats.tx_bytes;
 
@@ -38,6 +40,15 @@ app.get("/health", async (req, res) => {
       downloadRate = bytesIn / timeDiff / (1024 * 1024);
       uploadRate = bytesOut / timeDiff / (1024 * 1024);
       totalRate = (bytesIn + bytesOut) / timeDiff / (1024 * 1024);
+
+      console.log("Network Stats:", {
+        timeDiff,
+        bytesIn,
+        bytesOut,
+        downloadRate,
+        uploadRate,
+        totalRate,
+      });
     }
 
     // Update previous stats
@@ -71,13 +82,19 @@ app.get("/health", async (req, res) => {
         upload_rate: Number(uploadRate.toFixed(2)), // MB/s
         download_rate: Number(downloadRate.toFixed(2)), // MB/s
         total_rate: Number(totalRate.toFixed(2)), // MB/s
-        interfaces: networkStats.map((net) => ({
-          interface: net.iface,
-          rx_bytes: net.rx_bytes,
-          tx_bytes: net.tx_bytes,
-          rx_sec: Number((net.rx_sec / (1024 * 1024)).toFixed(2)), // Convert to MB/s
-          tx_sec: Number((net.tx_sec / (1024 * 1024)).toFixed(2)), // Convert to MB/s
-        })),
+        stats: networkStats[0]
+          ? {
+              interface: networkStats[0].iface,
+              rx_bytes: networkStats[0].rx_bytes,
+              tx_bytes: networkStats[0].tx_bytes,
+              rx_sec: Number(
+                (networkStats[0].rx_sec / (1024 * 1024)).toFixed(2)
+              ), // MB/s
+              tx_sec: Number(
+                (networkStats[0].tx_sec / (1024 * 1024)).toFixed(2)
+              ), // MB/s
+            }
+          : null,
       },
       processes: processes.list
         .map((proc) => ({
@@ -90,6 +107,7 @@ app.get("/health", async (req, res) => {
       timestamp: new Date(),
     };
 
+    console.log("Sending metrics:", metrics.network);
     res.json(metrics);
   } catch (error) {
     console.error("Health check error:", error);
