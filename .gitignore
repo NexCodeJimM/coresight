@@ -1,4 +1,7 @@
 requirements.md
 API_Tokens.txt
 terminal.txt
-/SQL/efi.sql
+SQL/efi.sql
+
+.env
+.DS_Store

@@ -4,9 +4,15 @@ import netifaces
 import json
 import time
 import requests
+import mysql.connector
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(
@@ -19,9 +25,65 @@ logger = logging.getLogger('CoreSightAgent')
 class SystemMonitor:
     def __init__(self):
         self.hostname = socket.gethostname()
-        logger.info(f"Agent running with hostname: {self.hostname}")
-        self.backend_url = "http://143.198.84.214:3000/api/metrics"
-        self.server_id = "YOUR_SERVER_ID"  # Set this to your server's ID
+        self.ip_address = self.get_ip_address()
+        self.server_id = None
+        
+        # Get backend URL from environment variables
+        backend_host = os.getenv('BACKEND_HOST', '143.198.84.214')
+        backend_port = os.getenv('BACKEND_PORT', '3000')
+        self.backend_url = f"http://{backend_host}:{backend_port}/api/metrics"
+        
+        logger.info(f"Agent running with hostname: {self.hostname}, IP: {self.ip_address}")
+        logger.info(f"Using backend URL: {self.backend_url}")
+        
+        # Initialize database connection
+        self.db_config = {
+            'host': os.getenv('DB_HOST', '143.198.84.214'),
+            'user': os.getenv('DB_USER', 'coresight'),
+            'password': os.getenv('DB_PASSWORD', 'RJmendoza21!'),
+            'database': os.getenv('DB_NAME', 'efi')
+        }
+        
+        # Get server ID on startup
+        self.fetch_server_id()
+
+    def get_ip_address(self):
+        try:
+            # Get the IP address of the default network interface
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip_address = s.getsockname()[0]
+            s.close()
+            return ip_address
+        except Exception as e:
+            logger.error(f"Error getting IP address: {e}")
+            return None
+
+    def fetch_server_id(self):
+        try:
+            conn = mysql.connector.connect(**self.db_config)
+            cursor = conn.cursor(dictionary=True)
+            
+            # Try to find server by hostname first, then IP address
+            cursor.execute("""
+                SELECT id FROM servers 
+                WHERE hostname = %s OR ip_address = %s
+                LIMIT 1
+            """, (self.hostname, self.ip_address))
+            
+            result = cursor.fetchone()
+            
+            if result:
+                self.server_id = result['id']
+                logger.info(f"Found server ID: {self.server_id}")
+            else:
+                logger.error("Server not found in database")
+                
+            cursor.close()
+            conn.close()
+            
+        except Exception as e:
+            logger.error(f"Error fetching server ID: {e}")
     
     def get_cpu_metrics(self):
         try:
@@ -123,10 +185,18 @@ class SystemMonitor:
             return []
     
     def collect_metrics(self):
+        if not self.server_id:
+            logger.error("No server ID available. Attempting to fetch...")
+            self.fetch_server_id()
+            if not self.server_id:
+                logger.error("Still no server ID. Skipping metrics collection.")
+                return None
+
         metrics = {
-            "server_id": self.server_id,  # Add server_id to metrics
+            "server_id": self.server_id,
             "timestamp": datetime.now().isoformat(),
             "hostname": self.hostname,
+            "ip_address": self.ip_address,
             "cpu": self.get_cpu_metrics(),
             "memory": self.get_memory_metrics(),
             "disk": self.get_disk_metrics(),
@@ -137,6 +207,9 @@ class SystemMonitor:
         return metrics
     
     def send_metrics(self, metrics):
+        if not metrics:
+            return
+
         try:
             response = requests.post(
                 self.backend_url,
@@ -151,13 +224,24 @@ class SystemMonitor:
                 logger.error(f"Server response: {e.response.text}")
 
     def run(self):
+        retry_interval = 60  # Retry getting server ID every minute if not found
         while True:
             try:
+                if not self.server_id:
+                    logger.info("No server ID, attempting to fetch...")
+                    self.fetch_server_id()
+                    if not self.server_id:
+                        logger.error(f"Server ID not found. Retrying in {retry_interval} seconds...")
+                        time.sleep(retry_interval)
+                        continue
+
                 metrics = self.collect_metrics()
-                self.send_metrics(metrics)
+                if metrics:
+                    self.send_metrics(metrics)
+                time.sleep(10)  # Send metrics every 10 seconds
             except Exception as e:
                 logger.error(f"Error in main loop: {e}")
-            time.sleep(10)  # Send metrics every 10 seconds
+                time.sleep(10)
 
 if __name__ == "__main__":
     monitor = SystemMonitor()
