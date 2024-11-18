@@ -221,23 +221,28 @@ class SystemMonitor:
             logger.error("No server ID available. Skipping metrics collection.")
             return None
 
-        # Add timestamp to metrics
+        # Get memory info
+        memory = psutil.virtual_memory()
+        # Get disk info
+        disk = psutil.disk_usage('/')
+        # Get network info
+        network = psutil.net_io_counters()
+
+        # Collect metrics in the format that matches the database schema
         metrics = {
             "server_id": self.server_id,
-            "timestamp": datetime.now().isoformat(),  # Add timestamp here
-            "cpu": {
-                "cpu_percent": psutil.cpu_percent(interval=1)
-            },
-            "memory": {
-                "percent": psutil.virtual_memory().percent
-            },
-            "disk": {
-                "percent": psutil.disk_usage('/').percent
-            },
-            "network": {
-                "bytes_sent": psutil.net_io_counters().bytes_sent,
-                "bytes_recv": psutil.net_io_counters().bytes_recv
-            }
+            "timestamp": datetime.now().isoformat(),
+            "cpu_usage": psutil.cpu_percent(interval=1),
+            "memory_usage": memory.percent,
+            "memory_total": memory.total,
+            "memory_used": memory.used,
+            "disk_usage": disk.percent,
+            "disk_total": disk.total,
+            "disk_used": disk.used,
+            "network_usage": (network.bytes_sent + network.bytes_recv) / (1024 * 1024),  # Total network in MB/s
+            "network_in": network.bytes_recv / (1024 * 1024),  # Network in in MB/s
+            "network_out": network.bytes_sent / (1024 * 1024),  # Network out in MB/s
+            "temperature": None  # Add temperature if you have a way to measure it
         }
         
         logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))

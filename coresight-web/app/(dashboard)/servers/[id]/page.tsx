@@ -30,15 +30,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface NetworkUsage {
+  upload_rate: number;
+  download_rate: number;
+  total_rate: number;
+}
+
 interface Metrics {
   cpu_usage: number;
   memory_usage: number;
   disk_usage: number;
-  network: {
-    upload_rate: number;
-    download_rate: number;
-    total_rate: number;
-  };
+  network_usage: NetworkUsage;
   timestamp: string;
 }
 
@@ -64,9 +66,10 @@ export default function ServerInformation({
       try {
         const response = await fetch(`/api/servers/${params.id}/metrics`);
         const data = await response.json();
+
         if (data.success) {
+          setCurrentMetrics(data.current);
           setMetrics(data.history || []);
-          setCurrentMetrics(data.current || null);
         }
       } catch (error) {
         console.error("Error fetching metrics:", error);
@@ -91,8 +94,8 @@ export default function ServerInformation({
     fetchMetrics();
     fetchProcesses();
 
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchMetrics, 30000);
+    // Poll for updates every 10 seconds
+    const interval = setInterval(fetchMetrics, 10000);
     return () => clearInterval(interval);
   }, [params.id]);
 
@@ -159,10 +162,14 @@ export default function ServerInformation({
           value={
             <div className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">
-                ↑ {currentMetrics?.network?.upload_rate?.toFixed(1) || "0"} MB/s
+                ↑{" "}
+                {currentMetrics?.network_usage?.upload_rate?.toFixed(1) || "0"}{" "}
+                MB/s
               </span>
               <span className="text-sm text-muted-foreground">
-                ↓ {currentMetrics?.network?.download_rate?.toFixed(1) || "0"}{" "}
+                ↓{" "}
+                {currentMetrics?.network_usage?.download_rate?.toFixed(1) ||
+                  "0"}{" "}
                 MB/s
               </span>
             </div>
@@ -258,7 +265,7 @@ export default function ServerInformation({
                 />
                 <Line
                   type="monotone"
-                  dataKey="network.upload_rate"
+                  dataKey="network_usage.upload_rate"
                   stroke="#8884d8"
                   strokeWidth={2}
                   dot={false}
@@ -266,7 +273,7 @@ export default function ServerInformation({
                 />
                 <Line
                   type="monotone"
-                  dataKey="network.download_rate"
+                  dataKey="network_usage.download_rate"
                   stroke="#82ca9d"
                   strokeWidth={2}
                   dot={false}

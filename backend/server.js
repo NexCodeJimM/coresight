@@ -893,36 +893,50 @@ app.get("/api/servers/:id/metrics", async (req, res) => {
   }
 });
 
-// Update the metrics endpoint to handle missing processes
+// Update the metrics endpoint to store all values
 app.post("/api/metrics", async (req, res) => {
   try {
     const metrics = req.body;
     const serverId = metrics.server_id;
     const metricId = require("crypto").randomUUID();
 
-    // Store metrics in database with generated ID
+    // Store complete metrics in database
     await db.query(
       `INSERT INTO server_metrics (
         id, 
         server_id, 
         cpu_usage, 
-        memory_usage, 
-        disk_usage, 
+        memory_usage,
+        memory_total,
+        memory_used,
+        disk_usage,
+        disk_total,
+        disk_used,
         network_usage,
+        network_in,
+        network_out,
+        temperature,
         timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         metricId,
         serverId,
         metrics.cpu.cpu_percent,
         metrics.memory.percent,
+        metrics.memory.total,
+        metrics.memory.used,
         metrics.disk.percent,
+        metrics.disk.total,
+        metrics.disk.used,
         (metrics.network.bytes_sent + metrics.network.bytes_recv) /
-          (1024 * 1024),
+          (1024 * 1024), // Total network in MB/s
+        metrics.network.bytes_recv / (1024 * 1024), // Network in in MB/s
+        metrics.network.bytes_sent / (1024 * 1024), // Network out in MB/s
+        metrics.temperature || null,
       ]
     );
 
-    // Only store processes if they exist
+    // Store process information
     if (metrics.processes && Array.isArray(metrics.processes)) {
       for (const process of metrics.processes) {
         const processId = require("crypto").randomUUID();
