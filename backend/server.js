@@ -806,6 +806,94 @@ app.post("/api/servers", async (req, res) => {
   }
 });
 
+// Add this endpoint for server metrics
+app.get("/api/servers/:id/metrics", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get current metrics
+    const [currentMetrics] = await db.query(
+      `SELECT * FROM server_metrics 
+       WHERE server_id = ? 
+       ORDER BY timestamp DESC 
+       LIMIT 1`,
+      [id]
+    );
+
+    // Get historical metrics (last 24 hours)
+    const [historicalMetrics] = await db.query(
+      `SELECT * FROM server_metrics 
+       WHERE server_id = ? 
+       AND timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+       ORDER BY timestamp ASC`,
+      [id]
+    );
+
+    // Get server details to check if it exists
+    const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [
+      id,
+    ]);
+
+    if (servers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found",
+      });
+    }
+
+    // Try to get real-time metrics from the server
+    try {
+      const server = servers[0];
+      const response = await fetch(
+        `http://${server.ip_address}:${server.port}/health`
+      );
+
+      if (response.ok) {
+        const healthData = await response.json();
+
+        // Store the new metrics
+        await db.query(
+          `INSERT INTO server_metrics (
+            id, server_id, cpu_usage, memory_usage, 
+            disk_usage, network_usage, timestamp
+          ) VALUES (UUID(), ?, ?, ?, ?, ?, NOW())`,
+          [
+            id,
+            healthData.cpu.usage,
+            healthData.memory.usage,
+            healthData.disk.usage,
+            healthData.network?.usage || 0,
+          ]
+        );
+
+        // Update currentMetrics with the latest data
+        currentMetrics[0] = {
+          cpu_usage: healthData.cpu.usage,
+          memory_usage: healthData.memory.usage,
+          disk_usage: healthData.disk.usage,
+          network_usage: healthData.network?.usage || 0,
+          timestamp: new Date(),
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching real-time metrics:", error);
+    }
+
+    return res.json({
+      success: true,
+      current: currentMetrics[0] || null,
+      history: historicalMetrics,
+    });
+  } catch (error) {
+    console.error("Error fetching server metrics:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch server metrics",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
