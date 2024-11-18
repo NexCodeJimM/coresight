@@ -900,7 +900,7 @@ app.post("/api/metrics", async (req, res) => {
     const serverId = metrics.server_id;
     const metricId = require("crypto").randomUUID();
 
-    // Store complete metrics in database
+    // Store metrics in database with generated ID
     await db.query(
       `INSERT INTO server_metrics (
         id, 
@@ -915,9 +915,8 @@ app.post("/api/metrics", async (req, res) => {
         network_usage,
         network_in,
         network_out,
-        temperature,
         timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         metricId,
         serverId,
@@ -932,35 +931,8 @@ app.post("/api/metrics", async (req, res) => {
           (1024 * 1024), // Total network in MB/s
         metrics.network.bytes_recv / (1024 * 1024), // Network in in MB/s
         metrics.network.bytes_sent / (1024 * 1024), // Network out in MB/s
-        metrics.temperature || null,
       ]
     );
-
-    // Store process information
-    if (metrics.processes && Array.isArray(metrics.processes)) {
-      for (const process of metrics.processes) {
-        const processId = require("crypto").randomUUID();
-        await db.query(
-          `INSERT INTO server_processes (
-            id,
-            server_id, 
-            pid, 
-            name, 
-            cpu_usage, 
-            memory_usage,
-            timestamp
-          ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-          [
-            processId,
-            serverId,
-            process.pid,
-            process.name,
-            process.cpu_percent,
-            process.memory_percent,
-          ]
-        );
-      }
-    }
 
     res.json({ success: true });
   } catch (error) {

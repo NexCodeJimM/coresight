@@ -228,23 +228,30 @@ class SystemMonitor:
         # Get network info
         network = psutil.net_io_counters()
 
-        # Collect metrics in the format that matches the database schema
+        # Format metrics to match backend expectations
         metrics = {
             "server_id": self.server_id,
             "timestamp": datetime.now().isoformat(),
-            "cpu_usage": psutil.cpu_percent(interval=1),
-            "memory_usage": memory.percent,
-            "memory_total": memory.total,
-            "memory_used": memory.used,
-            "disk_usage": disk.percent,
-            "disk_total": disk.total,
-            "disk_used": disk.used,
-            "network_usage": (network.bytes_sent + network.bytes_recv) / (1024 * 1024),  # Total network in MB/s
-            "network_in": network.bytes_recv / (1024 * 1024),  # Network in in MB/s
-            "network_out": network.bytes_sent / (1024 * 1024),  # Network out in MB/s
-            "temperature": None  # Add temperature if you have a way to measure it
+            "cpu": {
+                "cpu_percent": psutil.cpu_percent(interval=1)
+            },
+            "memory": {
+                "percent": memory.percent,
+                "total": memory.total,
+                "used": memory.used
+            },
+            "disk": {
+                "percent": disk.percent,
+                "total": disk.total,
+                "used": disk.used
+            },
+            "network": {
+                "bytes_sent": network.bytes_sent,
+                "bytes_recv": network.bytes_recv
+            }
         }
         
+        # Log the metrics for debugging
         logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
         return metrics
     
