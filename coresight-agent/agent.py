@@ -81,6 +81,7 @@ class SystemMonitor:
 
     def get_ip_address(self):
         try:
+            # Get the IP address of the default network interface
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
             ip_address = s.getsockname()[0]
@@ -95,6 +96,7 @@ class SystemMonitor:
             conn = mysql.connector.connect(**self.db_config)
             cursor = conn.cursor(dictionary=True)
             
+            # Try to find server by hostname first, then IP address
             cursor.execute("""
                 SELECT id FROM servers 
                 WHERE hostname = %s OR ip_address = %s
@@ -200,11 +202,12 @@ class SystemMonitor:
             for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
                 try:
                     info = proc.info
+                    # Ensure numeric values are valid
                     processes.append({
                         "pid": int(info['pid']),
                         "name": str(info['name']),
-                        "cpu_usage": float(info['cpu_percent'] or 0.0),
-                        "memory_usage": float(info['memory_percent'] or 0.0)
+                        "cpu_percent": float(info['cpu_percent'] or 0.0),
+                        "memory_percent": float(info['memory_percent'] or 0.0)
                     })
                 except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
                     continue
@@ -218,49 +221,39 @@ class SystemMonitor:
             logger.error("No server ID available. Skipping metrics collection.")
             return None
 
-        try:
-            # Get all metrics
-            memory = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
-            network = psutil.net_io_counters()
-            cpu_percent = psutil.cpu_percent(interval=1)
-            processes = self.get_process_info()
+        # Get memory info
+        memory = psutil.virtual_memory()
+        # Get disk info
+        disk = psutil.disk_usage('/')
+        # Get network info
+        network = psutil.net_io_counters()
 
-            # Format metrics to match the health.js format
-            metrics = {
-                "server_id": self.server_id,
-                "timestamp": datetime.now().isoformat(),
-                "status": "online",
-                "uptime": int(time.time() - psutil.boot_time()),
-                "cpu": {
-                    "usage": cpu_percent,
-                    "cores": psutil.cpu_count()
-                },
-                "memory": {
-                    "total": memory.total,
-                    "used": memory.used,
-                    "usage": memory.percent
-                },
-                "disk": {
-                    "total": disk.total,
-                    "used": disk.used,
-                    "usage": disk.percent
-                },
-                "network": {
-                    "bytes_sent": network.bytes_sent,
-                    "bytes_recv": network.bytes_recv,
-                    "upload_rate": network.bytes_sent / (1024 * 1024),  # MB/s
-                    "download_rate": network.bytes_recv / (1024 * 1024)  # MB/s
-                },
-                "processes": processes
+        # Format metrics to match backend expectations
+        metrics = {
+            "server_id": self.server_id,
+            "timestamp": datetime.now().isoformat(),
+            "cpu": {
+                "cpu_percent": psutil.cpu_percent(interval=1)
+            },
+            "memory": {
+                "percent": memory.percent,
+                "total": memory.total,
+                "used": memory.used
+            },
+            "disk": {
+                "percent": disk.percent,
+                "total": disk.total,
+                "used": disk.used
+            },
+            "network": {
+                "bytes_sent": network.bytes_sent,
+                "bytes_recv": network.bytes_recv
             }
-            
-            logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
-            return metrics
-            
-        except Exception as e:
-            logger.error(f"Error collecting metrics: {e}")
-            return None
+        }
+        
+        # Log the metrics for debugging
+        logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
+        return metrics
     
     def send_metrics(self, metrics):
         if not metrics:
@@ -273,7 +266,11 @@ class SystemMonitor:
                 headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
-            logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
+            # Only log timestamp if metrics contains it
+            if 'timestamp' in metrics:
+                logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
+            else:
+                logger.info("Metrics sent successfully")
         except requests.exceptions.RequestException as e:
             logger.error(f"Error sending metrics: {e}")
             if hasattr(e.response, 'text'):
