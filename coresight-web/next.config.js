@@ -7,6 +7,10 @@ const nextConfig = {
         destination: "http://143.198.84.214:3000/health",
       },
       {
+        source: "/api/servers/:id",
+        destination: "http://143.198.84.214:3000/api/servers/:id",
+      },
+      {
         source: "/api/servers/:id/metrics",
         destination: "http://143.198.84.214:3000/api/servers/:id/metrics",
       },

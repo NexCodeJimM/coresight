@@ -945,6 +945,58 @@ app.post("/api/metrics", async (req, res) => {
   }
 });
 
+// Add or update the server details endpoint
+app.get("/api/servers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get server details with uptime status
+    const [servers] = await db.query(
+      `SELECT 
+        s.*,
+        su.status as current_status,
+        su.last_checked as last_seen,
+        su.uptime
+      FROM servers s
+      LEFT JOIN server_uptime su ON s.id = su.server_id
+      WHERE s.id = ?`,
+      [id]
+    );
+
+    if (!servers.length) {
+      return res.status(404).json({
+        success: false,
+        error: "Server not found",
+      });
+    }
+
+    const server = servers[0];
+
+    res.json({
+      success: true,
+      server: {
+        id: server.id,
+        name: server.name,
+        ip_address: server.ip_address,
+        hostname: server.hostname,
+        description: server.description,
+        status: server.current_status || "unknown",
+        last_seen: server.last_seen,
+        uptime: server.uptime || 0,
+        created_at: server.created_at,
+        updated_at: server.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching server details:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch server details",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {

@@ -1,8 +1,10 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   LineChart,
   Line,
@@ -30,159 +32,231 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface NetworkUsage {
-  upload_rate: number;
-  download_rate: number;
-  total_rate: number;
+interface ServerDetails {
+  id: string;
+  name: string;
+  ip_address: string;
+  hostname: string;
+  description: string;
+  status: string;
 }
 
 interface Metrics {
+  id: string;
+  server_id: string;
   cpu_usage: number;
   memory_usage: number;
+  memory_total: number;
+  memory_used: number;
   disk_usage: number;
-  network_usage: NetworkUsage;
+  disk_total: number;
+  disk_used: number;
+  network_usage: number;
+  network_in: number;
+  network_out: number;
+  temperature: number | null;
   timestamp: string;
 }
 
-interface Process {
-  pid: number;
-  name: string;
-  cpu_usage: number;
-  memory_usage: number;
-}
-
-export default function ServerInformation({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function ServerPage({ params }: { params: { id: string } }) {
   const [metrics, setMetrics] = useState<Metrics[]>([]);
   const [currentMetrics, setCurrentMetrics] = useState<Metrics | null>(null);
-  const [processes, setProcesses] = useState<Process[]>([]);
-  const [showProcesses, setShowProcesses] = useState(false);
+  const [serverDetails, setServerDetails] = useState<ServerDetails | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`/api/servers/${params.id}/metrics`);
-        const data = await response.json();
+        setLoading(true);
+        // Fetch server details
+        const detailsResponse = await fetch(`/api/servers/${params.id}`);
+        const detailsData = await detailsResponse.json();
 
-        if (data.success) {
-          setCurrentMetrics(data.current);
-          setMetrics(data.history || []);
+        if (!detailsResponse.ok) {
+          throw new Error(
+            detailsData.error || "Failed to fetch server details"
+          );
         }
-      } catch (error) {
-        console.error("Error fetching metrics:", error);
+
+        setServerDetails(detailsData.server);
+
+        // Fetch metrics
+        const metricsResponse = await fetch(
+          `/api/servers/${params.id}/metrics`
+        );
+        const metricsData = await metricsResponse.json();
+
+        if (!metricsResponse.ok) {
+          throw new Error(metricsData.error || "Failed to fetch metrics");
+        }
+
+        if (metricsData.success) {
+          setCurrentMetrics(metricsData.current);
+          setMetrics(metricsData.history || []);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+        console.error("Error fetching data:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchProcesses = async () => {
-      try {
-        const response = await fetch(`/api/servers/${params.id}/processes`);
-        const data = await response.json();
-        if (data.success && Array.isArray(data.data)) {
-          setProcesses(data.data);
-        } else {
-          setProcesses([]);
-        }
-      } catch (error) {
-        console.error("Error fetching processes:", error);
-        setProcesses([]);
-      }
-    };
+    fetchData();
+    const interval = setInterval(fetchData, 10000); // Refresh every 10 seconds
 
-    fetchMetrics();
-    fetchProcesses();
-
-    // Poll for updates every 10 seconds
-    const interval = setInterval(fetchMetrics, 10000);
     return () => clearInterval(interval);
   }, [params.id]);
 
   // Format timestamp for graphs
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-      timeZone: "Asia/Manila", // Set to your local timezone
+      timeZone: "Asia/Manila",
     });
   };
 
-  // Format tooltip values
-  const formatTooltipValue = (value: number, type: string) => {
-    switch (type) {
-      case "network":
-        return `${value.toFixed(1)} MB/s`;
-      default:
-        return `${value.toFixed(1)}%`;
-    }
+  // Format bytes to human readable format
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
-  // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label, type }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 rounded-lg shadow border">
-          <p className="font-medium">{formatTimestamp(label)}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {entry.name}: {formatTooltipValue(entry.value, type)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-8">
-      {/* Current Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="CPU Usage"
-          value={`${currentMetrics?.cpu_usage?.toFixed(1) || "0"}%`}
-          icon={<FiCpu className="h-4 w-4" />}
-        />
-        <MetricCard
-          title="Memory Usage"
-          value={`${currentMetrics?.memory_usage?.toFixed(1) || "0"}%`}
-          icon={<BiMemoryCard className="h-4 w-4" />}
-        />
-        <MetricCard
-          title="Disk Usage"
-          value={`${currentMetrics?.disk_usage?.toFixed(1) || "0"}%`}
-          icon={<FiHardDrive className="h-4 w-4" />}
-        />
-        <MetricCard
-          title="Network Usage"
-          value={
-            <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                ↑{" "}
-                {currentMetrics?.network_usage?.upload_rate?.toFixed(1) || "0"}{" "}
-                MB/s
-              </span>
-              <span className="text-sm text-muted-foreground">
-                ↓{" "}
-                {currentMetrics?.network_usage?.download_rate?.toFixed(1) ||
-                  "0"}{" "}
-                MB/s
-              </span>
+      {/* Server Header */}
+      {serverDetails && (
+        <div className="border-b pb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold">{serverDetails.name}</h1>
+              <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                <span>{serverDetails.ip_address}</span>
+                <span>•</span>
+                <span>{serverDetails.hostname}</span>
+              </div>
+              {serverDetails.description && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {serverDetails.description}
+                </p>
+              )}
             </div>
-          }
-          icon={<AiOutlineNodeIndex className="h-4 w-4" />}
-        />
-      </div>
+            <Badge
+              variant="outline"
+              className={`${
+                serverDetails.status === "active"
+                  ? "bg-green-100 text-green-800"
+                  : serverDetails.status === "maintenance"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {serverDetails.status}
+            </Badge>
+          </div>
+        </div>
+      )}
+
+      {/* Current Metrics */}
+      {currentMetrics && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">CPU Usage</CardTitle>
+              <FiCpu className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {currentMetrics.cpu_usage.toFixed(1)}%
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Memory Usage
+              </CardTitle>
+              <BiMemoryCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {currentMetrics.memory_usage.toFixed(1)}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {formatBytes(currentMetrics.memory_used)} /{" "}
+                {formatBytes(currentMetrics.memory_total)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Disk Usage</CardTitle>
+              <FiHardDrive className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {currentMetrics.disk_usage.toFixed(1)}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {formatBytes(currentMetrics.disk_used)} /{" "}
+                {formatBytes(currentMetrics.disk_total)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Network Usage
+              </CardTitle>
+              <AiOutlineNodeIndex className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col">
+                <span className="text-sm text-muted-foreground">
+                  ↑ {formatBytes(currentMetrics.network_out)}/s
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  ↓ {formatBytes(currentMetrics.network_in)}/s
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* History Graphs */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>CPU History</CardTitle>
+            <CardTitle>CPU & Memory History</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -198,46 +272,24 @@ export default function ServerInformation({
                   tickFormatter={(value) => `${value}%`}
                 />
                 <Tooltip
-                  content={(props) => <CustomTooltip {...props} type="cpu" />}
+                  labelFormatter={formatTimestamp}
+                  formatter={(value: number) => [`${value.toFixed(1)}%`]}
                 />
                 <Line
                   type="monotone"
                   dataKey="cpu_usage"
                   stroke="#8884d8"
+                  name="CPU"
                   strokeWidth={2}
                   dot={false}
-                  name="CPU"
                 />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Memory History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={metrics}>
-                <XAxis
-                  dataKey="timestamp"
-                  tickFormatter={formatTimestamp}
-                  interval="preserveStartEnd"
-                  minTickGap={50}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip content={<CustomTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="memory_usage"
                   stroke="#82ca9d"
+                  name="Memory"
                   strokeWidth={2}
                   dot={false}
-                  name="Memory"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -257,88 +309,32 @@ export default function ServerInformation({
                   interval="preserveStartEnd"
                   minTickGap={50}
                 />
-                <YAxis tickFormatter={(value) => `${value.toFixed(1)} MB/s`} />
+                <YAxis tickFormatter={(value) => `${formatBytes(value)}/s`} />
                 <Tooltip
-                  content={(props) => (
-                    <CustomTooltip {...props} type="network" />
-                  )}
+                  labelFormatter={formatTimestamp}
+                  formatter={(value: number) => [formatBytes(value) + "/s"]}
                 />
                 <Line
                   type="monotone"
-                  dataKey="network_usage.upload_rate"
-                  stroke="#8884d8"
-                  strokeWidth={2}
-                  dot={false}
-                  name="Upload"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="network_usage.download_rate"
+                  dataKey="network_in"
                   stroke="#82ca9d"
+                  name="Download"
                   strokeWidth={2}
                   dot={false}
-                  name="Download"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="network_out"
+                  stroke="#8884d8"
+                  name="Upload"
+                  strokeWidth={2}
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
-
-      {/* Processes Dialog */}
-      <Dialog open={showProcesses} onOpenChange={setShowProcesses}>
-        <DialogTrigger asChild>
-          <Button>View Processes</Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Running Processes</DialogTitle>
-          </DialogHeader>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>PID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>CPU %</TableHead>
-                <TableHead>Memory %</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.isArray(processes) &&
-                processes.map((process) => (
-                  <TableRow key={process.pid}>
-                    <TableCell>{process.pid}</TableCell>
-                    <TableCell>{process.name}</TableCell>
-                    <TableCell>{process.cpu_usage?.toFixed(1)}%</TableCell>
-                    <TableCell>{process.memory_usage?.toFixed(1)}%</TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-function MetricCard({
-  title,
-  value,
-  icon,
-}: {
-  title: string;
-  value: string | React.ReactNode;
-  icon: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
   );
 }
