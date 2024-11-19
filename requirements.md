@@ -54,6 +54,8 @@
 - It should monitor CPU, Memory, Disk Usage, and Network.
 - There should be a settings button inside the server where informations can be updated and thresh hold settings can be set.
 - The uptime should also show in the server page as well as the processes.
+- Create the settings page for the server where it can edit the Name, IP Address, Hostname, description, InfluxDB org, bucket and token.
+- In the settings page, users can also delete the server.
 
 ## <!-- MySQL Structure -->
 

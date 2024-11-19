@@ -997,6 +997,54 @@ app.get("/api/servers/:id", async (req, res) => {
   }
 });
 
+// Update the server details endpoint to handle DELETE
+app.delete("/api/servers/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("Attempting to delete server:", id);
+
+    // Start a transaction
+    await db.query("START TRANSACTION");
+
+    try {
+      // Delete related records first
+      await db.query("DELETE FROM server_uptime WHERE server_id = ?", [id]);
+      await db.query("DELETE FROM server_processes WHERE server_id = ?", [id]);
+      await db.query("DELETE FROM server_metrics WHERE server_id = ?", [id]);
+      await db.query("DELETE FROM alerts WHERE server_id = ?", [id]);
+      await db.query("DELETE FROM server_actions WHERE server_id = ?", [id]);
+
+      // Finally delete the server
+      const [result] = await db.query("DELETE FROM servers WHERE id = ?", [id]);
+
+      if (result.affectedRows === 0) {
+        await db.query("ROLLBACK");
+        return res.status(404).json({
+          success: false,
+          error: "Server not found",
+        });
+      }
+
+      await db.query("COMMIT");
+
+      res.json({
+        success: true,
+        message: "Server deleted successfully",
+      });
+    } catch (error) {
+      await db.query("ROLLBACK");
+      throw error;
+    }
+  } catch (error) {
+    console.error("Error deleting server:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to delete server",
+      details: error.message,
+    });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {

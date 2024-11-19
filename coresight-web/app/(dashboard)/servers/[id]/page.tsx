@@ -216,20 +216,6 @@ export default function ServerPage({ params }: { params: { id: string } }) {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-4">
-              <Badge
-                variant="outline"
-                className={`${
-                  serverDetails.status === "active"
-                    ? "bg-green-100 text-green-800"
-                    : serverDetails.status === "maintenance"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-              >
-                {serverDetails.status}
-              </Badge>
-            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import mysql from "mysql2/promise";
+import { PoolOptions } from "mysql2/promise";
 
-const pool = mysql.createPool({
+const poolConfig: PoolOptions = {
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || "3306"),
   user: process.env.DB_USER,
@@ -8,12 +9,12 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  maxIdle: 10,
-  idleTimeout: 60000,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
-});
+  connectTimeout: 10000,
+};
+
+const pool = mysql.createPool(poolConfig);
 
 // Test the connection
 pool
