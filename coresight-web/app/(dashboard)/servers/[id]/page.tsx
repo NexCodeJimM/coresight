@@ -58,6 +58,13 @@ interface Metrics {
   timestamp: string;
 }
 
+interface Process {
+  pid: number;
+  name: string;
+  cpu_usage: number;
+  memory_usage: number;
+}
+
 export default function ServerPage({ params }: { params: { id: string } }) {
   const [metrics, setMetrics] = useState<Metrics[]>([]);
   const [currentMetrics, setCurrentMetrics] = useState<Metrics | null>(null);
@@ -66,11 +73,17 @@ export default function ServerPage({ params }: { params: { id: string } }) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showProcesses, setShowProcesses] = useState(false);
+  const [processes, setProcesses] = useState<Process[]>([]);
+  const [loadingProcesses, setLoadingProcesses] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        setLoading(true);
+        if (!isMounted) return;
+
         // Fetch server details
         const detailsResponse = await fetch(`/api/servers/${params.id}`);
         const detailsData = await detailsResponse.json();
@@ -81,7 +94,9 @@ export default function ServerPage({ params }: { params: { id: string } }) {
           );
         }
 
-        setServerDetails(detailsData.server);
+        if (isMounted) {
+          setServerDetails(detailsData.server);
+        }
 
         // Fetch metrics
         const metricsResponse = await fetch(
@@ -93,23 +108,58 @@ export default function ServerPage({ params }: { params: { id: string } }) {
           throw new Error(metricsData.error || "Failed to fetch metrics");
         }
 
-        if (metricsData.success) {
+        if (isMounted) {
           setCurrentMetrics(metricsData.current);
           setMetrics(metricsData.history || []);
+          setLoading(false);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "An error occurred");
+          setLoading(false);
+        }
         console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
     const interval = setInterval(fetchData, 10000); // Refresh every 10 seconds
 
-    return () => clearInterval(interval);
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [params.id]);
+
+  useEffect(() => {
+    const fetchProcesses = async () => {
+      if (!showProcesses) return;
+
+      try {
+        setLoadingProcesses(true);
+        const response = await fetch(`/api/servers/${params.id}/processes`);
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          setProcesses(data.data || []);
+        } else {
+          console.error("Failed to fetch processes:", data.error);
+        }
+      } catch (error) {
+        console.error("Error fetching processes:", error);
+      } finally {
+        setLoadingProcesses(false);
+      }
+    };
+
+    if (showProcesses) {
+      fetchProcesses();
+      // Refresh processes every 5 seconds while dialog is open
+      const interval = setInterval(fetchProcesses, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [params.id, showProcesses]);
 
   // Format timestamp for graphs
   const formatTimestamp = (timestamp: string) => {
@@ -166,23 +216,25 @@ export default function ServerPage({ params }: { params: { id: string } }) {
                 </p>
               )}
             </div>
-            <Badge
-              variant="outline"
-              className={`${
-                serverDetails.status === "active"
-                  ? "bg-green-100 text-green-800"
-                  : serverDetails.status === "maintenance"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {serverDetails.status}
-            </Badge>
+            <div className="flex items-center gap-4">
+              <Badge
+                variant="outline"
+                className={`${
+                  serverDetails.status === "active"
+                    ? "bg-green-100 text-green-800"
+                    : serverDetails.status === "maintenance"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {serverDetails.status}
+              </Badge>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Current Metrics */}
+      {/* Current Metrics Cards */}
       {currentMetrics && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -251,6 +303,46 @@ export default function ServerPage({ params }: { params: { id: string } }) {
           </Card>
         </div>
       )}
+
+      {/* Add the button here, after the cards */}
+      <div className="flex justify-end">
+        <Dialog open={showProcesses} onOpenChange={setShowProcesses}>
+          <DialogTrigger asChild>
+            <Button>View Processes</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Running Processes</DialogTitle>
+            </DialogHeader>
+            {loadingProcesses ? (
+              <div className="flex justify-center p-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>PID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>CPU %</TableHead>
+                    <TableHead>Memory %</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {processes.map((process) => (
+                    <TableRow key={process.pid}>
+                      <TableCell>{process.pid}</TableCell>
+                      <TableCell>{process.name}</TableCell>
+                      <TableCell>{process.cpu_usage.toFixed(1)}%</TableCell>
+                      <TableCell>{process.memory_usage.toFixed(1)}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* History Graphs */}
       <div className="grid gap-4 md:grid-cols-2">
