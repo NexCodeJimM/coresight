@@ -1087,6 +1087,7 @@ app.use((err, req, res, next) => {
 
 // Handle 404s
 app.use((req, res) => {
+  console.log("404 Not Found:", req.method, req.url);
   res.status(404).json({
     success: false,
     error: "Not found",

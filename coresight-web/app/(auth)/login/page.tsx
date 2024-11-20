@@ -32,22 +32,30 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      console.log("Attempting to sign in with:", formData.email);
+
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
         redirect: false,
+        callbackUrl: "/dashboard",
       });
 
+      console.log("Sign in result:", result);
+
       if (result?.error) {
+        console.error("Sign in error:", result.error);
         setError("Invalid email or password");
         return;
       }
 
       if (result?.ok) {
+        console.log("Sign in successful, redirecting...");
         router.push("/dashboard");
         router.refresh();
       }
-    } catch {
+    } catch (error) {
+      console.error("Sign in error:", error);
       setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);

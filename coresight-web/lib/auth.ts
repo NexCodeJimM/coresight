@@ -28,18 +28,24 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log("Missing credentials");
           return null;
         }
 
         try {
+          console.log("Attempting login with email:", credentials.email);
+
           const [rows] = await pool.query<UserRow[]>(
             "SELECT * FROM users WHERE email = ?",
             [credentials.email]
           );
 
+          console.log("Database query result:", rows);
+
           const user = rows[0];
 
           if (!user) {
+            console.log("No user found with email:", credentials.email);
             return null;
           }
 
@@ -48,7 +54,10 @@ export const authOptions: NextAuthOptions = {
             user.password
           );
 
+          console.log("Password validation result:", isPasswordValid);
+
           if (!isPasswordValid) {
+            console.log("Invalid password for user:", credentials.email);
             return null;
           }
 
@@ -60,7 +69,7 @@ export const authOptions: NextAuthOptions = {
             image: user.profile_picture,
           };
         } catch (error) {
-          console.error("Auth error:", error);
+          console.error("Database error:", error);
           return null;
         }
       },
@@ -86,19 +95,5 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  useSecureCookies: process.env.NODE_ENV === "production",
-  cookies: {
-    sessionToken: {
-      name:
-        process.env.NODE_ENV === "production"
-          ? "__Secure-next-auth.session-token"
-          : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
+  debug: process.env.NODE_ENV === "development",
 };

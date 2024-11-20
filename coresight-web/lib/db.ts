@@ -1,7 +1,6 @@
 import mysql from "mysql2/promise";
-import { PoolOptions } from "mysql2/promise";
 
-const poolConfig: PoolOptions = {
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || "3306"),
   user: process.env.DB_USER,
@@ -10,11 +9,7 @@ const poolConfig: PoolOptions = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  enableKeepAlive: true,
-  connectTimeout: 10000,
-};
-
-const pool = mysql.createPool(poolConfig);
+});
 
 // Test the connection
 pool
@@ -23,8 +18,8 @@ pool
     console.log("Database connected successfully");
     connection.release();
   })
-  .catch((error) => {
-    console.error("Error connecting to the database:", error);
+  .catch((err) => {
+    console.error("Error connecting to the database:", err);
   });
 
 export default pool;
