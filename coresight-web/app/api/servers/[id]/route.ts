@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
-import { RowDataPacket } from "mysql2";
+import { RowDataPacket, ResultSetHeader } from "mysql2";
 
 interface ServerRow extends RowDataPacket {
   id: string;
@@ -24,14 +24,15 @@ const RETRY_DELAY = 1000; // 1 second
 
 async function queryWithRetry(
   query: string,
-  params: any[],
+  params: (string | number | null)[],
   retries = MAX_RETRIES
 ): Promise<ServerRow[]> {
   try {
     const [rows] = await pool.query<ServerRow[]>(query, params);
     return rows;
-  } catch (error: any) {
-    if (error.code === "ETIMEDOUT" && retries > 0) {
+  } catch (error: unknown) {
+    const err = error as Error & { code?: string };
+    if (err.code === "ETIMEDOUT" && retries > 0) {
       console.log(
         `Database query timed out, retrying... (${retries} attempts left)`
       );
@@ -120,8 +121,7 @@ export async function PUT(
       token,
     } = await req.json();
 
-    // Update server in database
-    const [result] = await pool.query(
+    const [result] = await pool.query<ResultSetHeader>(
       `UPDATE servers 
        SET name = ?, 
            description = ?,
@@ -136,7 +136,7 @@ export async function PUT(
       [name, description, hostname, ip_address, port, org, bucket, token, id]
     );
 
-    if ((result as any).affectedRows === 0) {
+    if (result.affectedRows === 0) {
       return NextResponse.json(
         { success: false, error: "Server not found" },
         { status: 404 }
@@ -153,7 +153,7 @@ export async function PUT(
       {
         success: false,
         error: "Failed to update server",
-        details: error,
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -174,46 +174,32 @@ export async function DELETE(
     }
 
     const { id } = params;
-
-    // First delete related records in dependent tables
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
-      // Delete server_uptime records if they exist
+      // Delete related records
       await connection.execute(
         "DELETE FROM server_uptime WHERE server_id = ?",
         [id]
       );
-
-      // Delete server_processes records if they exist
       await connection.execute(
         "DELETE FROM server_processes WHERE server_id = ?",
         [id]
       );
-
-      // Delete server_metrics records if they exist
       await connection.execute(
         "DELETE FROM server_metrics WHERE server_id = ?",
         [id]
       );
-
-      // Delete alerts records if they exist
       await connection.execute("DELETE FROM alerts WHERE server_id = ?", [id]);
-
-      // Delete server_actions records if they exist
       await connection.execute(
         "DELETE FROM server_actions WHERE server_id = ?",
         [id]
       );
 
-      // Finally delete the server
-      const [result] = await connection.execute(
-        "DELETE FROM servers WHERE id = ?",
-        [id]
-      );
-
+      // Delete the server
+      await connection.execute("DELETE FROM servers WHERE id = ?", [id]);
       await connection.commit();
 
       return NextResponse.json({

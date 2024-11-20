@@ -2,6 +2,16 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import pool from "./db";
 import { compare } from "bcrypt";
+import { RowDataPacket } from "mysql2";
+
+interface UserRow extends RowDataPacket {
+  id: string;
+  email: string;
+  password: string;
+  username: string;
+  role: string;
+  profile_picture?: string;
+}
 
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("NEXTAUTH_SECRET is not set");
@@ -22,7 +32,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const [rows]: any = await pool.query(
+          const [rows] = await pool.query<UserRow[]>(
             "SELECT * FROM users WHERE email = ?",
             [credentials.email]
           );
@@ -56,9 +66,9 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+  pages: {
+    signIn: "/login",
+    error: "/login",
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -70,14 +80,25 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).role = token.role;
-        (session.user as any).id = token.id;
+        session.user.role = token.role;
+        session.user.id = token.id;
       }
       return session;
     },
   },
-  pages: {
-    signIn: "/login",
+  useSecureCookies: process.env.NODE_ENV === "production",
+  cookies: {
+    sessionToken: {
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Secure-next-auth.session-token"
+          : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
   },
-  debug: process.env.NODE_ENV === "development",
 };

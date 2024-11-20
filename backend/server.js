@@ -26,7 +26,7 @@ const corsOptions = {
     "http://143.198.84.214:3036",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
@@ -1043,6 +1043,54 @@ app.delete("/api/servers/:id", async (req, res) => {
       details: error.message,
     });
   }
+});
+
+// Add auth middleware
+app.use((req, res, next) => {
+  // Handle auth headers
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    // You can verify the token here if needed
+    console.log("Auth header present:", authHeader);
+  }
+  next();
+});
+
+// Add session endpoint
+app.get("/api/auth/session", async (req, res) => {
+  try {
+    // Return session info
+    res.json({
+      user: req.user || null,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+    });
+  } catch (error) {
+    console.error("Session error:", error);
+    res.status(500).json({ error: "Failed to get session" });
+  }
+});
+
+// Add a health check endpoint
+app.get("/api/auth/csrf", (req, res) => {
+  res.json({ csrfToken: "token" });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    error: "Internal server error",
+    details: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
+
+// Handle 404s
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Not found",
+  });
 });
 
 // Start server

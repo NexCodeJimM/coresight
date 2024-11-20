@@ -24,6 +24,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/mysql": "^2.15.26",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",

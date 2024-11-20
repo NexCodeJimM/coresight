@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
+import { RowDataPacket } from "mysql2";
+
+interface MetricsRow extends RowDataPacket {
+  id: string;
+  server_id: string;
+  cpu_usage: number;
+  memory_usage: number;
+  disk_usage: number;
+  network_in: number;
+  network_out: number;
+  temperature: number;
+  timestamp: Date;
+}
 
 export async function GET(
   req: Request,
@@ -16,7 +29,7 @@ export async function GET(
     const { id } = params;
 
     // Get current metrics (most recent)
-    const [currentMetrics] = await pool.query(
+    const [currentMetrics] = await pool.query<MetricsRow[]>(
       `SELECT * FROM server_metrics 
        WHERE server_id = ? 
        ORDER BY timestamp DESC 
@@ -25,7 +38,7 @@ export async function GET(
     );
 
     // Get historical metrics (last 24 hours)
-    const [historicalMetrics] = await pool.query(
+    const [historicalMetrics] = await pool.query<MetricsRow[]>(
       `SELECT * FROM server_metrics 
        WHERE server_id = ? 
        AND timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
@@ -35,7 +48,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      current: (currentMetrics as any[])[0] || null,
+      current: currentMetrics[0] || null,
       history: historicalMetrics,
     });
   } catch (error) {
@@ -44,7 +57,7 @@ export async function GET(
       {
         success: false,
         error: "Failed to fetch metrics",
-        details: error,
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

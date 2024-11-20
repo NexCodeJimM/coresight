@@ -1,22 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { GithubIcon } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Handle error from URL
+  useEffect(() => {
+    const errorType = searchParams.get("error");
+    if (errorType) {
+      setError("Invalid email or password");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,9 +43,11 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
-    } catch (error) {
+      if (result?.ok) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -51,8 +61,8 @@ export default function LoginPage() {
           <div className="text-white">
             <blockquote className="space-y-2">
               <p className="text-lg">
-                "This monitoring system has transformed how we manage our
-                infrastructure."
+                &quot;This monitoring system has transformed how we manage our
+                infrastructure.&quot;
               </p>
               <footer className="text-sm">Sofia Davis</footer>
             </blockquote>

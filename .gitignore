@@ -1,7 +1,10 @@
 requirements.md
 API_Tokens.txt
 terminal.txt
-SQL/efi.sql
+deploy.sh
+deploy_web.sh
+test.sh
+/SQL
 
 .env
 .DS_Store

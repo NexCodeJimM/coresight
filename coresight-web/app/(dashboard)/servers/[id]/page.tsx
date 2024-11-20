@@ -4,7 +4,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import {
   LineChart,
   Line,
@@ -31,6 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
+import { Settings } from "lucide-react";
 
 interface ServerDetails {
   id: string;
@@ -66,6 +68,7 @@ interface Process {
 }
 
 export default function ServerPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [metrics, setMetrics] = useState<Metrics[]>([]);
   const [currentMetrics, setCurrentMetrics] = useState<Metrics | null>(null);
   const [serverDetails, setServerDetails] = useState<ServerDetails | null>(
@@ -181,6 +184,11 @@ export default function ServerPage({ params }: { params: { id: string } }) {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
+  // Add function to handle settings navigation
+  const handleSettingsClick = () => {
+    router.push(`/servers/${params.id}/settings`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -290,8 +298,8 @@ export default function ServerPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* Add the button here, after the cards */}
-      <div className="flex justify-end">
+      {/* Update the buttons section */}
+      <div className="flex justify-end space-x-4">
         <Dialog open={showProcesses} onOpenChange={setShowProcesses}>
           <DialogTrigger asChild>
             <Button>View Processes</Button>
@@ -328,6 +336,15 @@ export default function ServerPage({ params }: { params: { id: string } }) {
             )}
           </DialogContent>
         </Dialog>
+
+        <Button
+          variant="outline"
+          onClick={handleSettingsClick}
+          className="flex items-center gap-2"
+        >
+          <Settings className="h-4 w-4" />
+          Settings
+        </Button>
       </div>
 
       {/* History Graphs */}
