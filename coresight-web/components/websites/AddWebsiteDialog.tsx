@@ -23,9 +23,10 @@ import { Loader2 } from "lucide-react";
 interface AddWebsiteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
-export function AddWebsiteDialog({ open, onOpenChange }: AddWebsiteDialogProps) {
+export function AddWebsiteDialog({ open, onOpenChange, onSuccess }: AddWebsiteDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,6 +37,7 @@ export function AddWebsiteDialog({ open, onOpenChange }: AddWebsiteDialogProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submission
     setLoading(true);
 
     try {
@@ -51,21 +53,29 @@ export function AddWebsiteDialog({ open, onOpenChange }: AddWebsiteDialogProps) 
         throw new Error("Failed to add website");
       }
 
-      toast({
-        title: "Success",
-        description: "Website added successfully",
-      });
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Website added successfully",
+        });
 
-      setFormData({
-        name: "",
-        url: "",
-        checkInterval: "60",
-      });
-      onOpenChange(false);
+        setFormData({
+          name: "",
+          url: "",
+          checkInterval: "60",
+        });
+        
+        onSuccess(); // Call the success callback
+      } else {
+        throw new Error(data.error || "Failed to add website");
+      }
     } catch (error) {
+      console.error('Error adding website:', error);
       toast({
         title: "Error",
-        description: "Failed to add website",
+        description: error instanceof Error ? error.message : "Failed to add website",
         variant: "destructive",
       });
     } finally {

@@ -8,8 +8,10 @@ interface AlertRow extends RowDataPacket {
   id: string;
   severity: string;
   message: string;
-  server_id: string;
-  server_name: string;
+  server_id: string | null;
+  website_id: string | null;
+  server_name: string | null;
+  website_name: string | null;
   created_at: Date;
 }
 
@@ -20,17 +22,20 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Get recent alerts with server names
+    // Get recent alerts with server and website names
     const [rows] = await pool.query<AlertRow[]>(`
       SELECT 
         a.id,
         a.severity,
         a.message,
         a.server_id,
+        a.website_id,
         s.name as server_name,
+        w.name as website_name,
         a.created_at
       FROM alerts a
-      JOIN servers s ON a.server_id = s.id
+      LEFT JOIN servers s ON a.server_id = s.id
+      LEFT JOIN monitored_websites w ON a.website_id = w.id
       WHERE a.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
       ORDER BY a.created_at DESC
       LIMIT 10
@@ -41,6 +46,7 @@ export async function GET() {
       severity: row.severity,
       message: row.message,
       server_name: row.server_name,
+      website_name: row.website_name,
       created_at: row.created_at.toISOString(),
     }));
 

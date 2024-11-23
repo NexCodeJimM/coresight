@@ -15,7 +15,8 @@ interface Alert {
   id: string;
   severity: "critical" | "warning" | "info";
   message: string;
-  server_name: string;
+  server_name?: string;
+  website_name?: string;
   created_at: string;
 }
 
@@ -125,7 +126,9 @@ export function RecentAlerts({ className, ...props }: RecentAlertsProps) {
                   {alert.message}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {alert.server_name}
+                  {alert.server_name 
+                    ? `Server: ${alert.server_name}`
+                    : `Website: ${alert.website_name}`}
                 </p>
               </div>
             </div>

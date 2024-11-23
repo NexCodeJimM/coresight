@@ -1306,3 +1306,111 @@ app.get("/api/websites/:id/alerts", async (req, res) => {
     });
   }
 });
+
+// POST new website
+app.post("/api/websites", async (req, res) => {
+  try {
+    const { name, url, checkInterval } = req.body;
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid URL format",
+      });
+    }
+
+    // Generate UUID for the new website
+    const websiteId = require("crypto").randomUUID();
+
+    // Initial ping to check if website is accessible
+    try {
+      const pingStart = Date.now();
+      const response = await fetch(url, { method: 'HEAD', timeout: 5000 });
+      const pingEnd = Date.now();
+      const responseTime = pingEnd - pingStart;
+      const initialStatus = response.ok ? 'up' : 'down';
+
+      // Use a transaction to ensure data consistency
+      await db.query('START TRANSACTION');
+
+      // Insert website with initial status
+      await db.query(
+        `INSERT INTO monitored_websites (
+          id, name, url, check_interval, status, 
+          last_checked, response_time
+        ) VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
+        [websiteId, name, url, checkInterval, initialStatus, responseTime]
+      );
+
+      // Record first uptime entry using the generated websiteId
+      await db.query(
+        `INSERT INTO website_uptime (
+          id, website_id, status, response_time
+        ) VALUES (UUID(), ?, ?, ?)`,
+        [websiteId, initialStatus, responseTime]
+      );
+
+      await db.query('COMMIT');
+
+      // Fetch the created website
+      const [websites] = await db.query(
+        'SELECT * FROM monitored_websites WHERE id = ?',
+        [websiteId]
+      );
+
+      res.json({
+        success: true,
+        website: websites[0],
+      });
+
+    } catch (error) {
+      // If initial ping fails or any other error occurs
+      try {
+        // Use a transaction for consistency
+        await db.query('START TRANSACTION');
+
+        // Insert website with down status
+        await db.query(
+          `INSERT INTO monitored_websites (
+            id, name, url, check_interval, status, 
+            last_checked
+          ) VALUES (?, ?, ?, ?, 'down', NOW())`,
+          [websiteId, name, url, checkInterval]
+        );
+
+        // Record first downtime entry using the generated websiteId
+        await db.query(
+          `INSERT INTO website_uptime (
+            id, website_id, status
+          ) VALUES (UUID(), ?, 'down')`,
+          [websiteId]
+        );
+
+        await db.query('COMMIT');
+
+        const [websites] = await db.query(
+          'SELECT * FROM monitored_websites WHERE id = ?',
+          [websiteId]
+        );
+
+        res.json({
+          success: true,
+          website: websites[0],
+        });
+      } catch (dbError) {
+        await db.query('ROLLBACK');
+        throw dbError;
+      }
+    }
+  } catch (error) {
+    console.error("Error creating website:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to create website monitor",
+      details: error.message,
+    });
+  }
+});

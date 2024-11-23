@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { WebsiteList } from "@/components/websites/WebsiteList";
@@ -8,6 +8,12 @@ import { AddWebsiteDialog } from "@/components/websites/AddWebsiteDialog";
 
 export default function WebsitesPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleWebsiteAdded = () => {
+    setShowAddDialog(false);
+    setRefreshKey(prev => prev + 1); // Trigger refresh
+  };
 
   return (
     <div className="p-8 space-y-8">
@@ -24,11 +30,12 @@ export default function WebsitesPage() {
         </Button>
       </div>
 
-      <WebsiteList />
+      <WebsiteList key={refreshKey} />
       
       <AddWebsiteDialog 
         open={showAddDialog} 
-        onOpenChange={setShowAddDialog} 
+        onOpenChange={setShowAddDialog}
+        onSuccess={handleWebsiteAdded}
       />
     </div>
   );
