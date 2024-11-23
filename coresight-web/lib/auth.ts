@@ -9,16 +9,12 @@ interface UserRow extends RowDataPacket {
   email: string;
   password: string;
   username: string;
-  role: string;
+  role: "admin" | "staff";
+  is_admin: boolean;
   profile_picture?: string;
 }
 
-if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("NEXTAUTH_SECRET is not set");
-}
-
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -29,24 +25,21 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           console.log("Missing credentials");
-          return null;
+          throw new Error("Please enter your email and password");
         }
 
         try {
-          console.log("Attempting login with email:", credentials.email);
-
+          console.log("Attempting to authenticate:", credentials.email);
           const [rows] = await pool.query<UserRow[]>(
             "SELECT * FROM users WHERE email = ?",
             [credentials.email]
           );
 
-          console.log("Database query result:", rows);
-
           const user = rows[0];
+          console.log("User found:", user ? "Yes" : "No");
 
           if (!user) {
-            console.log("No user found with email:", credentials.email);
-            return null;
+            throw new Error("No user found with this email");
           }
 
           const isPasswordValid = await compare(
@@ -54,11 +47,10 @@ export const authOptions: NextAuthOptions = {
             user.password
           );
 
-          console.log("Password validation result:", isPasswordValid);
+          console.log("Password valid:", isPasswordValid);
 
           if (!isPasswordValid) {
-            console.log("Invalid password for user:", credentials.email);
-            return null;
+            throw new Error("Invalid password");
           }
 
           return {
@@ -66,11 +58,11 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.username,
             role: user.role,
-            image: user.profile_picture,
+            is_admin: Boolean(user.is_admin),
           };
         } catch (error) {
-          console.error("Database error:", error);
-          return null;
+          console.error("Auth error:", error);
+          throw error;
         }
       },
     }),
@@ -84,6 +76,18 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.is_admin = user.is_admin;
+
+        try {
+          await pool.query(
+            `UPDATE users 
+             SET last_login = CONVERT_TZ(NOW(), @@session.time_zone, '+00:00')
+             WHERE id = ?`,
+            [user.id]
+          );
+        } catch (error) {
+          console.error("Error updating last login:", error);
+        }
       }
       return token;
     },
@@ -91,9 +95,15 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.role = token.role;
         session.user.id = token.id;
+        session.user.is_admin = token.is_admin;
       }
       return session;
     },
   },
-  debug: process.env.NODE_ENV === "development",
+  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  debug: true,
 };

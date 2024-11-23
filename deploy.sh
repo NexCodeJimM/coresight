@@ -22,10 +22,6 @@ echo "Installing Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 
-# 3.5. Install npm
-echo "Installing npm..."
-apt install -y npm
-
 # 4. Install PM2
 echo "Installing PM2..."
 npm install -g pm2
@@ -46,6 +42,7 @@ cp .env.production .env
 # 7. Set up the Python agent
 echo "Setting up Python agent..."
 cd $WORKING_DIR/coresight-agent
+cp .env.production .env
 
 # Remove existing venv if it exists
 rm -rf venv
@@ -65,9 +62,9 @@ chown -R root:root venv/
 chmod 755 venv/bin/python3
 chmod 755 venv/bin/python
 
-# Install requirements
+# Install Python requirements based on agent.py
 echo "Installing Python requirements..."
-pip3 install psutil requests netifaces
+pip3 install psutil requests mysql-connector-python python-dotenv netifaces
 
 # Create agent.py if it doesn't exist
 if [ ! -f agent.py ]; then
@@ -75,22 +72,28 @@ if [ ! -f agent.py ]; then
     cp ../agent.py .
 fi
 
+# Create log file with proper permissions
+touch agent.log
+chmod 644 agent.log
+
 # 8. Create systemd service for the agent
 echo "Creating systemd service for agent..."
-PYTHON_VENV_PATH="$WORKING_DIR/coresight-agent/venv/bin/python3"
 tee /etc/systemd/system/coresight-agent.service << EOF
 [Unit]
-Description=Coresight System Monitoring Agent
+Description=Coresight Monitoring Agent
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$WORKING_DIR/coresight-agent
-Environment=PYTHONPATH=$WORKING_DIR/coresight-agent
-ExecStart=$PYTHON_VENV_PATH agent.py
+WorkingDirectory=/root/coresight/coresight-agent
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/root/coresight/coresight-agent/.env
+ExecStart=/root/coresight/coresight-agent/venv/bin/python agent.py
 Restart=always
 RestartSec=10
+StandardOutput=append:/root/coresight/coresight-agent/agent.log
+StandardError=append:/root/coresight/coresight-agent/agent.log
 
 [Install]
 WantedBy=multi-user.target
@@ -112,19 +115,21 @@ echo "Configuring firewall..."
 ufw allow 22/tcp  # SSH
 ufw allow 80/tcp  # HTTP
 ufw allow 443/tcp # HTTPS
-ufw allow 3000/tcp # Your app
+ufw allow 3000/tcp # Backend API
+ufw allow 3001/tcp # Health check
+ufw allow 8086/tcp # InfluxDB
 ufw --force enable
 
 echo "Deployment complete!"
-echo "Please configure InfluxDB at http://165.22.237.60:8086"
-echo "Then access the dashboard at http://165.22.237.60:3000"
+echo "Please configure InfluxDB at http://localhost:8086"
 
 # Print status and permissions
 echo "Checking permissions and status..."
 echo "Python venv permissions:"
 ls -la $WORKING_DIR/coresight-agent/venv/bin/
-echo "Python path: $PYTHON_VENV_PATH"
 echo "Current directory: $(pwd)"
+echo "Agent log file:"
+ls -la $WORKING_DIR/coresight-agent/agent.log
 systemctl status influxdb --no-pager
 systemctl status coresight-agent --no-pager
 pm2 status

@@ -934,6 +934,23 @@ app.post("/api/metrics", async (req, res) => {
       ]
     );
 
+    // For each process, also store disk usage
+    for (const process of processes) {
+      await db.query(
+        `INSERT INTO server_processes 
+         (id, server_id, pid, name, cpu_usage, memory_usage, disk_usage) 
+         VALUES (UUID(), ?, ?, ?, ?, ?, ?)`,
+        [
+          serverId,
+          process.pid,
+          process.name,
+          process.cpu_usage,
+          process.memory_usage,
+          process.disk_usage || 0, // Add disk usage
+        ]
+      );
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error("Error storing metrics:", error);

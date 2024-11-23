@@ -18,3 +18,7 @@ export default async function ServersPage() {
     </div>
   );
 }
+
+export const metadata = {
+  title: "Servers",
+};

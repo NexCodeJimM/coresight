@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -18,22 +22,60 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle error from URL
   useEffect(() => {
-    const errorType = searchParams.get("error");
-    if (errorType) {
-      setError("Invalid email or password");
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const getErrorMessage = (error: string | null) => {
+    switch (error) {
+      case "CredentialsSignin":
+        return "Invalid email or password. Please try again.";
+      case "Email is required":
+        return "Please enter your email address.";
+      case "Password is required":
+        return "Please enter your password.";
+      case "ETIMEDOUT":
+        return "Unable to connect to the server. Please check your internet connection or try again later.";
+      case "Account not found":
+        return "This account doesn't exist. Please check your email or contact your administrator.";
+      default:
+        if (error?.includes('ETIMEDOUT') || error?.includes('timeout')) {
+          return "Unable to connect to the server. Please check your internet connection or try again later.";
+        }
+        return error || "An error occurred. Please try again.";
     }
-  }, [searchParams]);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
-    try {
-      console.log("Attempting to sign in with:", formData.email);
+    if (!formData.email) {
+      setError("Email is required");
+      setIsLoading(false);
+      return;
+    }
 
+    if (!formData.password) {
+      setError("Password is required");
+      setIsLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log("Attempting sign in...");
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
@@ -44,19 +86,28 @@ export default function LoginPage() {
       console.log("Sign in result:", result);
 
       if (result?.error) {
-        console.error("Sign in error:", result.error);
-        setError("Invalid email or password");
+        if (result.error.includes('ETIMEDOUT')) {
+          setError('ETIMEDOUT');
+        } else if (result.error.includes('not found')) {
+          setError('Account not found');
+        } else {
+          setError(result.error);
+        }
         return;
       }
 
       if (result?.ok) {
-        console.log("Sign in successful, redirecting...");
-        router.push("/dashboard");
-        router.refresh();
+        router.push(result.url || "/dashboard");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign in error:", error);
-      setError("Something went wrong. Please try again.");
+      if (error?.message?.includes('ETIMEDOUT')) {
+        setError('ETIMEDOUT');
+      } else if (error?.response?.status === 404) {
+        setError('Account not found');
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -64,15 +115,14 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="hidden w-1/2 bg-black lg:block">
+      <div className="hidden w-1/2 bg-black dark:bg-gray-900 lg:block">
         <div className="flex h-full items-center justify-center p-8">
           <div className="text-white">
             <blockquote className="space-y-2">
               <p className="text-lg">
-                &quot;This monitoring system has transformed how we manage our
-                infrastructure.&quot;
+                Monitoring system that provides real-time visibility into the performance and health of your infrastructure.
               </p>
-              <footer className="text-sm">Sofia Davis</footer>
+              <footer className="text-sm">Developer</footer>
             </blockquote>
           </div>
         </div>
@@ -87,6 +137,7 @@ export default function LoginPage() {
               width={40}
               height={40}
               className="mb-4"
+              priority
             />
             <h1 className="text-2xl font-semibold">Welcome back</h1>
             <p className="text-sm text-muted-foreground">
@@ -95,6 +146,21 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/30">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    {/* You can add an error icon here if desired */}
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      {getErrorMessage(error)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <Input
                 type="email"
@@ -107,20 +173,34 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div>
+            <div className="relative">
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, password: e.target.value }))
                 }
-                className="w-full"
+                className="w-full pr-10"
                 required
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="sr-only">
+                  {showPassword ? "Hide password" : "Show password"}
+                </span>
+              </Button>
             </div>
-
-            {error && <p className="text-sm text-red-500">{error}</p>}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign in"}

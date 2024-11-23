@@ -1,7 +1,13 @@
 import { Navbar } from "@/components/layout/Navbar";
+import { Metadata } from "next";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+
+export const metadata: Metadata = {
+  title: "Dashboard - CoreSight",
+  description: "Server monitoring dashboard",
+};
 
 export default async function DashboardLayout({
   children,
@@ -15,9 +21,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="container mx-auto p-4">{children}</main>
-    </>
+      <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
+    </div>
   );
 }

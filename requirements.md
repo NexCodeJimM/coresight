@@ -363,3 +363,33 @@ source venv/bin/activate
 
 #Monitor Logs
 tail -f /root/coresight/coresight-agent/agent.log
+
+# System Settings
+
+nano /etc/systemd/system/coresight-agent.service
+
+# Content
+
+[Unit]
+Description=Coresight Monitoring Agent
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/coresight/coresight-agent
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/root/coresight/coresight-agent/.env
+ExecStart=/root/coresight/coresight-agent/venv/bin/python agent.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/root/coresight/coresight-agent/agent.log
+StandardError=append:/root/coresight/coresight-agent/agent.log
+
+[Install]
+WantedBy=multi-user.target
+
+# Set timezone in MySQL:
+
+SET GLOBAL time_zone = '+00:00';
+SET time_zone = '+00:00';
