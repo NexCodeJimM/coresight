@@ -1309,6 +1309,7 @@ app.get("/api/websites/:id/alerts", async (req, res) => {
 
 // POST new website
 app.post("/api/websites", async (req, res) => {
+  let connection;
   try {
     const { name, url, checkInterval } = req.body;
 
@@ -1322,6 +1323,10 @@ app.post("/api/websites", async (req, res) => {
       });
     }
 
+    // Get a connection for transaction
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
     // Generate UUID for the new website
     const websiteId = require("crypto").randomUUID();
 
@@ -1333,11 +1338,8 @@ app.post("/api/websites", async (req, res) => {
       const responseTime = pingEnd - pingStart;
       const initialStatus = response.ok ? 'up' : 'down';
 
-      // Use a transaction to ensure data consistency
-      await db.query('START TRANSACTION');
-
       // Insert website with initial status
-      await db.query(
+      await connection.query(
         `INSERT INTO monitored_websites (
           id, name, url, check_interval, status, 
           last_checked, response_time
@@ -1345,18 +1347,18 @@ app.post("/api/websites", async (req, res) => {
         [websiteId, name, url, checkInterval, initialStatus, responseTime]
       );
 
-      // Record first uptime entry using the generated websiteId
-      await db.query(
+      // Record first uptime entry using the websiteId
+      await connection.query(
         `INSERT INTO website_uptime (
-          id, website_id, status, response_time
-        ) VALUES (UUID(), ?, ?, ?)`,
+          id, website_id, status, response_time, timestamp
+        ) VALUES (UUID(), ?, ?, ?, NOW())`,
         [websiteId, initialStatus, responseTime]
       );
 
-      await db.query('COMMIT');
+      await connection.commit();
 
       // Fetch the created website
-      const [websites] = await db.query(
+      const [websites] = await connection.query(
         'SELECT * FROM monitored_websites WHERE id = ?',
         [websiteId]
       );
@@ -1368,49 +1370,48 @@ app.post("/api/websites", async (req, res) => {
 
     } catch (error) {
       // If initial ping fails or any other error occurs
-      try {
-        // Use a transaction for consistency
-        await db.query('START TRANSACTION');
+      // Insert website with down status
+      await connection.query(
+        `INSERT INTO monitored_websites (
+          id, name, url, check_interval, status, 
+          last_checked
+        ) VALUES (?, ?, ?, ?, 'down', NOW())`,
+        [websiteId, name, url, checkInterval]
+      );
 
-        // Insert website with down status
-        await db.query(
-          `INSERT INTO monitored_websites (
-            id, name, url, check_interval, status, 
-            last_checked
-          ) VALUES (?, ?, ?, ?, 'down', NOW())`,
-          [websiteId, name, url, checkInterval]
-        );
+      // Record first downtime entry
+      await connection.query(
+        `INSERT INTO website_uptime (
+          id, website_id, status, timestamp
+        ) VALUES (UUID(), ?, 'down', NOW())`,
+        [websiteId]
+      );
 
-        // Record first downtime entry using the generated websiteId
-        await db.query(
-          `INSERT INTO website_uptime (
-            id, website_id, status
-          ) VALUES (UUID(), ?, 'down')`,
-          [websiteId]
-        );
+      await connection.commit();
 
-        await db.query('COMMIT');
+      const [websites] = await connection.query(
+        'SELECT * FROM monitored_websites WHERE id = ?',
+        [websiteId]
+      );
 
-        const [websites] = await db.query(
-          'SELECT * FROM monitored_websites WHERE id = ?',
-          [websiteId]
-        );
-
-        res.json({
-          success: true,
-          website: websites[0],
-        });
-      } catch (dbError) {
-        await db.query('ROLLBACK');
-        throw dbError;
-      }
+      res.json({
+        success: true,
+        website: websites[0],
+      });
     }
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
     console.error("Error creating website:", error);
     res.status(500).json({
       success: false,
       error: "Failed to create website monitor",
       details: error.message,
     });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 });
