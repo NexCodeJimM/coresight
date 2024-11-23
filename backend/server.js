@@ -934,21 +934,27 @@ app.post("/api/metrics", async (req, res) => {
       ]
     );
 
-    // For each process, also store disk usage
-    for (const process of processes) {
-      await db.query(
-        `INSERT INTO server_processes 
-         (id, server_id, pid, name, cpu_usage, memory_usage, disk_usage) 
-         VALUES (UUID(), ?, ?, ?, ?, ?, ?)`,
-        [
-          serverId,
-          process.pid,
-          process.name,
-          process.cpu_usage,
-          process.memory_usage,
-          process.disk_usage || 0, // Add disk usage
-        ]
-      );
+    // Store process information if available
+    if (metrics.processes && Array.isArray(metrics.processes)) {
+      // Clear old processes for this server
+      await db.query('DELETE FROM server_processes WHERE server_id = ?', [serverId]);
+
+      // Insert new process information
+      for (const process of metrics.processes) {
+        await db.query(
+          `INSERT INTO server_processes 
+           (id, server_id, pid, name, cpu_usage, memory_usage, disk_usage, timestamp) 
+           VALUES (UUID(), ?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            serverId,
+            process.pid,
+            process.name,
+            process.cpu_usage || process.cpu_percent,
+            process.memory_usage || process.memory_percent,
+            process.disk_usage || 0,
+          ]
+        );
+      }
     }
 
     res.json({ success: true });

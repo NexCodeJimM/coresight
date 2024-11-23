@@ -202,16 +202,23 @@ class SystemMonitor:
             for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
                 try:
                     info = proc.info
-                    # Ensure numeric values are valid
+                    # Get process disk IO
+                    try:
+                        io_counters = proc.io_counters()
+                        disk_usage = (io_counters.read_bytes + io_counters.write_bytes) / proc.memory_info().vms * 100 if proc.memory_info().vms > 0 else 0
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        disk_usage = 0
+
                     processes.append({
                         "pid": int(info['pid']),
                         "name": str(info['name']),
                         "cpu_percent": float(info['cpu_percent'] or 0.0),
-                        "memory_percent": float(info['memory_percent'] or 0.0)
+                        "memory_percent": float(info['memory_percent'] or 0.0),
+                        "disk_usage": float(disk_usage)
                     })
                 except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
                     continue
-            return processes[:10]  # Return top 10 processes
+            return sorted(processes, key=lambda x: x['cpu_percent'], reverse=True)[:10]  # Return top 10 processes
         except Exception as e:
             logger.error(f"Error getting process info: {e}")
             return []
@@ -221,14 +228,12 @@ class SystemMonitor:
             logger.error("No server ID available. Skipping metrics collection.")
             return None
 
-        # Get memory info
+        # Get all metrics as before
         memory = psutil.virtual_memory()
-        # Get disk info
         disk = psutil.disk_usage('/')
-        # Get network info
         network = psutil.net_io_counters()
+        processes = self.get_process_info()  # Get process information
 
-        # Format metrics to match backend expectations
         metrics = {
             "server_id": self.server_id,
             "timestamp": datetime.now().isoformat(),
@@ -248,10 +253,10 @@ class SystemMonitor:
             "network": {
                 "bytes_sent": network.bytes_sent,
                 "bytes_recv": network.bytes_recv
-            }
+            },
+            "processes": processes  # Add processes to metrics
         }
         
-        # Log the metrics for debugging
         logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
         return metrics
     
