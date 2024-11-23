@@ -7,6 +7,9 @@ const nodemailer = require("nodemailer");
 const mysql = require("mysql2");
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
+const dns = require('dns');
+const { promisify } = require('util');
+const lookup = promisify(dns.lookup);
 
 const app = express();
 
@@ -1121,4 +1124,185 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Website monitoring service
+async function checkWebsiteStatus(website) {
+  const startTime = Date.now();
+  let status = 'down';
+  let responseTime = null;
+
+  try {
+    // First, try to resolve the domain
+    const domain = new URL(website.url).hostname;
+    await lookup(domain);
+
+    // Then try to fetch the website
+    const response = await fetch(website.url, {
+      method: 'HEAD',
+      timeout: 10000, // 10 seconds timeout
+    });
+
+    responseTime = Date.now() - startTime;
+    status = response.ok ? 'up' : 'down';
+
+  } catch (error) {
+    console.error(`Error checking website ${website.url}:`, error);
+    status = 'down';
+  }
+
+  try {
+    // Update website status
+    await db.query(
+      `UPDATE monitored_websites 
+       SET status = ?, 
+           last_checked = NOW(), 
+           response_time = ? 
+       WHERE id = ?`,
+      [status, responseTime, website.id]
+    );
+
+    // Record uptime history
+    await db.query(
+      `INSERT INTO website_uptime (
+        id, website_id, status, response_time, timestamp
+      ) VALUES (UUID(), ?, ?, ?, NOW())`,
+      [website.id, status, responseTime]
+    );
+
+    // If status changed, create an alert
+    const [previousStatus] = await db.query(
+      `SELECT status FROM website_uptime 
+       WHERE website_id = ? 
+       AND id != LAST_INSERT_ID()
+       ORDER BY timestamp DESC LIMIT 1`,
+      [website.id]
+    );
+
+    if (previousStatus.length && previousStatus[0].status !== status) {
+      await db.query(
+        `INSERT INTO alerts (
+          id, website_id, type, message, status
+        ) VALUES (UUID(), ?, ?, ?, 'active')`,
+        [
+          website.id,
+          status === 'down' ? 'error' : 'info',
+          status === 'down'
+            ? `Website ${website.name} is down`
+            : `Website ${website.name} is back online`
+        ]
+      );
+    }
+
+  } catch (error) {
+    console.error(`Error updating website status for ${website.url}:`, error);
+  }
+}
+
+async function monitorWebsites() {
+  try {
+    // Get all websites
+    const [websites] = await db.query('SELECT * FROM monitored_websites');
+
+    // Check each website based on its check interval
+    for (const website of websites) {
+      const [lastCheck] = await db.query(
+        `SELECT timestamp FROM website_uptime 
+         WHERE website_id = ? 
+         ORDER BY timestamp DESC LIMIT 1`,
+        [website.id]
+      );
+
+      const lastCheckTime = lastCheck.length ? new Date(lastCheck[0].timestamp) : new Date(0);
+      const timeSinceLastCheck = Date.now() - lastCheckTime.getTime();
+
+      // Check if it's time to monitor this website again
+      if (timeSinceLastCheck >= website.check_interval * 1000) {
+        await checkWebsiteStatus(website);
+      }
+    }
+  } catch (error) {
+    console.error('Error in website monitoring:', error);
+  }
+}
+
+// Start website monitoring
+const MONITOR_INTERVAL = 10000; // Check every 10 seconds
+setInterval(monitorWebsites, MONITOR_INTERVAL);
+monitorWebsites(); // Initial check
+
+// Add API endpoint for website uptime history
+app.get("/api/websites/:id/uptime", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { hours = 24 } = req.query;
+
+    const [uptimeHistory] = await db.query(
+      `SELECT status, response_time, timestamp
+       FROM website_uptime 
+       WHERE website_id = ? 
+       AND timestamp >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+       ORDER BY timestamp ASC`,
+      [id, hours]
+    );
+
+    // Calculate uptime percentage
+    const totalChecks = uptimeHistory.length;
+    const upChecks = uptimeHistory.filter(check => check.status === 'up').length;
+    const uptimePercentage = totalChecks > 0 
+      ? (upChecks / totalChecks * 100).toFixed(2)
+      : 100;
+
+    // Calculate average response time
+    const validResponseTimes = uptimeHistory
+      .filter(check => check.response_time != null)
+      .map(check => check.response_time);
+    const avgResponseTime = validResponseTimes.length > 0
+      ? (validResponseTimes.reduce((a, b) => a + b, 0) / validResponseTimes.length).toFixed(2)
+      : null;
+
+    res.json({
+      success: true,
+      uptime: {
+        percentage: uptimePercentage,
+        avgResponseTime,
+        history: uptimeHistory
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching website uptime:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch website uptime",
+      details: error.message
+    });
+  }
+});
+
+// Add API endpoint for website alerts
+app.get("/api/websites/:id/alerts", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status = 'active' } = req.query;
+
+    const [alerts] = await db.query(
+      `SELECT * FROM alerts 
+       WHERE website_id = ? 
+       AND status = ?
+       ORDER BY created_at DESC`,
+      [id, status]
+    );
+
+    res.json({
+      success: true,
+      alerts
+    });
+  } catch (error) {
+    console.error("Error fetching website alerts:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch website alerts",
+      details: error.message
+    });
+  }
 });

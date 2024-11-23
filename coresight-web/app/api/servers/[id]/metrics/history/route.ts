@@ -5,13 +5,12 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 
 interface MetricsRow extends RowDataPacket {
-  id: string;
-  server_id: string;
-  cpu_usage: number;
-  memory_usage: number;
-  network_in: number;
-  network_out: number;
-  timestamp: Date;
+  date: string;
+  avg_cpu: number;
+  avg_memory: number;
+  avg_disk: number;
+  avg_network_in: number;
+  avg_network_out: number;
 }
 
 export async function GET(
@@ -26,27 +25,26 @@ export async function GET(
 
     const { id } = params;
 
-    // Get historical metrics
+    // Get daily averages for the last 7 days
     const [historicalMetricsRows] = await pool.query<MetricsRow[]>(
-      `SELECT * FROM server_metrics 
+      `SELECT 
+        DATE(timestamp) as date,
+        AVG(cpu_usage) as avg_cpu,
+        AVG(memory_usage) as avg_memory,
+        AVG(disk_usage) as avg_disk,
+        AVG(network_in) as avg_network_in,
+        AVG(network_out) as avg_network_out
+       FROM server_metrics 
        WHERE server_id = ? 
-       AND timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-       ORDER BY timestamp ASC`,
+       AND timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+       GROUP BY DATE(timestamp)
+       ORDER BY date ASC`,
       [id]
     );
 
-    // Transform historical metrics
-    const historicalMetrics = historicalMetricsRows.map((row) => ({
-      timestamp: row.timestamp,
-      cpu_usage: row.cpu_usage,
-      memory_usage: row.memory_usage,
-      network_in: row.network_in,
-      network_out: row.network_out,
-    }));
-
     return NextResponse.json({
       success: true,
-      history: historicalMetrics,
+      history: historicalMetricsRows,
     });
   } catch (error) {
     console.error("Error fetching historical metrics:", error);

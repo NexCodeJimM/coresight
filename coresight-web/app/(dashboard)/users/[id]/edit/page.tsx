@@ -170,22 +170,23 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push(`/users/${params.id}`)}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to User Profile
+      </Button>
+
+      <div className="flex justify-between items-center">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push(`/users/${params.id}`)}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="text-3xl font-bold tracking-tight">Edit Profile</h2>
-          </div>
+          <h2 className="text-3xl font-bold tracking-tight">Edit Profile</h2>
           <p className="text-muted-foreground">
             Update user information and permissions
           </p>
         </div>
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive">

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, ArrowLeft } from "lucide-react";
 import { ServerDetails } from "@/components/servers/ServerDetails";
 import { ServerMetricsHistory } from "@/components/servers/ServerMetricsHistory";
 import { ServerProcesses } from "@/components/servers/ServerProcesses";
@@ -151,26 +151,39 @@ export default function ServerPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="space-y-8 p-8">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push('/servers')}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Servers
+      </Button>
+
       {/* Server Header */}
-      {serverDetails && (
-        <div className="border-b pb-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">{serverDetails.name}</h1>
-              <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                <span>{serverDetails.ip_address}</span>
-                <span>•</span>
-                <span>{serverDetails.hostname}</span>
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold">Server Details</h1>
+        {serverDetails && (
+          <div className="border-b pb-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">{serverDetails.name}</h2>
+                <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                  <span>{serverDetails.ip_address}</span>
+                  <span>•</span>
+                  <span>{serverDetails.hostname}</span>
+                </div>
+                {serverDetails.description && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {serverDetails.description}
+                  </p>
+                )}
               </div>
-              {serverDetails.description && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {serverDetails.description}
-                </p>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Current Metrics */}
       <ServerDetails currentMetrics={currentMetrics} />

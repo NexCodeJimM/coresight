@@ -18,6 +18,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ArrowLeft } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ServerSettings {
   id: string;
@@ -179,8 +181,82 @@ export default function ServerSettingsPage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="space-y-6 p-6">
+        {/* Back Button Skeleton */}
+        <Skeleton className="h-9 w-32" />
+
+        {/* Header Skeleton */}
+        <div className="space-y-1">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+
+        {/* Delete Button Skeleton */}
+        <div className="flex justify-end">
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Basic Information Card Skeleton */}
+        <div className="space-y-6">
+          <div className="rounded-lg border bg-card">
+            <div className="p-6">
+              <Skeleton className="h-7 w-48 mb-6" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* InfluxDB Settings Card Skeleton */}
+          <div className="rounded-lg border bg-card">
+            <div className="p-6">
+              <Skeleton className="h-7 w-48 mb-6" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons Skeleton */}
+          <div className="flex justify-end space-x-4">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -191,8 +267,23 @@ export default function ServerSettingsPage({
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Server Settings</h1>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push(`/servers/${params.id}`)}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Server Details
+      </Button>
+
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold">Server Settings</h1>
+        <p className="text-muted-foreground">
+          Manage your server configuration and settings
+        </p>
+      </div>
+
+      <div className="flex justify-end">
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogTrigger asChild>
             <Button variant="destructive">Delete Server</Button>

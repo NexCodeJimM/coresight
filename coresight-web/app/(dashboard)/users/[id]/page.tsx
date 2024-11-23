@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Mail, User, Calendar, Clock, Shield } from "lucide-react";
+import { Edit2, Mail, User, Calendar, Clock, Shield, ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface User {
@@ -87,6 +87,15 @@ export default function UserProfilePage({
 
   return (
     <div className="p-6 space-y-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push('/users')}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Users
+      </Button>
+
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold tracking-tight">User Profile</h2>
         {session?.user.is_admin && (
