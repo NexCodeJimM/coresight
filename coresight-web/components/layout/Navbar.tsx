@@ -124,6 +124,15 @@ export function Navbar() {
               Servers
             </Link>
             <Link
+              href="/websites"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                isActive("/websites") ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              Websites
+            </Link>
+            <Link
               href="/users"
               className={cn(
                 "text-sm font-medium transition-colors hover:text-primary",

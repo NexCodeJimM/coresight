@@ -7,6 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Settings, ArrowLeft, ExternalLink } from "lucide-react";
 import { WebsiteUptimeGraph } from "@/components/websites/WebsiteUptimeGraph";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Website {
   id: string;
@@ -28,20 +36,33 @@ interface UptimeData {
   }[];
 }
 
+interface TimeRange {
+  label: string;
+  value: string;
+  hours: number;
+}
+
+const timeRanges: TimeRange[] = [
+  { label: "Last 24 Hours", value: "daily", hours: 24 },
+  { label: "Last 7 Days", value: "weekly", hours: 168 },
+  { label: "Last 30 Days", value: "monthly", hours: 720 },
+  { label: "Last Year", value: "yearly", hours: 8760 },
+];
+
 export default function WebsitePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [website, setWebsite] = useState<Website | null>(null);
   const [uptimeData, setUptimeData] = useState<UptimeData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>(timeRanges[0]);
 
   useEffect(() => {
-    const fetchWebsiteDetails = async () => {
+    const fetchData = async () => {
       try {
-        setLoading(true);
         const [websiteRes, uptimeRes] = await Promise.all([
           fetch(`/api/websites/${params.id}`),
-          fetch(`/api/websites/${params.id}/uptime`)
+          fetch(`/api/websites/${params.id}/uptime?hours=${selectedTimeRange.hours}`)
         ]);
 
         if (!websiteRes.ok) throw new Error("Failed to fetch website details");
@@ -60,34 +81,40 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
         console.error("Error fetching website details:", error);
         setError(error instanceof Error ? error.message : "Failed to load website details");
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
 
-    fetchWebsiteDetails();
-    // Poll for updates every 30 seconds
-    const interval = setInterval(fetchWebsiteDetails, 30000);
+    fetchData();
+
+    // Set up polling for updates without showing loading state
+    const interval = setInterval(async () => {
+      try {
+        const [websiteRes, uptimeRes] = await Promise.all([
+          fetch(`/api/websites/${params.id}`),
+          fetch(`/api/websites/${params.id}/uptime?hours=${selectedTimeRange.hours}`)
+        ]);
+
+        if (websiteRes.ok) {
+          const websiteData = await websiteRes.json();
+          if (websiteData.success) {
+            setWebsite(websiteData.website);
+          }
+        }
+
+        if (uptimeRes.ok) {
+          const uptimeData = await uptimeRes.json();
+          if (uptimeData.success) {
+            setUptimeData(uptimeData.uptime);
+          }
+        }
+      } catch (error) {
+        console.error("Error updating data:", error);
+      }
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [params.id]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Error: {error}</div>
-      </div>
-    );
-  }
-
-  if (!website) return null;
+  }, [params.id, selectedTimeRange]);
 
   const formatLastChecked = (date: string | null) => {
     if (!date) return "Never";
@@ -105,6 +132,63 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
     if (seconds < 60) return `${seconds} seconds`;
     return `${seconds / 60} minutes`;
   };
+
+  if (initialLoading) {
+    return (
+      <div className="space-y-8 p-8">
+        <Button variant="ghost" size="sm" disabled>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Websites
+        </Button>
+
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-5 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-4 w-24 mt-1" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-48" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[400px] w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/websites')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Websites
+        </Button>
+        <div className="mt-8 text-center text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (!website) return null;
 
   return (
     <div className="space-y-8 p-8">
@@ -173,7 +257,9 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{uptimeData.percentage}%</div>
-              <p className="text-xs text-muted-foreground">Last 24 hours</p>
+              <p className="text-xs text-muted-foreground">
+                Last {selectedTimeRange.label.toLowerCase()}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -200,6 +286,29 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
           </Card>
         </div>
       )}
+
+    {/* Time Range Selector */}
+    <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Select Range</h2>
+        <Select
+          value={selectedTimeRange.value}
+          onValueChange={(value) => {
+            const range = timeRanges.find(r => r.value === value);
+            if (range) setSelectedTimeRange(range);
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select time range" />
+          </SelectTrigger>
+          <SelectContent>
+            {timeRanges.map((range) => (
+              <SelectItem key={range.value} value={range.value}>
+                {range.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Uptime Graph */}
       {uptimeData && (

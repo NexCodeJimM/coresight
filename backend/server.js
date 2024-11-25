@@ -1137,18 +1137,44 @@ async function checkWebsiteStatus(website) {
     const domain = new URL(website.url).hostname;
     await lookup(domain);
 
-    // Then try to fetch the website
+    // Try GET request instead of HEAD, with proper headers
     const response = await fetch(website.url, {
-      method: 'HEAD',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CoreSight/1.0; +http://example.com)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      },
       timeout: 10000, // 10 seconds timeout
+      redirect: 'follow', // Follow redirects
     });
 
     responseTime = Date.now() - startTime;
-    status = response.ok ? 'up' : 'down';
+    // Consider 2xx and 3xx status codes as 'up'
+    status = (response.status >= 200 && response.status < 400) ? 'up' : 'down';
 
   } catch (error) {
     console.error(`Error checking website ${website.url}:`, error);
-    status = 'down';
+    // Try one more time with http if https fails
+    if (website.url.startsWith('https://')) {
+      try {
+        const httpUrl = website.url.replace('https://', 'http://');
+        const response = await fetch(httpUrl, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; CoreSight/1.0; +http://example.com)',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          },
+          timeout: 10000,
+          redirect: 'follow',
+        });
+        responseTime = Date.now() - startTime;
+        status = (response.status >= 200 && response.status < 400) ? 'up' : 'down';
+      } catch (retryError) {
+        status = 'down';
+      }
+    } else {
+      status = 'down';
+    }
   }
 
   try {
