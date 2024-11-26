@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Dashboard - CoreSight",
+  title: "Website Monitoring - CoreSight - Precision Monitoring for Peak Performance",
   description: "Server monitoring dashboard",
 };
 

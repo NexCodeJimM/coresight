@@ -1131,6 +1131,7 @@ async function checkWebsiteStatus(website) {
   const startTime = Date.now();
   let status = 'down';
   let responseTime = null;
+  let errorMessage = null;
 
   try {
     // First, try to resolve the domain
@@ -1151,9 +1152,14 @@ async function checkWebsiteStatus(website) {
     responseTime = Date.now() - startTime;
     // Consider 2xx and 3xx status codes as 'up'
     status = (response.status >= 200 && response.status < 400) ? 'up' : 'down';
+    if (status === 'down') {
+      errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
+    }
 
   } catch (error) {
     console.error(`Error checking website ${website.url}:`, error);
+    errorMessage = error.message;
+
     // Try one more time with http if https fails
     if (website.url.startsWith('https://')) {
       try {
@@ -1169,11 +1175,18 @@ async function checkWebsiteStatus(website) {
         });
         responseTime = Date.now() - startTime;
         status = (response.status >= 200 && response.status < 400) ? 'up' : 'down';
+        if (status === 'down') {
+          errorMessage = `HTTP Error: ${response.status} ${response.statusText}`;
+        } else {
+          errorMessage = null;
+        }
       } catch (retryError) {
         status = 'down';
+        errorMessage = retryError.message;
       }
     } else {
       status = 'down';
+      errorMessage = error.message;
     }
   }
 
@@ -1188,12 +1201,12 @@ async function checkWebsiteStatus(website) {
       [status, responseTime, website.id]
     );
 
-    // Record uptime history
+    // Record uptime history with error message
     await db.query(
       `INSERT INTO website_uptime (
-        id, website_id, status, response_time, timestamp
-      ) VALUES (UUID(), ?, ?, ?, NOW())`,
-      [website.id, status, responseTime]
+        id, website_id, status, response_time, error_message, timestamp
+      ) VALUES (UUID(), ?, ?, ?, ?, NOW())`,
+      [website.id, status, responseTime, errorMessage]
     );
 
     // If status changed, create an alert
@@ -1214,7 +1227,7 @@ async function checkWebsiteStatus(website) {
           website.id,
           status === 'down' ? 'error' : 'info',
           status === 'down'
-            ? `Website ${website.name} is down`
+            ? `Website ${website.name} is down: ${errorMessage}`
             : `Website ${website.name} is back online`
         ]
       );

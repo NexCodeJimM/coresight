@@ -13,11 +13,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const user = data.user;
 
     return {
-      title: `${user.first_name} ${user.last_name} | User Profile`,
+      title: `${user.first_name} ${user.last_name} | User Profile - CoreSight - Precision Monitoring for Peak Performance`,
     };
   } catch (error) {
     return {
-      title: "User Profile",
+      title: "User Profile - CoreSight - Precision Monitoring for Peak Performance",
     };
   }
 }

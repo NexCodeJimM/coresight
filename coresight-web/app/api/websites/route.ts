@@ -14,9 +14,11 @@ interface WebsiteRow extends RowDataPacket {
   response_time: number | null;
   created_at: Date;
   updated_at: Date;
+  category_id: string | null;
+  category_name: string | null;
 }
 
-// GET all websites
+// GET all websites with categories
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +27,10 @@ export async function GET() {
     }
 
     const [websites] = await pool.query<WebsiteRow[]>(
-      `SELECT * FROM monitored_websites ORDER BY created_at DESC`
+      `SELECT w.*, c.name as category_name 
+       FROM monitored_websites w 
+       LEFT JOIN website_categories c ON w.category_id = c.id 
+       ORDER BY w.created_at DESC`
     );
 
     return NextResponse.json({
@@ -54,7 +59,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, url, checkInterval } = body;
+    const { name, url, checkInterval, categoryId } = body;
 
     // Validate URL format
     try {
@@ -95,13 +100,13 @@ export async function POST(request: Request) {
       const responseTime = pingEnd - pingStart;
       const initialStatus = (response.status >= 200 && response.status < 400) ? 'up' : 'down';
 
-      // Insert website
+      // Insert website with category
       await connection.query(
         `INSERT INTO monitored_websites (
           id, name, url, check_interval, status, 
-          last_checked, response_time
-        ) VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
-        [websiteId, name, url, checkInterval, initialStatus, responseTime]
+          last_checked, response_time, category_id
+        ) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)`,
+        [websiteId, name, url, checkInterval, initialStatus, responseTime, categoryId || null]
       );
 
       // Insert uptime record
@@ -136,13 +141,13 @@ export async function POST(request: Request) {
           const responseTime = pingEnd - retryPingStart;
           const initialStatus = (response.status >= 200 && response.status < 400) ? 'up' : 'down';
           
-          // Insert website
+          // Insert website with category
           await connection.query(
             `INSERT INTO monitored_websites (
               id, name, url, check_interval, status, 
-              last_checked, response_time
-            ) VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
-            [websiteId, name, url, checkInterval, initialStatus, responseTime]
+              last_checked, response_time, category_id
+            ) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)`,
+            [websiteId, name, url, checkInterval, initialStatus, responseTime, categoryId || null]
           );
 
           // Insert uptime record
@@ -158,9 +163,9 @@ export async function POST(request: Request) {
           await connection.query(
             `INSERT INTO monitored_websites (
               id, name, url, check_interval, status, 
-              last_checked
-            ) VALUES (?, ?, ?, ?, 'down', NOW())`,
-            [websiteId, name, url, checkInterval]
+              last_checked, category_id
+            ) VALUES (?, ?, ?, ?, 'down', NOW(), ?)`,
+            [websiteId, name, url, checkInterval, categoryId || null]
           );
 
           await connection.query(
@@ -175,9 +180,9 @@ export async function POST(request: Request) {
         await connection.query(
           `INSERT INTO monitored_websites (
             id, name, url, check_interval, status, 
-            last_checked
-          ) VALUES (?, ?, ?, ?, 'down', NOW())`,
-          [websiteId, name, url, checkInterval]
+            last_checked, category_id
+          ) VALUES (?, ?, ?, ?, 'down', NOW(), ?)`,
+          [websiteId, name, url, checkInterval, categoryId || null]
         );
 
         await connection.query(
@@ -191,9 +196,12 @@ export async function POST(request: Request) {
 
     await connection.commit();
 
-    // Fetch the created website
+    // Fetch the created website with category name
     const [websites] = await connection.query<WebsiteRow[]>(
-      'SELECT * FROM monitored_websites WHERE id = ?',
+      `SELECT w.*, c.name as category_name 
+       FROM monitored_websites w 
+       LEFT JOIN website_categories c ON w.category_id = c.id 
+       WHERE w.id = ?`,
       [websiteId]
     );
 

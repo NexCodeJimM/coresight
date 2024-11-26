@@ -33,6 +33,12 @@ interface WebsiteSettings {
   url: string;
   check_interval: number;
   status: "up" | "down";
+  category_id: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 export default function WebsiteSettingsPage({
@@ -45,37 +51,43 @@ export default function WebsiteSettingsPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<WebsiteSettings | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
-    const fetchWebsiteSettings = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/websites/${params.id}`);
-        const data = await response.json();
+        const [websiteRes, categoriesRes] = await Promise.all([
+          fetch(`/api/websites/${params.id}`),
+          fetch('/api/website-categories')
+        ]);
 
-        if (response.ok && data.success) {
-          setSettings(data.website);
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: data.error || "Failed to load website settings",
-          });
+        if (!websiteRes.ok) throw new Error("Failed to load website settings");
+        if (!categoriesRes.ok) throw new Error("Failed to load categories");
+
+        const websiteData = await websiteRes.json();
+        const categoriesData = await categoriesRes.json();
+
+        if (websiteData.success) {
+          setSettings(websiteData.website);
+        }
+        if (categoriesData.success) {
+          setCategories(categoriesData.categories);
         }
       } catch (error) {
-        console.error("Error fetching website settings:", error);
+        console.error("Error fetching data:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Error loading website settings",
+          description: "Failed to load settings",
         });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWebsiteSettings();
+    fetchData();
   }, [params.id, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,6 +105,7 @@ export default function WebsiteSettingsPage({
           name: settings.name,
           url: settings.url,
           checkInterval: settings.check_interval,
+          category_id: settings.category_id,
         }),
       });
 
@@ -141,6 +154,7 @@ export default function WebsiteSettingsPage({
         toast({
           title: "Success",
           description: "Website deleted successfully",
+          variant: "success",
         });
         router.push("/websites");
       } else {
@@ -255,9 +269,9 @@ export default function WebsiteSettingsPage({
               </label>
               <Input
                 id="name"
-                value={settings.name}
+                value={settings?.name}
                 onChange={(e) =>
-                  setSettings({ ...settings, name: e.target.value })
+                  setSettings(prev => ({ ...prev!, name: e.target.value }))
                 }
                 required
               />
@@ -269,9 +283,9 @@ export default function WebsiteSettingsPage({
               </label>
               <Input
                 id="url"
-                value={settings.url}
+                value={settings?.url}
                 onChange={(e) =>
-                  setSettings({ ...settings, url: e.target.value })
+                  setSettings(prev => ({ ...prev!, url: e.target.value }))
                 }
                 placeholder="https://example.com"
                 required
@@ -279,13 +293,40 @@ export default function WebsiteSettingsPage({
             </div>
 
             <div className="space-y-2">
+              <label htmlFor="category" className="text-sm font-medium">
+                Category
+              </label>
+              <Select
+                value={settings?.category_id || "uncategorized"}
+                onValueChange={(value) =>
+                  setSettings(prev => ({ 
+                    ...prev!, 
+                    category_id: value === "uncategorized" ? null : value 
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <label htmlFor="interval" className="text-sm font-medium">
                 Check Interval
               </label>
               <Select
-                value={settings.check_interval.toString()}
+                value={settings?.check_interval.toString()}
                 onValueChange={(value) =>
-                  setSettings({ ...settings, check_interval: parseInt(value) })
+                  setSettings(prev => ({ ...prev!, check_interval: parseInt(value) }))
                 }
               >
                 <SelectTrigger>

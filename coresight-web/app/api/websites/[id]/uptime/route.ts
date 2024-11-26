@@ -8,6 +8,8 @@ interface UptimeRow extends RowDataPacket {
   status: "up" | "down";
   response_time: number | null;
   timestamp: Date;
+  category_id: string | null;
+  category_name: string | null;
 }
 
 export async function GET(
@@ -24,13 +26,16 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const hours = Number(searchParams.get('hours')) || 24;
 
-    // Get uptime history
+    // Get uptime history with category information
     const [uptimeHistory] = await pool.query<UptimeRow[]>(
-      `SELECT status, response_time, timestamp
-       FROM website_uptime 
-       WHERE website_id = ? 
-       AND timestamp >= DATE_SUB(NOW(), INTERVAL ? HOUR)
-       ORDER BY timestamp ASC`,
+      `SELECT u.status, u.response_time, u.timestamp,
+              w.category_id, c.name as category_name
+       FROM website_uptime u
+       JOIN monitored_websites w ON u.website_id = w.id
+       LEFT JOIN website_categories c ON w.category_id = c.id
+       WHERE u.website_id = ? 
+       AND u.timestamp >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+       ORDER BY u.timestamp ASC`,
       [id, hours]
     );
 
@@ -49,11 +54,21 @@ export async function GET(
       ? (validResponseTimes.reduce((a, b) => a + b, 0) / validResponseTimes.length).toFixed(2)
       : null;
 
+    // Get the current category information
+    const categoryInfo = uptimeHistory.length > 0 ? {
+      category_id: uptimeHistory[0].category_id,
+      category_name: uptimeHistory[0].category_name
+    } : {
+      category_id: null,
+      category_name: null
+    };
+
     return NextResponse.json({
       success: true,
       uptime: {
         percentage: uptimePercentage,
         avgResponseTime,
+        category: categoryInfo,
         history: uptimeHistory.map(row => ({
           status: row.status,
           response_time: row.response_time,

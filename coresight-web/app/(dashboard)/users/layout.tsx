@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "User Management",
+  title: "User Management - CoreSight - Precision Monitoring for Peak Performance",
 };
 
 export default function UsersLayout({

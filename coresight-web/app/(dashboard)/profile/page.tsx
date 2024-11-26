@@ -12,6 +12,7 @@ import { Loader2, Eye, EyeOff, Camera } from "lucide-react";
 export default function ProfilePage() {
   const { data: session, update: updateSession } = useSession();
   const { toast } = useToast();
+  const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -28,32 +29,42 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch('/api/profile');
-        if (!response.ok) throw new Error('Failed to fetch user data');
-        
-        const userData = await response.json();
-        setFormData({
-          firstName: userData.first_name || "",
-          lastName: userData.last_name || "",
-          email: userData.email || "",
-          image: userData.image || "",
-        });
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load profile data",
-          variant: "destructive",
-        });
-      }
-    };
+    setMounted(true);
+  }, []);
 
-    if (session?.user) {
-      fetchUserData();
+  useEffect(() => {
+    if (mounted) {
+      const fetchUserData = async () => {
+        try {
+          const response = await fetch('/api/profile');
+          if (!response.ok) throw new Error('Failed to fetch user data');
+          
+          const userData = await response.json();
+          setFormData({
+            firstName: userData.first_name || "",
+            lastName: userData.last_name || "",
+            email: userData.email || "",
+            image: userData.image || "",
+          });
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load profile data",
+            variant: "destructive",
+          });
+        }
+      };
+
+      if (session?.user) {
+        fetchUserData();
+      }
     }
-  }, [session, toast]);
+  }, [session, toast, mounted]);
+
+  if (!mounted) {
+    return null;
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -19,6 +19,6 @@ export default async function ServersPage() {
   );
 }
 
-export const metadata = {
-  title: "Servers",
-};
+// export const metadata = {
+//   title: "Servers",
+// };

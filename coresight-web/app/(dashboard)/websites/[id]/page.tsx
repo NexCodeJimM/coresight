@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface Website {
   id: string;
@@ -24,6 +26,8 @@ interface Website {
   last_checked: string | null;
   response_time: number | null;
   check_interval: number;
+  category_id: string | null;
+  category_name: string | null;
 }
 
 interface UptimeData {
@@ -42,6 +46,19 @@ interface TimeRange {
   hours: number;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface WebsiteLogs {
+  id: string;
+  status: "up" | "down";
+  response_time: number | null;
+  timestamp: string;
+  error_message?: string;
+}
+
 const timeRanges: TimeRange[] = [
   { label: "Last 24 Hours", value: "daily", hours: 24 },
   { label: "Last 7 Days", value: "weekly", hours: 168 },
@@ -56,20 +73,26 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>(timeRanges[0]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [logs, setLogs] = useState<WebsiteLogs[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [websiteRes, uptimeRes] = await Promise.all([
+        const [websiteRes, uptimeRes, categoriesRes, logsRes] = await Promise.all([
           fetch(`/api/websites/${params.id}`),
-          fetch(`/api/websites/${params.id}/uptime?hours=${selectedTimeRange.hours}`)
+          fetch(`/api/websites/${params.id}/uptime?hours=${selectedTimeRange.hours}`),
+          fetch('/api/website-categories'),
+          fetch(`/api/websites/${params.id}/logs`)
         ]);
 
         if (!websiteRes.ok) throw new Error("Failed to fetch website details");
         if (!uptimeRes.ok) throw new Error("Failed to fetch uptime data");
+        if (!categoriesRes.ok) throw new Error("Failed to fetch categories");
 
         const websiteData = await websiteRes.json();
         const uptimeData = await uptimeRes.json();
+        const categoriesData = await categoriesRes.json();
 
         if (websiteData.success) {
           setWebsite(websiteData.website);
@@ -77,9 +100,19 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
         if (uptimeData.success) {
           setUptimeData(uptimeData.uptime);
         }
+        if (categoriesData.success) {
+          setCategories(categoriesData.categories);
+        }
+
+        if (logsRes.ok) {
+          const logsData = await logsRes.json();
+          if (logsData.success) {
+            setLogs(logsData.logs);
+          }
+        }
       } catch (error) {
-        console.error("Error fetching website details:", error);
-        setError(error instanceof Error ? error.message : "Failed to load website details");
+        console.error("Error fetching data:", error);
+        setError(error instanceof Error ? error.message : "Failed to load data");
       } finally {
         setInitialLoading(false);
       }
@@ -231,10 +264,17 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
                 {website.response_time && (
                   <>
                     <span>•</span>
-                    <span>Response time: {website.response_time}ms</span>
+                    <span>{website.response_time}ms</span>
                   </>
                 )}
               </div>
+              {website.category_name && (
+                <div className="mt-2">
+                  <span className="text-sm text-muted-foreground">
+                    Category: {website.category_name}
+                  </span>
+                </div>
+              )}
             </div>
             <Button
               variant="outline"
@@ -287,8 +327,8 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-    {/* Time Range Selector */}
-    <div className="flex justify-between items-center">
+      {/* Time Range Selector */}
+      <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Select Range</h2>
         <Select
           value={selectedTimeRange.value}
@@ -321,6 +361,56 @@ export default function WebsitePage({ params }: { params: { id: string } }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Website Logs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Status Logs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-4">
+              {logs.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex items-start gap-4 pb-4 border-b last:border-0"
+                >
+                  {log.status === "up" ? (
+                    <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-500" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 mt-0.5 text-red-500" />
+                  )}
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">
+                        Status changed to {log.status === "up" ? "Online" : "Offline"}
+                      </p>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(log.timestamp).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "numeric",
+                          hour12: true,
+                          timeZone: "Asia/Manila",
+                        })}
+                      </span>
+                    </div>
+                    {log.status === "down" && log.error_message && (
+                      <p className="text-sm text-red-500">{log.error_message}</p>
+                    )}
+                    {log.response_time && log.status === "up" && (
+                      <p className="text-sm text-muted-foreground">
+                        Response time: {log.response_time}ms
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 } 
