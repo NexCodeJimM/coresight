@@ -1,20 +1,19 @@
 [Unit]
-Description=CoreSight Agent Service
+Description=CoreSight Monitoring Agent
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/opt/coresight/agent
+WorkingDirectory=/root/coresight-1.0.0/coresight-agent
 Environment=PYTHONUNBUFFERED=1
-EnvironmentFile=/opt/coresight/agent/.env
-ExecStart=/opt/coresight/agent/venv/bin/python agent.py
-ExecStartPost=/opt/coresight/scripts/check-updates.sh
+EnvironmentFile=/root/coresight-1.0.0/coresight-agent/.env
+ExecStart=/root/coresight-1.0.0/coresight-agent/venv/bin/python3 agent.py
 Restart=always
 RestartSec=10
-
-# Run update check every 6 hours
-OnUnitActiveSec=6h
+StandardOutput=append:/root/coresight-1.0.0/coresight-agent/logs/agent.log
+StandardError=append:/root/coresight-1.0.0/coresight-agent/logs/agent.log
+LogsDirectory=/root/coresight-1.0.0/coresight-agent/logs
 
 [Install]
 WantedBy=multi-user.target 

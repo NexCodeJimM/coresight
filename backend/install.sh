@@ -53,20 +53,61 @@ echo "$LATEST_VERSION" > .version
 npm install
 
 # Create .env file
-cat > .env << EOL
+echo "Creating .env file..."
+if [ ! -f .env ]; then
+    # Prompt for environment variables
+    read -p "Enter MySQL Host (default: localhost): " DB_HOST
+    DB_HOST=${DB_HOST:-localhost}
+    
+    read -p "Enter MySQL Port (default: 3306): " DB_PORT
+    DB_PORT=${DB_PORT:-3306}
+    
+    read -p "Enter MySQL User: " DB_USER
+    read -s -p "Enter MySQL Password: " DB_PASSWORD
+    echo
+    
+    read -p "Enter MySQL Database Name (default: coresight): " DB_NAME
+    DB_NAME=${DB_NAME:-coresight}
+    
+    read -p "Enter InfluxDB Token: " INFLUXDB_TOKEN
+    read -p "Enter InfluxDB Organization (default: coresight): " INFLUXDB_ORG
+    INFLUXDB_ORG=${INFLUXDB_ORG:-coresight}
+    
+    # Create .env file with provided values
+    cat > .env << EOL
+# Server Configuration
 PORT=3000
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=coresight
+NODE_ENV=production
+
+# Database Configuration
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
+DB_NAME=${DB_NAME}
 
 # InfluxDB Configuration
 INFLUXDB_URL=http://localhost:8086
-INFLUXDB_TOKEN=your_influxdb_token
-INFLUXDB_ORG=your_org
+INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+INFLUXDB_ORG=${INFLUXDB_ORG}
 INFLUXDB_BUCKET=coresight
+
+# JWT Configuration
+JWT_SECRET=$(openssl rand -base64 32)
+JWT_EXPIRES_IN=7d
+
+# Email Configuration (optional)
+# EMAIL_HOST=smtp.gmail.com
+# EMAIL_PORT=587
+# EMAIL_USER=your-email@gmail.com
+# EMAIL_PASS=your-app-specific-password
+# EMAIL_FROM=noreply@coresight.com
 EOL
+
+    echo -e "${GREEN}.env file created successfully!${NC}"
+else
+    echo ".env file already exists, skipping creation"
+fi
 
 # Create PM2 ecosystem file
 cat > ecosystem.config.js << EOL
@@ -108,6 +149,7 @@ pm2 startup | grep "sudo env" | bash
 
 echo -e "${GREEN}CoreSight Backend installed successfully!${NC}"
 echo -e "${GREEN}InfluxDB is running on http://localhost:8086${NC}"
-echo -e "${GREEN}Please configure InfluxDB and update the .env file with your credentials${NC}"
+echo -e "${GREEN}Backend is running on http://localhost:3000${NC}"
+echo -e "${GREEN}Configuration file: /opt/coresight/backend/.env${NC}"
 echo -e "${GREEN}To check backend status, run: pm2 status${NC}"
 echo -e "${GREEN}To view backend logs, run: pm2 logs coresight-backend${NC}" 

@@ -7,12 +7,13 @@ NC='\033[0m'
 
 echo -e "${GREEN}Installing CoreSight Agent...${NC}"
 
-# Get latest version
-LATEST_VERSION=$(curl -s https://api.github.com/repos/nexcodejimm/coresight/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-
 # Create directory
 mkdir -p /opt/coresight/agent
 cd /opt/coresight/agent
+
+# Create logs directory
+mkdir -p logs
+chmod 755 logs
 
 # Install Python if not present
 if ! command -v python3 &> /dev/null; then
@@ -27,48 +28,52 @@ curl -L "https://github.com/nexcodejimm/coresight/releases/latest/download/agent
 tar -xzf agent.tar.gz
 rm agent.tar.gz
 
-# Save version
-echo "$LATEST_VERSION" > .version
-
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
+# Fix permissions
+chmod -R 755 venv/
+chown -R root:root venv/
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Create .env file
-cat > .env << EOL
-BACKEND_HOST=your_backend_host
-BACKEND_PORT=3000
-SERVER_ID=your_server_id
+# Create .env file if not exists
+if [ ! -f .env ]; then
+    # Prompt for environment variables
+    read -p "Enter Backend Host (default: localhost): " BACKEND_HOST
+    BACKEND_HOST=${BACKEND_HOST:-localhost}
+    
+    read -p "Enter Backend Port (default: 3000): " BACKEND_PORT
+    BACKEND_PORT=${BACKEND_PORT:-3000}
+    
+    read -p "Enter Server ID: " SERVER_ID
+    
+    # Create .env file
+    cat > .env << EOL
+BACKEND_HOST=${BACKEND_HOST}
+BACKEND_PORT=${BACKEND_PORT}
+SERVER_ID=${SERVER_ID}
 EOL
 
-# Create systemd service
-cat > /etc/systemd/system/coresight-agent.service << EOL
-[Unit]
-Description=Coresight Monitoring Agent
-After=network.target
+    chmod 644 .env
+fi
 
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/root/coresight/coresight-agent
-Environment=PYTHONUNBUFFERED=1
-EnvironmentFile=/root/coresight/coresight-agent/.env
-ExecStart=/root/coresight/coresight-agent/venv/bin/python agent.py
-Restart=always
-RestartSec=10
-StandardOutput=append:/root/coresight/coresight-agent/agent.log
-StandardError=append:/root/coresight/coresight-agent/agent.log
+# Copy service file
+cp coresight-agent.service /etc/systemd/system/
+chmod 644 /etc/systemd/system/coresight-agent.service
 
-[Install]
-WantedBy=multi-user.target
-EOL
+# Reload systemd and start service
+systemctl daemon-reload
+systemctl enable coresight-agent
+systemctl start coresight-agent
 
-# Start service
-sudo systemctl daemon-reload
-sudo systemctl enable coresight-agent
-sudo systemctl start coresight-agent
+# Check service status
+echo -e "${GREEN}Checking service status...${NC}"
+systemctl status coresight-agent --no-pager
 
-echo -e "${GREEN}CoreSight Agent installed successfully!${NC}" 
+echo -e "${GREEN}Installation complete!${NC}"
+echo -e "Logs are available at: /opt/coresight/agent/logs/agent.log"
+echo -e "Service status: systemctl status coresight-agent"
+echo -e "View logs: journalctl -u coresight-agent -f" 

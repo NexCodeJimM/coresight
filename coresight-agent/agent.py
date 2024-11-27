@@ -39,49 +39,29 @@ class SystemMonitor:
         try:
             self.hostname = socket.gethostname()
             self.ip_address = self.get_ip_address()
-            self.server_id = None
+            
+            # Get server ID from environment variables
+            self.server_id = os.getenv('SERVER_ID')
+            if not self.server_id:
+                logger.error("SERVER_ID not found in environment variables")
+                raise ValueError("SERVER_ID environment variable is required")
+            
+            logger.info(f"Using Server ID: {self.server_id}")
             
             # Get backend URL from environment variables with defaults
-            backend_host = os.getenv('BACKEND_HOST', '143.198.84.214')
+            backend_host = os.getenv('BACKEND_HOST', 'localhost')
             backend_port = os.getenv('BACKEND_PORT', '3000')
             self.backend_url = f"http://{backend_host}:{backend_port}/api/metrics"
             
             logger.info(f"Initializing agent with hostname: {self.hostname}, IP: {self.ip_address}")
             logger.info(f"Using backend URL: {self.backend_url}")
             
-            # Initialize database connection config
-            self.db_config = {
-                'host': os.getenv('DB_HOST', '143.198.84.214'),
-                'user': os.getenv('DB_USER', 'coresight'),
-                'password': os.getenv('DB_PASSWORD', 'RJmendoza21!'),
-                'database': os.getenv('DB_NAME', 'efi'),
-                'port': int(os.getenv('DB_PORT', '3306'))
-            }
-            
-            logger.info("Database configuration loaded")
-            
-            # Test database connection
-            self.test_db_connection()
-            
-            # Get server ID on startup
-            self.fetch_server_id()
-            
         except Exception as e:
             logger.error(f"Error initializing SystemMonitor: {e}", exc_info=True)
             raise
 
-    def test_db_connection(self):
-        try:
-            conn = mysql.connector.connect(**self.db_config)
-            logger.info("Database connection test successful")
-            conn.close()
-        except Exception as e:
-            logger.error(f"Database connection test failed: {e}", exc_info=True)
-            raise
-
     def get_ip_address(self):
         try:
-            # Get the IP address of the default network interface
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
             ip_address = s.getsockname()[0]
@@ -91,32 +71,6 @@ class SystemMonitor:
             logger.error(f"Error getting IP address: {e}")
             return None
 
-    def fetch_server_id(self):
-        try:
-            conn = mysql.connector.connect(**self.db_config)
-            cursor = conn.cursor(dictionary=True)
-            
-            # Try to find server by hostname first, then IP address
-            cursor.execute("""
-                SELECT id FROM servers 
-                WHERE hostname = %s OR ip_address = %s
-                LIMIT 1
-            """, (self.hostname, self.ip_address))
-            
-            result = cursor.fetchone()
-            
-            if result:
-                self.server_id = result['id']
-                logger.info(f"Found server ID: {self.server_id}")
-            else:
-                logger.error("Server not found in database")
-                
-            cursor.close()
-            conn.close()
-            
-        except Exception as e:
-            logger.error(f"Error fetching server ID: {e}")
-    
     def get_cpu_metrics(self):
         try:
             cpu_percent = psutil.cpu_percent(interval=1)
@@ -224,15 +178,11 @@ class SystemMonitor:
             return []
     
     def collect_metrics(self):
-        if not self.server_id:
-            logger.error("No server ID available. Skipping metrics collection.")
-            return None
-
-        # Get all metrics as before
+        # Get all metrics
         memory = psutil.virtual_memory()
         disk = psutil.disk_usage('/')
         network = psutil.net_io_counters()
-        processes = self.get_process_info()  # Get process information
+        processes = self.get_process_info()
 
         metrics = {
             "server_id": self.server_id,
@@ -254,16 +204,13 @@ class SystemMonitor:
                 "bytes_sent": network.bytes_sent,
                 "bytes_recv": network.bytes_recv
             },
-            "processes": processes  # Add processes to metrics
+            "processes": processes
         }
         
         logger.info("Collected metrics: %s", json.dumps(metrics, indent=2))
         return metrics
     
     def send_metrics(self, metrics):
-        if not metrics:
-            return
-
         try:
             response = requests.post(
                 self.backend_url,
@@ -271,28 +218,15 @@ class SystemMonitor:
                 headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
-            # Only log timestamp if metrics contains it
-            if 'timestamp' in metrics:
-                logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
-            else:
-                logger.info("Metrics sent successfully")
+            logger.info(f"Metrics sent successfully at {metrics['timestamp']}")
         except requests.exceptions.RequestException as e:
             logger.error(f"Error sending metrics: {e}")
             if hasattr(e.response, 'text'):
                 logger.error(f"Server response: {e.response.text}")
 
     def run(self):
-        retry_interval = 60  # Retry getting server ID every minute if not found
         while True:
             try:
-                if not self.server_id:
-                    logger.info("No server ID, attempting to fetch...")
-                    self.fetch_server_id()
-                    if not self.server_id:
-                        logger.error(f"Server ID not found. Retrying in {retry_interval} seconds...")
-                        time.sleep(retry_interval)
-                        continue
-
                 metrics = self.collect_metrics()
                 if metrics:
                     self.send_metrics(metrics)

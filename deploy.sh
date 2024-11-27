@@ -4,7 +4,7 @@
 set -e
 
 # Set working directory
-WORKING_DIR="/root/coresight"
+WORKING_DIR="/root/coresight-1.0.0"
 cd $WORKING_DIR
 
 echo "Starting deployment from $WORKING_DIR..."
@@ -62,53 +62,31 @@ chown -R root:root venv/
 chmod 755 venv/bin/python3
 chmod 755 venv/bin/python
 
-# Install Python requirements based on agent.py
+# Install Python requirements
 echo "Installing Python requirements..."
-pip3 install psutil requests mysql-connector-python python-dotenv netifaces
-
-# Create agent.py if it doesn't exist
-if [ ! -f agent.py ]; then
-    echo "Creating agent.py..."
-    cp ../agent.py .
-fi
+pip3 install psutil requests mysql-connector-python python-dotenv netifaces flask
 
 # Create log file with proper permissions
-touch agent.log
-chmod 644 agent.log
+mkdir -p logs
+chmod 755 logs
+touch logs/agent.log
+chmod 644 logs/agent.log
 
 # 8. Create systemd service for the agent
 echo "Creating systemd service for agent..."
-tee /etc/systemd/system/coresight-agent.service << EOF
-[Unit]
-Description=Coresight Monitoring Agent
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/root/coresight/coresight-agent
-Environment=PYTHONUNBUFFERED=1
-EnvironmentFile=/root/coresight/coresight-agent/.env
-ExecStart=/root/coresight/coresight-agent/venv/bin/python agent.py
-Restart=always
-RestartSec=10
-StandardOutput=append:/root/coresight/coresight-agent/agent.log
-StandardError=append:/root/coresight/coresight-agent/agent.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
+cp coresight-agent.service /etc/systemd/system/
+chmod 644 /etc/systemd/system/coresight-agent.service
 
 # 9. Start services
 echo "Starting services..."
 cd $WORKING_DIR/backend
-pm2 start server.js --name coresight-backend
+pm2 start ecosystem.config.js
 pm2 save
 
 # Reload systemd and start agent
 systemctl daemon-reload
-systemctl start coresight-agent
 systemctl enable coresight-agent
+systemctl start coresight-agent
 
 # 10. Configure firewall
 echo "Configuring firewall..."
@@ -129,7 +107,7 @@ echo "Python venv permissions:"
 ls -la $WORKING_DIR/coresight-agent/venv/bin/
 echo "Current directory: $(pwd)"
 echo "Agent log file:"
-ls -la $WORKING_DIR/coresight-agent/agent.log
+ls -la $WORKING_DIR/coresight-agent/logs/agent.log
 systemctl status influxdb --no-pager
 systemctl status coresight-agent --no-pager
 pm2 status
