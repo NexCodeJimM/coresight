@@ -29,13 +29,17 @@ echo -e "${GREEN}Creating tag v$VERSION...${NC}"
 git tag -a "v$VERSION" -m "Release v$VERSION"
 git push origin "v$VERSION"
 
+# Rename the release files
+mv releases/$VERSION/backend.tar.gz releases/$VERSION/coresight-backend.tar.gz
+mv releases/$VERSION/agent.tar.gz releases/$VERSION/coresight-agent.tar.gz
+
 # Create GitHub release with changelog
 echo -e "${GREEN}Creating GitHub release...${NC}"
 gh release create "v$VERSION" \
-  --title "Release v$VERSION" \
+  --title "CoreSight v$VERSION" \
   --notes-file "changelogs/v$VERSION.md" \
-  "releases/$VERSION/backend.tar.gz" \
-  "releases/$VERSION/agent.tar.gz"
+  "releases/$VERSION/coresight-backend.tar.gz#CoreSight Backend" \
+  "releases/$VERSION/coresight-agent.tar.gz#CoreSight Agent"
 
 # Update main changelog file
 if [ ! -f CHANGELOG.md ]; then
@@ -51,5 +55,5 @@ git commit -m "docs: update changelog for v$VERSION"
 git push origin main
 
 echo -e "${GREEN}Release v$VERSION created successfully!${NC}"
-echo -e "Backend download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/backend.tar.gz"
-echo -e "Agent download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/agent.tar.gz" 
+echo -e "Backend download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/coresight-backend.tar.gz"
+echo -e "Agent download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/coresight-agent.tar.gz" 

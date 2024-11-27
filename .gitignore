@@ -33,3 +33,6 @@ venv/
 # Build
 dist/
 build/
+
+API_Tokens.txt
+terminal.txt

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import bcrypt from 'bcrypt';
 
 interface UserRow extends RowDataPacket {
   id: string;
@@ -77,7 +78,7 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 403 });
     }
 
-    const { username, first_name, last_name, email, role, is_admin } =
+    const { username, first_name, last_name, email, role, is_admin, new_password } =
       await req.json();
 
     // Validate input
@@ -88,26 +89,54 @@ export async function PATCH(
       );
     }
 
-    // Update user in database
-    await pool.query(
-      `UPDATE users 
-       SET username = ?, 
-           first_name = ?,
-           last_name = ?,
-           email = ?, 
-           role = ?,
-           is_admin = ?
-       WHERE id = ?`,
-      [
-        username,
-        first_name,
-        last_name,
-        email,
-        role,
-        is_admin ? 1 : 0,
-        params.id,
-      ]
-    );
+    if (new_password) {
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(new_password, 10);
+      
+      // Update user with new password
+      await pool.query(
+        `UPDATE users 
+         SET username = ?, 
+             first_name = ?,
+             last_name = ?,
+             email = ?, 
+             role = ?,
+             is_admin = ?,
+             password = ?
+         WHERE id = ?`,
+        [
+          username,
+          first_name,
+          last_name,
+          email,
+          role,
+          is_admin ? 1 : 0,
+          hashedPassword,
+          params.id,
+        ]
+      );
+    } else {
+      // Update user without changing password
+      await pool.query(
+        `UPDATE users 
+         SET username = ?, 
+             first_name = ?,
+             last_name = ?,
+             email = ?, 
+             role = ?,
+             is_admin = ?
+         WHERE id = ?`,
+        [
+          username,
+          first_name,
+          last_name,
+          email,
+          role,
+          is_admin ? 1 : 0,
+          params.id,
+        ]
+      );
+    }
 
     return NextResponse.json({
       success: true,

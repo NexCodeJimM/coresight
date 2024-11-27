@@ -85,6 +85,22 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
 
     try {
       const formData = new FormData(e.currentTarget);
+      const newPassword = formData.get("new_password") as string;
+      const confirmPassword = formData.get("confirm_password") as string;
+
+      // Password validation
+      if (newPassword || confirmPassword) {
+        if (newPassword !== confirmPassword) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Passwords do not match",
+          });
+          setSaving(false);
+          return;
+        }
+      }
+
       const userData = {
         username: formData.get("username"),
         first_name: formData.get("first_name"),
@@ -92,6 +108,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         email: formData.get("email"),
         role: formData.get("role"),
         is_admin: formData.get("role") === "admin",
+        new_password: newPassword || undefined, // Only include if not empty
       };
 
       const response = await fetch(`/api/users/${params.id}`, {
@@ -111,6 +128,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
       toast({
         title: "Success",
         description: "User profile updated successfully",
+        variant: "success"
       });
 
       router.push(`/users/${params.id}`);
@@ -274,6 +292,26 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new_password">New Password</Label>
+              <Input
+                id="new_password"
+                name="new_password"
+                type="password"
+                placeholder="Leave blank to keep current password"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm_password">Confirm Password</Label>
+              <Input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                placeholder="Confirm new password"
+              />
             </div>
 
             <div className="flex gap-4">
