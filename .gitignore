@@ -1,10 +1,35 @@
-requirements.md
-API_Tokens.txt
-terminal.txt
-deploy.sh
-deploy_web.sh
-test.sh
-/SQL
-
-.env
+# System files
+.bashrc
+.cache/
+.cloud-locale-test.skip
+.gitconfig
+.lesshst
+.npm/
+.profile
+.ssh/
+.wget-hsts
 .DS_Store
+
+# Project specific
+/releases/
+/CHANGELOG.md
+scripts/releases/
+scripts/CHANGELOG.md
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# Build
+dist/
+build/
