@@ -26,6 +26,15 @@ interface Alert {
   created_at: string;
 }
 
+interface Notification {
+  id: string;
+  type: string;
+  message: string;
+  data: any;
+  is_read: boolean;
+  created_at: string;
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
@@ -39,31 +48,48 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    const fetchAlerts = async () => {
+    const fetchNotifications = async () => {
       try {
-        const response = await fetch("/api/alerts/recent");
-        if (!response.ok) throw new Error("Failed to fetch alerts");
+        const [alertsRes, notificationsRes] = await Promise.all([
+          fetch("/api/alerts/recent"),
+          fetch("/api/notifications")
+        ]);
 
-        const data = await response.json();
-        if (data.success) {
-          setAlerts(data.alerts);
-          // Set unread count to new alerts in the last hour
+        if (!alertsRes.ok || !notificationsRes.ok) 
+          throw new Error("Failed to fetch notifications");
+
+        const alertsData = await alertsRes.json();
+        const notificationsData = await notificationsRes.json();
+
+        if (alertsData.success) {
+          setAlerts(alertsData.alerts);
+        }
+
+        if (notificationsData.success) {
+          // Combine alerts and notifications for display
+          const allNotifications = [
+            ...alertsData.alerts,
+            ...notificationsData.notifications
+          ].sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+
+          // Update unread count
           setUnreadCount(
-            data.alerts.filter((alert: Alert) => {
-              const alertTime = new Date(alert.created_at);
+            allNotifications.filter((item) => {
+              const notifTime = new Date(item.created_at);
               const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
-              return alertTime > hourAgo;
+              return notifTime > hourAgo && !item.is_read;
             }).length
           );
         }
       } catch (error) {
-        console.error("Error fetching alerts:", error);
+        console.error("Error fetching notifications:", error);
       }
     };
 
-    fetchAlerts();
-    // Refresh alerts every minute
-    const interval = setInterval(fetchAlerts, 60000);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -87,6 +113,23 @@ export function Navbar() {
       return pathname === path;
     }
     return pathname?.startsWith(path);
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+
+      if (response.ok) {
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
   };
 
   return (
@@ -179,7 +222,7 @@ export function Navbar() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setUnreadCount(0)}
+                    onClick={handleMarkAllRead}
                   >
                     Mark all as read
                   </Button>

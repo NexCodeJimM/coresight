@@ -1,0 +1,18 @@
+[Unit]
+Description=CoreSight Backend Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/coresight/backend
+ExecStart=/usr/bin/node server.js
+ExecStartPost=/opt/coresight/scripts/check-updates.sh
+Restart=always
+Environment=NODE_ENV=production
+
+# Run update check every 6 hours
+OnUnitActiveSec=6h
+
+[Install]
+WantedBy=multi-user.target 

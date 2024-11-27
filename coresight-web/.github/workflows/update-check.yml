@@ -1,0 +1,35 @@
+name: Update Check
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get Latest Version
+        id: latest
+        run: |
+          VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "::set-output name=version::$VERSION"
+
+      - name: Check Installations
+        run: |
+          # Get list of installations from central registry
+          INSTALLATIONS=$(curl -s https://your-registry-api/installations)
+          
+          for INSTALL in $INSTALLATIONS; do
+            HOST=$(echo $INSTALL | jq -r .host)
+            CURRENT=$(curl -s "http://$HOST:3000/api/version")
+            
+            if [ "$CURRENT" != "${{ steps.latest.outputs.version }}" ]; then
+              # Send update notification
+              curl -X POST "http://$HOST:3000/api/notifications" \
+                -H "Content-Type: application/json" \
+                -d '{"type":"update","version":"${{ steps.latest.outputs.version }}"}'
+            fi
+          done 

@@ -1,0 +1,20 @@
+[Unit]
+Description=CoreSight Agent Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/coresight/agent
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/opt/coresight/agent/.env
+ExecStart=/opt/coresight/agent/venv/bin/python agent.py
+ExecStartPost=/opt/coresight/scripts/check-updates.sh
+Restart=always
+RestartSec=10
+
+# Run update check every 6 hours
+OnUnitActiveSec=6h
+
+[Install]
+WantedBy=multi-user.target 
