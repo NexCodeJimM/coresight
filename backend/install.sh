@@ -27,6 +27,19 @@ if ! command -v pm2 &> /dev/null; then
     sudo npm install -g pm2
 fi
 
+# Install InfluxDB
+echo "Installing InfluxDB..."
+if ! command -v influxd &> /dev/null; then
+    wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.7.1-amd64.deb
+    sudo dpkg -i influxdb2-2.7.1-amd64.deb
+    sudo systemctl start influxdb
+    sudo systemctl enable influxdb
+    rm influxdb2-2.7.1-amd64.deb
+    echo -e "${GREEN}InfluxDB installed successfully!${NC}"
+else
+    echo "InfluxDB is already installed"
+fi
+
 # Download backend files
 echo "Downloading backend files..."
 curl -L "https://github.com/nexcodejimm/coresight/releases/latest/download/backend.tar.gz" -o backend.tar.gz
@@ -47,6 +60,12 @@ DB_PORT=3306
 DB_USER=your_db_user
 DB_PASSWORD=your_db_password
 DB_NAME=coresight
+
+# InfluxDB Configuration
+INFLUXDB_URL=http://localhost:8086
+INFLUXDB_TOKEN=your_influxdb_token
+INFLUXDB_ORG=your_org
+INFLUXDB_BUCKET=coresight
 EOL
 
 # Create PM2 ecosystem file
@@ -73,6 +92,13 @@ EOL
 # Create logs directory
 mkdir -p logs
 
+# Configure firewall if UFW is present
+if command -v ufw &> /dev/null; then
+    echo "Configuring firewall..."
+    sudo ufw allow 3000/tcp # Backend API
+    sudo ufw allow 8086/tcp # InfluxDB
+fi
+
 # Start with PM2
 pm2 start ecosystem.config.js
 
@@ -81,5 +107,7 @@ pm2 save
 pm2 startup | grep "sudo env" | bash
 
 echo -e "${GREEN}CoreSight Backend installed successfully!${NC}"
-echo -e "${GREEN}To check status, run: pm2 status${NC}"
-echo -e "${GREEN}To view logs, run: pm2 logs coresight-backend${NC}" 
+echo -e "${GREEN}InfluxDB is running on http://localhost:8086${NC}"
+echo -e "${GREEN}Please configure InfluxDB and update the .env file with your credentials${NC}"
+echo -e "${GREEN}To check backend status, run: pm2 status${NC}"
+echo -e "${GREEN}To view backend logs, run: pm2 logs coresight-backend${NC}" 
