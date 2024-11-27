@@ -17,9 +17,39 @@ if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
+# Generate changelog
+echo -e "${GREEN}Generating changelog...${NC}"
+./scripts/generate-changelog.sh $VERSION
+
+# Create packages
+./scripts/package.sh $VERSION
+
 # Create and push tag
 echo -e "${GREEN}Creating tag v$VERSION...${NC}"
 git tag -a "v$VERSION" -m "Release v$VERSION"
 git push origin "v$VERSION"
 
-echo -e "${GREEN}Release process started. Check GitHub Actions for progress.${NC}" 
+# Create GitHub release with changelog
+echo -e "${GREEN}Creating GitHub release...${NC}"
+gh release create "v$VERSION" \
+  --title "Release v$VERSION" \
+  --notes-file "changelogs/v$VERSION.md" \
+  "releases/$VERSION/backend.tar.gz" \
+  "releases/$VERSION/agent.tar.gz"
+
+# Update main changelog file
+if [ ! -f CHANGELOG.md ]; then
+  echo "# Changelog" > CHANGELOG.md
+fi
+
+cat "changelogs/v$VERSION.md" CHANGELOG.md > CHANGELOG.tmp
+mv CHANGELOG.tmp CHANGELOG.md
+
+# Commit changelog
+git add CHANGELOG.md "changelogs/v$VERSION.md"
+git commit -m "docs: update changelog for v$VERSION"
+git push origin main
+
+echo -e "${GREEN}Release v$VERSION created successfully!${NC}"
+echo -e "Backend download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/backend.tar.gz"
+echo -e "Agent download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/agent.tar.gz" 

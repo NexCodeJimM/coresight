@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-import os
+from version import VERSION
 
 version_bp = Blueprint('version', __name__)
 
@@ -9,10 +9,10 @@ def get_version():
         with open('.version', 'r') as f:
             version = f.read().strip()
     except:
-        version = '0.0.0'
+        version = VERSION
     
     return jsonify({
         'success': True,
         'version': version,
-        'update_available': False  # Will be set by the update check service
+        'update_available': False
     }) 
