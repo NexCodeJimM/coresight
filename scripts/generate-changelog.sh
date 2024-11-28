@@ -1,6 +1,7 @@
 #!/bin/bash
 
 VERSION=$1
+RELEASE_TYPE=$2
 CHANGELOG_DIR="$(dirname "$(dirname "$(readlink -f "$0")")")/changelogs"
 
 # Create changelogs directory if it doesn't exist
@@ -10,22 +11,16 @@ mkdir -p "$CHANGELOG_DIR"
 cat > "$CHANGELOG_DIR/v$VERSION.md" << EOF
 # v$VERSION
 
-# Pre-Release v.1.0.2 
+# $RELEASE_TYPE v$VERSION
 
 ## What's New
-- Added the ability for admins to change the password of non-admin users.
-- Added two-factor authentication for all users. It is optional and can be enabled on the profile page.
-- Admins can disable 2FA for non-admin users.
-- Added Google ReCaptcha v3.
-
+- Add your new features here
 
 ## Bug Fixes
-- Fixed the release script to generate files with the proper file name.
-- Fixed package script.
-
+- Add your bug fixes here
 
 ## Changes
-- Included the deployment script inside the coresight folder.
+- Add your changes here
 EOF
 
 echo "Generated changelog at $CHANGELOG_DIR/v$VERSION.md" 

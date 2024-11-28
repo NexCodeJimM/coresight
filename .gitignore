@@ -34,5 +34,7 @@ venv/
 dist/
 build/
 
+# Project specific
 API_Tokens.txt
 terminal.txt
+/requirements.md

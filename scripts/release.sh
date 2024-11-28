@@ -8,6 +8,25 @@ NC='\033[0m'
 # Get the project root directory
 PROJECT_ROOT="$(dirname "$(dirname "$(readlink -f "$0")")")"
 
+# Ask for release type
+echo -e "${GREEN}Select release type:${NC}"
+echo "1) Pre-release"
+echo "2) Release"
+read -p "Enter your choice (1 or 2): " RELEASE_TYPE
+
+case $RELEASE_TYPE in
+  1)
+    RELEASE_PREFIX="Pre-release"
+    ;;
+  2)
+    RELEASE_PREFIX="Release"
+    ;;
+  *)
+    echo -e "${RED}Invalid choice. Please select 1 or 2${NC}"
+    exit 1
+    ;;
+esac
+
 # Get version from argument or prompt
 VERSION=$1
 if [ -z "$VERSION" ]; then
@@ -25,7 +44,7 @@ mkdir -p "$PROJECT_ROOT/releases/$VERSION"
 
 # Generate changelog
 echo -e "${GREEN}Generating changelog...${NC}"
-"$PROJECT_ROOT/scripts/generate-changelog.sh" $VERSION
+"$PROJECT_ROOT/scripts/generate-changelog.sh" $VERSION "$RELEASE_PREFIX"
 
 # Create packages
 echo -e "${GREEN}Creating packages...${NC}"
@@ -40,7 +59,7 @@ fi
 
 # Create and push tag
 echo -e "${GREEN}Creating tag v$VERSION...${NC}"
-git tag -a "v$VERSION" -m "Release v$VERSION"
+git tag -a "v$VERSION" -m "$RELEASE_PREFIX v$VERSION"
 git push origin "v$VERSION"
 
 # Ensure the release file exists
@@ -62,18 +81,25 @@ cd "$PROJECT_ROOT"
 
 # Create GitHub release
 echo -e "${GREEN}Creating GitHub release...${NC}"
-echo -e "Creating release v$VERSION with file:"
+echo -e "Creating $RELEASE_PREFIX v$VERSION with file:"
 echo -e "- releases/$VERSION/coresight-v$VERSION.tar.gz"
 
 # Try to delete existing release if it exists
 gh release delete "v$VERSION" --yes 2>/dev/null || true
 
-# Create new release
-gh release create "v$VERSION" \
-    --title "CoreSight v$VERSION" \
-    --notes-file "changelogs/v$VERSION.md" \
-    --draft=false \
-    "releases/$VERSION/coresight-v$VERSION.tar.gz"
+# Create new release with pre-release flag if applicable
+if [ "$RELEASE_TYPE" == "1" ]; then
+    gh release create "v$VERSION" \
+        --title "CoreSight $RELEASE_PREFIX v$VERSION" \
+        --notes-file "changelogs/v$VERSION.md" \
+        --prerelease \
+        "releases/$VERSION/coresight-v$VERSION.tar.gz"
+else
+    gh release create "v$VERSION" \
+        --title "CoreSight $RELEASE_PREFIX v$VERSION" \
+        --notes-file "changelogs/v$VERSION.md" \
+        "releases/$VERSION/coresight-v$VERSION.tar.gz"
+fi
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Failed to create GitHub release${NC}"
@@ -97,5 +123,5 @@ git add CHANGELOG.md "changelogs/v$VERSION.md"
 git commit -m "docs: update changelog for v$VERSION"
 git push origin main
 
-echo -e "${GREEN}Release v$VERSION created successfully!${NC}"
+echo -e "${GREEN}$RELEASE_PREFIX v$VERSION created successfully!${NC}"
 echo -e "Download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/coresight-v$VERSION.tar.gz" 
