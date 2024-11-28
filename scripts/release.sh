@@ -17,11 +17,15 @@ if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
+# Create releases directory if it doesn't exist
+mkdir -p releases/$VERSION
+
 # Generate changelog
 echo -e "${GREEN}Generating changelog...${NC}"
 ./scripts/generate-changelog.sh $VERSION
 
 # Create packages
+echo -e "${GREEN}Creating packages...${NC}"
 ./scripts/package.sh $VERSION
 
 # Create and push tag
@@ -29,17 +33,32 @@ echo -e "${GREEN}Creating tag v$VERSION...${NC}"
 git tag -a "v$VERSION" -m "Release v$VERSION"
 git push origin "v$VERSION"
 
-# Rename the release files
-mv releases/$VERSION/backend.tar.gz releases/$VERSION/coresight-backend.tar.gz
-mv releases/$VERSION/agent.tar.gz releases/$VERSION/coresight-agent.tar.gz
+# Ensure the release files exist and are named correctly
+cd releases/$VERSION
+if [ ! -f "backend.tar.gz" ] || [ ! -f "agent.tar.gz" ]; then
+  echo -e "${RED}Release files not found${NC}"
+  exit 1
+fi
+
+# Rename the files
+mv backend.tar.gz coresight-backend.tar.gz
+mv agent.tar.gz coresight-agent.tar.gz
+
+# Verify files exist after renaming
+if [ ! -f "coresight-backend.tar.gz" ] || [ ! -f "coresight-agent.tar.gz" ]; then
+  echo -e "${RED}Failed to rename release files${NC}"
+  exit 1
+fi
+
+cd ../..
 
 # Create GitHub release with changelog
 echo -e "${GREEN}Creating GitHub release...${NC}"
 gh release create "v$VERSION" \
   --title "CoreSight v$VERSION" \
   --notes-file "changelogs/v$VERSION.md" \
-  "releases/$VERSION/coresight-backend.tar.gz#CoreSight Backend" \
-  "releases/$VERSION/coresight-agent.tar.gz#CoreSight Agent"
+  "releases/$VERSION/coresight-backend.tar.gz" \
+  "releases/$VERSION/coresight-agent.tar.gz"
 
 # Update main changelog file
 if [ ! -f CHANGELOG.md ]; then
