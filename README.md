@@ -1,13 +1,23 @@
-# CoreSight - Server Monitoring System
+# CoreSight - Server Monitoring System (On-going Project)
 
-CoreSight is a modern server monitoring system built with Next.js and Node.js that provides real-time monitoring of server metrics, health checks, and uptime tracking.
+CoreSight is a modern server monitoring system built with Next.js, Node.js, and Python that provides real-time monitoring of server metrics, health checks, and uptime tracking.
 
-## System Requirements
+### Requirements
 
+- A VPS/Cloud Server
 - Node.js 18.x or higher
 - MySQL 5.7 or higher
-- npm or yarn package manager
+- PHPMyAdmin (optional)
+- Python
 
-## Installation
+## Current Features
+- Ability to add and monitor servers and website uptime.
+- Role-based authentication.
+- Two-Factor Authentication.
+- Easy deployment of backend applications on servers.
+- Notification system.
+- User management.
 
-### 1. Clone the Repository
+## Upcoming Features
+- Mobile Application
+- Email notification
