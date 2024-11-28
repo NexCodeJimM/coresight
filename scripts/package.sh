@@ -50,12 +50,11 @@ echo -e "${GREEN}Adding deploy script...${NC}"
 cp "$PROJECT_ROOT/deploy.sh" "$TEMP_DIR/coresight/"
 chmod +x "$TEMP_DIR/coresight/deploy.sh"
 
-# Create archives
+# Create single archive
 cd "$TEMP_DIR"
-tar -czf "$PROJECT_ROOT/releases/$VERSION/backend.tar.gz" coresight/
-tar -czf "$PROJECT_ROOT/releases/$VERSION/agent.tar.gz" coresight/
+tar -czf "$PROJECT_ROOT/releases/$VERSION/coresight-v$VERSION.tar.gz" coresight/
 
 # Clean up
 rm -rf "$TEMP_DIR"
 
-echo -e "${GREEN}Packages created successfully in releases/$VERSION/${NC}" 
+echo -e "${GREEN}Package created successfully in releases/$VERSION/${NC}" 

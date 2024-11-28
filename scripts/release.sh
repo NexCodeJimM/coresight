@@ -43,26 +43,20 @@ echo -e "${GREEN}Creating tag v$VERSION...${NC}"
 git tag -a "v$VERSION" -m "Release v$VERSION"
 git push origin "v$VERSION"
 
-# Ensure the release files exist and are named correctly
+# Ensure the release file exists
 cd "$PROJECT_ROOT/releases/$VERSION" || {
     echo -e "${RED}Cannot access releases directory${NC}"
     exit 1
 }
 
-# Check if files exist before combining
-echo -e "${GREEN}Checking release files...${NC}"
+# Check if file exists
+echo -e "${GREEN}Checking release file...${NC}"
 ls -la
 
-if [ ! -f "backend.tar.gz" ] || [ ! -f "agent.tar.gz" ]; then
-    echo -e "${RED}Release files not found${NC}"
+if [ ! -f "coresight-v$VERSION.tar.gz" ]; then
+    echo -e "${RED}Release file not found${NC}"
     exit 1
 fi
-
-# Create a single archive containing both files
-echo -e "${GREEN}Creating combined release archive...${NC}"
-mv backend.tar.gz coresight-backend.tar.gz
-mv agent.tar.gz coresight-agent.tar.gz
-tar -czf coresight-v$VERSION.tar.gz coresight-*.tar.gz
 
 cd "$PROJECT_ROOT"
 
