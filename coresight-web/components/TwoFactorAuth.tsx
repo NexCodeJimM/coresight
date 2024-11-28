@@ -224,7 +224,7 @@ export function TwoFactorAuth({ userId, enabled, onUpdate, adminMode = false }: 
           {loading
             ? "Processing..."
             : enabled
-            ? "Disable 2FA"
+            ? "Disable Two-Factor Authentication"
             : "Enable Two-Factor Authentication"}
         </Button>
       </div>
