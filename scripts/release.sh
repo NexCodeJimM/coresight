@@ -49,7 +49,7 @@ cd "$PROJECT_ROOT/releases/$VERSION" || {
     exit 1
 }
 
-# Check if files exist before renaming
+# Check if files exist before combining
 echo -e "${GREEN}Checking release files...${NC}"
 ls -la
 
@@ -58,24 +58,18 @@ if [ ! -f "backend.tar.gz" ] || [ ! -f "agent.tar.gz" ]; then
     exit 1
 fi
 
-# Rename the files
-echo -e "${GREEN}Renaming release files...${NC}"
+# Create a single archive containing both files
+echo -e "${GREEN}Creating combined release archive...${NC}"
 mv backend.tar.gz coresight-backend.tar.gz
 mv agent.tar.gz coresight-agent.tar.gz
-
-# Verify files exist after renaming
-if [ ! -f "coresight-backend.tar.gz" ] || [ ! -f "coresight-agent.tar.gz" ]; then
-    echo -e "${RED}Failed to rename release files${NC}"
-    exit 1
-fi
+tar -czf coresight-v$VERSION.tar.gz coresight-*.tar.gz
 
 cd "$PROJECT_ROOT"
 
 # Create GitHub release
 echo -e "${GREEN}Creating GitHub release...${NC}"
-echo -e "Creating release v$VERSION with files:"
-echo -e "- releases/$VERSION/coresight-backend.tar.gz"
-echo -e "- releases/$VERSION/coresight-agent.tar.gz"
+echo -e "Creating release v$VERSION with file:"
+echo -e "- releases/$VERSION/coresight-v$VERSION.tar.gz"
 
 # Try to delete existing release if it exists
 gh release delete "v$VERSION" --yes 2>/dev/null || true
@@ -85,8 +79,7 @@ gh release create "v$VERSION" \
     --title "CoreSight v$VERSION" \
     --notes-file "changelogs/v$VERSION.md" \
     --draft=false \
-    "releases/$VERSION/coresight-backend.tar.gz" \
-    "releases/$VERSION/coresight-agent.tar.gz"
+    "releases/$VERSION/coresight-v$VERSION.tar.gz"
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Failed to create GitHub release${NC}"
@@ -111,5 +104,4 @@ git commit -m "docs: update changelog for v$VERSION"
 git push origin main
 
 echo -e "${GREEN}Release v$VERSION created successfully!${NC}"
-echo -e "Backend download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/coresight-backend.tar.gz"
-echo -e "Agent download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/coresight-agent.tar.gz" 
+echo -e "Download URL: https://github.com/nexcodejimm/coresight/releases/download/v$VERSION/coresight-v$VERSION.tar.gz" 
