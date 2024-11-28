@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -17,7 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export default function LoginPage() {
+// Create a wrapper component for the login form
+function LoginForm() {
   const router = useRouter();
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -30,6 +32,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   useEffect(() => {
     setMounted(true);
@@ -68,19 +71,45 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    if (!formData.email) {
-      setError("Email is required");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!formData.password) {
-      setError("Password is required");
+    if (!executeRecaptcha) {
+      console.log("Execute recaptcha not yet available");
       setIsLoading(false);
       return;
     }
 
     try {
+      // Get reCAPTCHA token
+      const token = await executeRecaptcha('login');
+
+      // Verify reCAPTCHA token
+      const recaptchaResponse = await fetch('/api/verify-recaptcha', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      const recaptchaData = await recaptchaResponse.json();
+
+      if (!recaptchaData.success) {
+        setError("Invalid reCAPTCHA. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!formData.email) {
+        setError("Email is required");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!formData.password) {
+        setError("Password is required");
+        setIsLoading(false);
+        return;
+      }
+
       const checkResponse = await fetch('/api/auth/check-2fa', {
         method: 'POST',
         headers: {
@@ -301,5 +330,22 @@ export default function LoginPage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+// Main component wrapped with reCAPTCHA provider
+export default function LoginPage() {
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+      scriptProps={{
+        async: false,
+        defer: false,
+        appendTo: "head",
+        nonce: undefined,
+      }}
+    >
+      <LoginForm />
+    </GoogleReCaptchaProvider>
   );
 }
