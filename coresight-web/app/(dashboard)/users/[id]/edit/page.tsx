@@ -37,6 +37,7 @@ interface User {
   email: string;
   role: "admin" | "staff";
   is_admin: boolean;
+  two_factor_enabled: boolean;
 }
 
 export default function EditUserPage({ params }: { params: { id: string } }) {
@@ -172,6 +173,37 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         title: "Error",
         description:
           error instanceof Error ? error.message : "Failed to delete user",
+      });
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    try {
+      const response = await fetch(`/api/users/${params.id}/2fa`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to disable 2FA");
+      }
+
+      toast({
+        title: "Success",
+        description: "User's two-factor authentication has been disabled",
+        variant: "success",
+      });
+
+      // Refresh the user data
+      const userResponse = await fetch(`/api/users/${params.id}`);
+      const userData = await userResponse.json();
+      if (userData.success) {
+        setUser(userData.user);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to disable user's 2FA",
       });
     }
   };
@@ -312,6 +344,59 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
                 type="password"
                 placeholder="Confirm new password"
               />
+            </div>
+
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">Status:</p>
+                      <span 
+                        className={user?.two_factor_enabled 
+                          ? "text-green-600 dark:text-green-400" 
+                          : "text-red-600 dark:text-red-400"
+                        }
+                      >
+                        {user?.two_factor_enabled ? "Enabled" : "Disabled"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1" suppressHydrationWarning>
+                      {user?.two_factor_enabled 
+                        ? "This user has two-factor authentication enabled for their account." 
+                        : "This user has not enabled two-factor authentication."}
+                    </p>
+                  </div>
+                  {session?.user.is_admin && user?.two_factor_enabled && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive">
+                          Disable User's 2FA
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Disable Two-Factor Authentication</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to disable two-factor authentication for this user? 
+                            This will remove an important security feature from their account.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDisable2FA}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Disable 2FA
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-4">

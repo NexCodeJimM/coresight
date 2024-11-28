@@ -1,26 +1,37 @@
 import "next-auth";
-import { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
+  interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    is_admin: boolean;
+    two_factor_enabled: boolean;
+  }
+
   interface Session {
-    user: {
+    user: User & {
       id: string;
       role: string;
       is_admin: boolean;
-    } & DefaultSession["user"];
+      two_factor_enabled: boolean;
+    };
   }
 
-  interface User {
-    id: string;
+  interface JWT {
     role: string;
+    id: string;
     is_admin: boolean;
+    two_factor_enabled: boolean;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string;
     role: string;
+    id: string;
     is_admin: boolean;
+    two_factor_enabled: boolean;
   }
-}
+} 

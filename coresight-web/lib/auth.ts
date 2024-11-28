@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import pool from "./db";
 import { compare } from "bcrypt";
 import { RowDataPacket } from "mysql2";
+import { verifyTOTP } from "@epic-web/totp";
 
 interface UserRow extends RowDataPacket {
   id: string;
@@ -12,6 +13,17 @@ interface UserRow extends RowDataPacket {
   role: "admin" | "staff";
   is_admin: boolean;
   profile_picture?: string;
+  two_factor_enabled: boolean;
+  two_factor_secret: string | null;
+}
+
+interface CustomUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  is_admin: boolean;
+  two_factor_enabled: boolean;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -21,22 +33,20 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "2FA Code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log("Missing credentials");
           throw new Error("Please enter your email and password");
         }
 
         try {
-          console.log("Attempting to authenticate:", credentials.email);
           const [rows] = await pool.query<UserRow[]>(
             "SELECT * FROM users WHERE email = ?",
             [credentials.email]
           );
 
           const user = rows[0];
-          console.log("User found:", user ? "Yes" : "No");
 
           if (!user) {
             throw new Error("No user found with this email");
@@ -47,10 +57,24 @@ export const authOptions: NextAuthOptions = {
             user.password
           );
 
-          console.log("Password valid:", isPasswordValid);
-
           if (!isPasswordValid) {
             throw new Error("Invalid password");
+          }
+
+          if (user.two_factor_enabled && !credentials.otp) {
+            throw new Error("2FA_REQUIRED");
+          }
+
+          if (user.two_factor_enabled && credentials.otp) {
+            const isValid = await verifyTOTP({
+              secret: user.two_factor_secret!,
+              otp: String(credentials.otp),
+              window: 1,
+            });
+
+            if (!isValid) {
+              throw new Error("Invalid 2FA code");
+            }
           }
 
           return {
@@ -59,7 +83,8 @@ export const authOptions: NextAuthOptions = {
             name: user.username,
             role: user.role,
             is_admin: Boolean(user.is_admin),
-          };
+            two_factor_enabled: Boolean(user.two_factor_enabled),
+          } as CustomUser;
         } catch (error) {
           console.error("Auth error:", error);
           throw error;
@@ -74,30 +99,28 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
-        token.id = user.id;
-        token.is_admin = user.is_admin;
-
-        try {
-          await pool.query(
-            `UPDATE users 
-             SET last_login = CONVERT_TZ(NOW(), @@session.time_zone, '+00:00')
-             WHERE id = ?`,
-            [user.id]
-          );
-        } catch (error) {
-          console.error("Error updating last login:", error);
-        }
+        const customUser = user as CustomUser;
+        return {
+          ...token,
+          role: customUser.role,
+          id: customUser.id,
+          is_admin: customUser.is_admin,
+          two_factor_enabled: customUser.two_factor_enabled,
+        };
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role;
-        session.user.id = token.id;
-        session.user.is_admin = token.is_admin;
-      }
-      return session;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          role: token.role,
+          is_admin: token.is_admin,
+          two_factor_enabled: token.two_factor_enabled,
+        },
+      };
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
@@ -105,5 +128,5 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
 };

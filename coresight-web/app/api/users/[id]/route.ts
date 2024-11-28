@@ -16,6 +16,7 @@ interface UserRow extends RowDataPacket {
   profile_picture: string | null;
   last_login: string | null;
   created_at: string;
+  two_factor_enabled: boolean;
 }
 
 export async function GET(
@@ -39,7 +40,8 @@ export async function GET(
         is_admin,
         profile_picture,
         last_login,
-        created_at
+        created_at,
+        two_factor_enabled
       FROM users 
       WHERE id = ?`,
       [params.id]

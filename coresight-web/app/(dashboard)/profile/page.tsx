@@ -8,6 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Eye, EyeOff, Camera } from "lucide-react";
+import { TwoFactorAuth } from "@/components/TwoFactorAuth";
+
+interface UserProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  image: string;
+  two_factor_enabled: boolean;
+}
 
 export default function ProfilePage() {
   const { data: session, update: updateSession } = useSession();
@@ -16,11 +25,12 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UserProfile>({
     firstName: "",
     lastName: "",
     email: "",
     image: "",
+    two_factor_enabled: false,
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -45,6 +55,7 @@ export default function ProfilePage() {
             lastName: userData.last_name || "",
             email: userData.email || "",
             image: userData.image || "",
+            two_factor_enabled: Boolean(userData.two_factor_enabled),
           });
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -348,6 +359,27 @@ export default function ProfilePage() {
               {isLoading ? "Updating..." : "Update Password"}
             </Button>
           </form>
+        </div>
+
+        <div className="border-t pt-6">
+          <h2 className="mb-4 text-xl font-semibold">Two-Factor Authentication</h2>
+          {session?.user && (
+            <TwoFactorAuth
+              userId={session.user.id}
+              enabled={formData.two_factor_enabled}
+              onUpdate={async () => {
+                await updateSession();
+                const response = await fetch('/api/profile');
+                if (response.ok) {
+                  const userData = await response.json();
+                  setFormData(prev => ({
+                    ...prev,
+                    two_factor_enabled: Boolean(userData.two_factor_enabled),
+                  }));
+                }
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
