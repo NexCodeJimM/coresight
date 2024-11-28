@@ -9,8 +9,6 @@ mkdir -p "$CHANGELOG_DIR"
 
 # Create a basic changelog file
 cat > "$CHANGELOG_DIR/v$VERSION.md" << EOF
-# v$VERSION
-
 # $RELEASE_TYPE v$VERSION
 
 ## What's New
