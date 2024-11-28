@@ -31,7 +31,7 @@ echo -e "${GREEN}Generating changelog...${NC}"
 echo -e "${GREEN}Creating packages...${NC}"
 "$PROJECT_ROOT/scripts/package.sh" $VERSION
 
-# Check if tag exists and remove if it does
+# Remove existing tag if it exists
 if git tag | grep -q "^v$VERSION$"; then
     echo -e "${GREEN}Removing existing tag v$VERSION...${NC}"
     git tag -d "v$VERSION"
@@ -49,12 +49,17 @@ cd "$PROJECT_ROOT/releases/$VERSION" || {
     exit 1
 }
 
+# Check if files exist before renaming
+echo -e "${GREEN}Checking release files...${NC}"
+ls -la
+
 if [ ! -f "backend.tar.gz" ] || [ ! -f "agent.tar.gz" ]; then
     echo -e "${RED}Release files not found${NC}"
     exit 1
 fi
 
 # Rename the files
+echo -e "${GREEN}Renaming release files...${NC}"
 mv backend.tar.gz coresight-backend.tar.gz
 mv agent.tar.gz coresight-agent.tar.gz
 
@@ -66,13 +71,31 @@ fi
 
 cd "$PROJECT_ROOT"
 
-# Create GitHub release with changelog
+# Create GitHub release
 echo -e "${GREEN}Creating GitHub release...${NC}"
+echo -e "Creating release v$VERSION with files:"
+echo -e "- releases/$VERSION/coresight-backend.tar.gz"
+echo -e "- releases/$VERSION/coresight-agent.tar.gz"
+
+# Try to delete existing release if it exists
+gh release delete "v$VERSION" --yes 2>/dev/null || true
+
+# Create new release
 gh release create "v$VERSION" \
     --title "CoreSight v$VERSION" \
     --notes-file "changelogs/v$VERSION.md" \
+    --draft=false \
     "releases/$VERSION/coresight-backend.tar.gz" \
     "releases/$VERSION/coresight-agent.tar.gz"
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Failed to create GitHub release${NC}"
+    echo -e "Please check if:"
+    echo -e "1. GitHub CLI is authenticated"
+    echo -e "2. You have permission to create releases"
+    echo -e "3. The files exist and are readable"
+    exit 1
+fi
 
 # Update main changelog file
 if [ ! -f "$PROJECT_ROOT/CHANGELOG.md" ]; then
