@@ -22,6 +22,10 @@ cat > "$CHANGELOG_DIR/v$VERSION.md" << EOF
 ## Bug Fixes
 - Fixed the release script to generate files with the proper file name.
 - Fixed package script.
+
+
+## Changes
+- Included the deployment script inside the coresight folder.
 EOF
 
 echo "Generated changelog at $CHANGELOG_DIR/v$VERSION.md" 
