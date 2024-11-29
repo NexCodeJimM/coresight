@@ -1,7 +1,7 @@
 {
   "name": "coresight-backend",
-  "version": "1.0.2",
-  "description": "Backend server for Coresight monitoring system",
+  "version": "1.0.0",
+  "description": "Node.JS Backend server for Coresight monitoring system",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

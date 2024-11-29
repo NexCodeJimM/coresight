@@ -468,19 +468,13 @@ app.get("/api/metrics/local/current", async (req, res) => {
   }
 });
 
-// Update the server health endpoint to collect real-time metrics
+// Update the server health endpoint to include alert creation
 app.get("/api/servers/:id/health", async (req, res) => {
   try {
-    console.log("Health check requested for server:", req.params.id);
     const { id } = req.params;
-
-    // Get server details
-    const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [
-      id,
-    ]);
+    const [servers] = await db.query("SELECT * FROM servers WHERE id = ?", [id]);
 
     if (servers.length === 0) {
-      console.log("Server not found:", id);
       return res.status(404).json({
         success: false,
         error: "Server not found",
@@ -488,33 +482,38 @@ app.get("/api/servers/:id/health", async (req, res) => {
     }
 
     const server = servers[0];
-    console.log("Checking health for server:", server);
+    let isServerDown = false;
 
-    // Try to ping the server
     try {
-      console.log(
-        `Attempting to connect to http://${server.ip_address}:${server.port}/health`
-      );
       const response = await fetch(
         `http://${server.ip_address}:${server.port}/health`,
-        {
-          timeout: 5000, // 5 seconds timeout
-        }
+        { timeout: 5000 }
       );
-
-      console.log("Health check response status:", response.status);
 
       if (response.ok) {
         const healthData = await response.json();
-        console.log("Health data received:", healthData);
-
-        // Update server status in database
+        
+        // Update server status to online
         await db.query(
           `UPDATE server_uptime 
            SET status = 'online', last_checked = NOW(), uptime = uptime + ?
            WHERE server_id = ?`,
           [60, id]
         );
+
+        // If server was previously down, create an "up" alert
+        const [previousStatus] = await db.query(
+          `SELECT status FROM server_uptime WHERE server_id = ? ORDER BY last_checked DESC LIMIT 1`,
+          [id]
+        );
+
+        if (previousStatus.length && previousStatus[0].status === 'offline') {
+          await db.query(
+            `INSERT INTO alerts (id, server_id, severity, message, created_at)
+             VALUES (UUID(), ?, 'info', ?, NOW())`,
+            [id, `Server ${server.name} is back online`]
+          );
+        }
 
         return res.json({
           success: true,
@@ -523,25 +522,40 @@ app.get("/api/servers/:id/health", async (req, res) => {
           system: healthData,
         });
       }
+      isServerDown = true;
     } catch (error) {
       console.error(`Failed to ping server ${id}:`, error);
+      isServerDown = true;
     }
 
-    // If we reach here, server is offline
-    console.log("Server is offline, updating status");
-    await db.query(
-      `UPDATE server_uptime 
-       SET status = 'offline', last_checked = NOW()
-       WHERE server_id = ?`,
-      [id]
-    );
+    if (isServerDown) {
+      // Update server status to offline
+      await db.query(
+        `UPDATE server_uptime 
+         SET status = 'offline', last_checked = NOW()
+         WHERE server_id = ?`,
+        [id]
+      );
 
-    return res.json({
-      success: true,
-      status: "offline",
-      lastChecked: new Date(),
-      system: null,
-    });
+      // Create critical alert for server down with updated fields
+      await db.query(
+        `INSERT INTO alerts (
+          id, server_id, type, severity, message, 
+          status, priority, created_at
+        ) VALUES (
+          UUID(), ?, 'network', 'critical', ?, 
+          'active', 'critical', NOW()
+        )`,
+        [id, `Server ${server.name} is not responding`]
+      );
+
+      return res.json({
+        success: true,
+        status: "offline",
+        lastChecked: new Date(),
+        system: null,
+      });
+    }
   } catch (error) {
     console.error("Error checking server health:", error);
     res.status(500).json({
@@ -557,15 +571,23 @@ const createAlertsTable = async () => {
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS alerts (
-        id VARCHAR(255) PRIMARY KEY,
-        server_id VARCHAR(255) NOT NULL,
-        type VARCHAR(50) NOT NULL,
+        id VARCHAR(255) NOT NULL,
+        server_id VARCHAR(255) DEFAULT NULL,
+        website_id VARCHAR(255) DEFAULT NULL,
+        type ENUM('cpu', 'memory', 'disk', 'network', 'website') NOT NULL,
+        severity ENUM('low', 'medium', 'high', 'critical') NOT NULL,
         message TEXT NOT NULL,
         status ENUM('active', 'resolved') DEFAULT 'active',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+        resolved_at TIMESTAMP NULL DEFAULT NULL,
+        priority ENUM('low', 'medium', 'high', 'critical') DEFAULT 'medium',
+        PRIMARY KEY (id),
+        KEY idx_alerts_created_at (created_at),
+        KEY idx_alerts_server_id (server_id),
+        KEY fk_alerts_website (website_id),
+        CONSTRAINT fk_alerts_server FOREIGN KEY (server_id) REFERENCES servers (id) ON DELETE CASCADE,
+        CONSTRAINT fk_alerts_website FOREIGN KEY (website_id) REFERENCES monitored_websites (id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     `);
     console.log("Alerts table created or already exists");
   } catch (error) {
@@ -575,6 +597,66 @@ const createAlertsTable = async () => {
 
 // Call this when your server starts
 createAlertsTable();
+
+// Add a function to check server status periodically
+async function checkAllServersHealth() {
+  try {
+    const [servers] = await db.query('SELECT * FROM servers WHERE status = "active"');
+    
+    for (const server of servers) {
+      try {
+        const response = await fetch(
+          `http://${server.ip_address}:${server.port}/health`,
+          { timeout: 5000 }
+        );
+
+        const isOnline = response.ok;
+        const currentStatus = isOnline ? 'online' : 'offline';
+
+        // Get previous status
+        const [previousStatus] = await db.query(
+          `SELECT status FROM server_uptime WHERE server_id = ? ORDER BY last_checked DESC LIMIT 1`,
+          [server.id]
+        );
+
+        // Update status
+        await db.query(
+          `UPDATE server_uptime SET status = ?, last_checked = NOW() WHERE server_id = ?`,
+          [currentStatus, server.id]
+        );
+
+        // Create alert if status changed
+        if (!previousStatus.length || previousStatus[0].status !== currentStatus) {
+          await db.query(
+            `INSERT INTO alerts (
+              id, server_id, type, severity, message,
+              status, priority, created_at
+            ) VALUES (
+              UUID(), ?, 'network', ?, ?,
+              'active', ?, NOW()
+            )`,
+            [
+              server.id,
+              currentStatus === 'offline' ? 'critical' : 'low',
+              currentStatus === 'offline' 
+                ? `Server ${server.name} is not responding`
+                : `Server ${server.name} is back online`,
+              currentStatus === 'offline' ? 'critical' : 'low'
+            ]
+          );
+        }
+      } catch (error) {
+        console.error(`Error checking server ${server.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('Error in checkAllServersHealth:', error);
+  }
+}
+
+// Run server health checks every minute
+setInterval(checkAllServersHealth, 60000);
+checkAllServersHealth(); // Initial check
 
 // Add this function near your createAlertsTable function
 const createMetricsTables = async () => {

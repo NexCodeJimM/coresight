@@ -22,7 +22,7 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Get recent alerts with server and website names
+    // Get recent alerts with server and website names, prioritizing critical alerts
     const [rows] = await pool.query<AlertRow[]>(`
       SELECT 
         a.id,
@@ -37,8 +37,15 @@ export async function GET() {
       LEFT JOIN servers s ON a.server_id = s.id
       LEFT JOIN monitored_websites w ON a.website_id = w.id
       WHERE a.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-      ORDER BY a.created_at DESC
-      LIMIT 10
+        OR a.severity = 'critical'  -- Always include critical alerts
+      ORDER BY 
+        CASE 
+          WHEN a.severity = 'critical' THEN 1
+          WHEN a.severity = 'warning' THEN 2
+          ELSE 3
+        END,
+        a.created_at DESC
+      LIMIT 20
     `);
 
     const alerts = rows.map((row) => ({
@@ -48,6 +55,7 @@ export async function GET() {
       server_name: row.server_name,
       website_name: row.website_name,
       created_at: row.created_at.toISOString(),
+      is_read: false  // Alerts are always considered unread
     }));
 
     return NextResponse.json({

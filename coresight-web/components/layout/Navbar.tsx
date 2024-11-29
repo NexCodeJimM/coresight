@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface Alert {
   id: string;
@@ -55,41 +56,46 @@ export function Navbar() {
           fetch("/api/notifications")
         ]);
 
-        if (!alertsRes.ok || !notificationsRes.ok) 
-          throw new Error("Failed to fetch notifications");
+        if (!alertsRes.ok || !notificationsRes.ok) {
+          console.error("Failed to fetch notifications/alerts");
+          return;
+        }
 
         const alertsData = await alertsRes.json();
         const notificationsData = await notificationsRes.json();
 
+        // Set alerts for display
         if (alertsData.success) {
-          setAlerts(alertsData.alerts);
+          setAlerts(alertsData.alerts || []);
         }
 
-        if (notificationsData.success) {
-          // Combine alerts and notifications for display
-          const allNotifications = [
-            ...alertsData.alerts,
-            ...notificationsData.notifications
-          ].sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
+        // Combine alerts and notifications
+        const allNotifications = [
+          ...(alertsData.success ? alertsData.alerts : []),
+          ...(notificationsData.success ? notificationsData.notifications : [])
+        ].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
 
-          // Update unread count
-          setUnreadCount(
-            allNotifications.filter((item) => {
-              const notifTime = new Date(item.created_at);
-              const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
-              return notifTime > hourAgo && !item.is_read;
-            }).length
-          );
-        }
+        // Update unread count - consider both alerts and notifications from last hour
+        const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        setUnreadCount(
+          allNotifications.filter((item) => {
+            const notifTime = new Date(item.created_at);
+            return notifTime > hourAgo && (!item.is_read || item.severity === 'critical');
+          }).length
+        );
+
       } catch (error) {
         console.error("Error fetching notifications:", error);
       }
     };
 
+    // Initial fetch
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
+    
+    // Refresh every 30 seconds instead of 60
+    const interval = setInterval(fetchNotifications, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -139,11 +145,18 @@ export function Navbar() {
           <Link
             href="/dashboard"
             className={cn(
-              "font-bold text-xl transition-colors",
+              "flex items-center transition-colors",
               isActive("/") && "text-primary"
             )}
           >
-            CORESIGHT
+            <Image
+              src="/images/logo.webp"
+              alt="Coresight"
+              width={800}
+              height={800}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
           <nav className="flex items-center space-x-4">
             <Link

@@ -30,11 +30,16 @@ export function RecentAlerts({ className, ...props }: RecentAlertsProps) {
     const fetchAlerts = async () => {
       try {
         const response = await fetch("/api/alerts/recent");
-        if (!response.ok) throw new Error("Failed to fetch alerts");
+        if (!response.ok) {
+          console.error("Failed to fetch alerts:", response.statusText);
+          throw new Error("Failed to fetch alerts");
+        }
 
         const data = await response.json();
         if (data.success) {
           setAlerts(data.alerts);
+        } else {
+          console.error("Failed to fetch alerts:", data.error);
         }
       } catch (error) {
         console.error("Error fetching alerts:", error);
@@ -44,8 +49,8 @@ export function RecentAlerts({ className, ...props }: RecentAlertsProps) {
     };
 
     fetchAlerts();
-    // Refresh alerts every minute
-    const interval = setInterval(fetchAlerts, 60000);
+    // Refresh alerts every 30 seconds instead of 60
+    const interval = setInterval(fetchAlerts, 30000);
 
     return () => clearInterval(interval);
   }, []);

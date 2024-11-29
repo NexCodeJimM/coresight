@@ -1,1 +1,1 @@
-VERSION = '1.0.2'  # Change this to your desired version 
+VERSION = '1.0.0'  # Change this to your desired version 

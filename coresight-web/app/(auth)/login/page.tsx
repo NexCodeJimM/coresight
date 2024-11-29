@@ -200,10 +200,10 @@ function LoginForm() {
           <div className="mx-auto w-full max-w-sm">
             <div className="mb-8">
               <Image
-                src="/logo.png"
+                src="/images/logo.webp"
                 alt="Logo"
-                width={40}
-                height={40}
+                width={800}
+                height={800}
                 className="mb-4"
                 priority
               />
