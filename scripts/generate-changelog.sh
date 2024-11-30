@@ -11,14 +11,21 @@ mkdir -p "$CHANGELOG_DIR"
 cat > "$CHANGELOG_DIR/v$VERSION.md" << EOF
 # $RELEASE_TYPE v$VERSION
 
+This is just the pre-release version of CoreSight. Please report any bugs encountered.
+
 ## What's New
-- Add your new features here
+- Ability to add and monitor servers and website uptime.
+- Role-based authentication.
+- Two-Factor Authentication.
+- Easy deployment of backend applications on servers.
+- Notification system.
+- User management.
 
 ## Bug Fixes
-- Add your bug fixes here
+- None
 
 ## Changes
-- Add your changes here
+- None
 EOF
 
 echo "Generated changelog at $CHANGELOG_DIR/v$VERSION.md" 
