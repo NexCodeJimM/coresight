@@ -6,13 +6,15 @@ import { RowDataPacket } from "mysql2";
 
 interface AlertRow extends RowDataPacket {
   id: string;
-  severity: string;
-  message: string;
   server_id: string | null;
   website_id: string | null;
-  server_name: string | null;
-  website_name: string | null;
+  type: 'cpu' | 'memory' | 'disk' | 'network' | 'website';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  status: 'active' | 'resolved';
   created_at: Date;
+  resolved_at: Date | null;
+  priority: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export async function GET() {
@@ -22,45 +24,34 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Get recent alerts with server and website names, prioritizing critical alerts
+    // Get recent alerts with server and website names
     const [rows] = await pool.query<AlertRow[]>(`
       SELECT 
-        a.id,
-        a.severity,
-        a.message,
-        a.server_id,
-        a.website_id,
+        a.*,
         s.name as server_name,
-        w.name as website_name,
-        a.created_at
+        w.name as website_name
       FROM alerts a
       LEFT JOIN servers s ON a.server_id = s.id
       LEFT JOIN monitored_websites w ON a.website_id = w.id
-      WHERE a.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-        OR a.severity = 'critical'  -- Always include critical alerts
+      WHERE a.status = 'active'
+      AND (
+        a.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        OR a.severity = 'critical'
+      )
       ORDER BY 
         CASE 
           WHEN a.severity = 'critical' THEN 1
-          WHEN a.severity = 'warning' THEN 2
-          ELSE 3
+          WHEN a.severity = 'high' THEN 2
+          WHEN a.severity = 'medium' THEN 3
+          ELSE 4
         END,
         a.created_at DESC
       LIMIT 20
     `);
 
-    const alerts = rows.map((row) => ({
-      id: row.id,
-      severity: row.severity,
-      message: row.message,
-      server_name: row.server_name,
-      website_name: row.website_name,
-      created_at: row.created_at.toISOString(),
-      is_read: false  // Alerts are always considered unread
-    }));
-
     return NextResponse.json({
       success: true,
-      alerts,
+      alerts: rows,
     });
   } catch (error) {
     console.error("Error fetching recent alerts:", error);

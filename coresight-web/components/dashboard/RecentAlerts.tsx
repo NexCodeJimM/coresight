@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 
 interface Alert {
   id: string;
-  severity: "critical" | "warning" | "info";
+  severity: "critical" | "high" | "medium" | "low";
   message: string;
   server_name?: string;
   website_name?: string;
@@ -49,7 +49,7 @@ export function RecentAlerts({ className, ...props }: RecentAlertsProps) {
     };
 
     fetchAlerts();
-    // Refresh alerts every 30 seconds instead of 60
+    // Refresh alerts every 30 seconds
     const interval = setInterval(fetchAlerts, 30000);
 
     return () => clearInterval(interval);
@@ -74,9 +74,7 @@ export function RecentAlerts({ className, ...props }: RecentAlertsProps) {
       <Card className={cn("col-span-3", className)} {...props}>
         <CardHeader>
           <CardTitle>Recent Alerts</CardTitle>
-          <CardDescription>
-            Latest system alerts and notifications
-          </CardDescription>
+          <CardDescription>Latest system alerts and notifications</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
@@ -102,43 +100,44 @@ export function RecentAlerts({ className, ...props }: RecentAlertsProps) {
     <Card className={cn("col-span-3", className)} {...props}>
       <CardHeader>
         <CardTitle>Recent Alerts</CardTitle>
-        <CardDescription>
-          Latest system alerts and notifications
-        </CardDescription>
+        <CardDescription>Latest system alerts and notifications</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-8">
-          {alerts.map((alert) => (
-            <div key={alert.id} className="flex items-center">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={
-                      alert.severity === "critical"
-                        ? "destructive"
-                        : alert.severity === "warning"
-                        ? "warning"
-                        : "default"
-                    }
-                  >
-                    {alert.severity}
-                  </Badge>
+          {alerts.length > 0 ? (
+            alerts.map((alert) => (
+              <div key={alert.id} className="flex items-center">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        alert.severity === "critical"
+                          ? "destructive"
+                          : alert.severity === "high"
+                          ? "warning"
+                          : "default"
+                      }
+                    >
+                      {alert.severity}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      {getTimeAgo(alert.created_at)}
+                    </p>
+                  </div>
+                  <p className="text-sm font-medium leading-none">
+                    {alert.message}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    {getTimeAgo(alert.created_at)}
+                    {alert.server_name 
+                      ? `Server: ${alert.server_name}`
+                      : alert.website_name 
+                      ? `Website: ${alert.website_name}`
+                      : ''}
                   </p>
                 </div>
-                <p className="text-sm font-medium leading-none">
-                  {alert.message}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {alert.server_name 
-                    ? `Server: ${alert.server_name}`
-                    : `Website: ${alert.website_name}`}
-                </p>
               </div>
-            </div>
-          ))}
-          {alerts.length === 0 && (
+            ))
+          ) : (
             <p className="text-sm text-muted-foreground text-center">
               No recent alerts
             </p>

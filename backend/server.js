@@ -601,7 +601,7 @@ createAlertsTable();
 // Add a function to check server status periodically
 async function checkAllServersHealth() {
   try {
-    const [servers] = await db.query('SELECT * FROM servers WHERE status = "active"');
+    const [servers] = await db.query('SELECT s.*, su.status as previous_status FROM servers s LEFT JOIN server_uptime su ON s.id = su.server_id WHERE s.status = "active"');
     
     for (const server of servers) {
       try {
@@ -612,12 +612,7 @@ async function checkAllServersHealth() {
 
         const isOnline = response.ok;
         const currentStatus = isOnline ? 'online' : 'offline';
-
-        // Get previous status
-        const [previousStatus] = await db.query(
-          `SELECT status FROM server_uptime WHERE server_id = ? ORDER BY last_checked DESC LIMIT 1`,
-          [server.id]
-        );
+        const previousStatus = server.previous_status || 'unknown';
 
         // Update status
         await db.query(
@@ -625,8 +620,14 @@ async function checkAllServersHealth() {
           [currentStatus, server.id]
         );
 
-        // Create alert if status changed
-        if (!previousStatus.length || previousStatus[0].status !== currentStatus) {
+        // Create alert and notification if status changed
+        if (previousStatus !== currentStatus) {
+          const severity = currentStatus === 'offline' ? 'critical' : 'low';
+          const message = currentStatus === 'offline' 
+            ? `Server ${server.name} is not responding`
+            : `Server ${server.name} is back online`;
+
+          // Insert alert
           await db.query(
             `INSERT INTO alerts (
               id, server_id, type, severity, message,
@@ -637,16 +638,75 @@ async function checkAllServersHealth() {
             )`,
             [
               server.id,
-              currentStatus === 'offline' ? 'critical' : 'low',
-              currentStatus === 'offline' 
-                ? `Server ${server.name} is not responding`
-                : `Server ${server.name} is back online`,
-              currentStatus === 'offline' ? 'critical' : 'low'
+              severity,
+              message,
+              severity
             ]
           );
+
+          // Insert notification
+          await db.query(
+            `INSERT INTO notifications (
+              id, type, message, data, is_read, created_at
+            ) VALUES (
+              UUID(), 'server_status', ?, ?, 0, NOW()
+            )`,
+            [
+              message,
+              JSON.stringify({
+                server_id: server.id,
+                server_name: server.name,
+                status: currentStatus,
+                severity: severity,
+                previous_status: previousStatus
+              })
+            ]
+          );
+
+          console.log(`Created alert and notification for server ${server.name}: ${currentStatus} (was: ${previousStatus})`);
         }
       } catch (error) {
         console.error(`Error checking server ${server.id}:`, error);
+        
+        // Only create alert and notification if server wasn't already offline
+        if (server.previous_status !== 'offline') {
+          // Create alert for connection error
+          await db.query(
+            `INSERT INTO alerts (
+              id, server_id, type, severity, message,
+              status, priority, created_at
+            ) VALUES (
+              UUID(), ?, 'network', 'critical', ?,
+              'active', 'critical', NOW()
+            )`,
+            [server.id, `Server ${server.name} is not responding: ${error.message}`]
+          );
+
+          // Create notification for error
+          await db.query(
+            `INSERT INTO notifications (
+              id, type, message, data, is_read, created_at
+            ) VALUES (
+              UUID(), 'server_error', ?, ?, 0, NOW()
+            )`,
+            [
+              `Server ${server.name} is not responding: ${error.message}`,
+              JSON.stringify({
+                server_id: server.id,
+                server_name: server.name,
+                error: error.message,
+                severity: 'critical',
+                previous_status: server.previous_status
+              })
+            ]
+          );
+        }
+
+        // Update status to offline
+        await db.query(
+          `UPDATE server_uptime SET status = 'offline', last_checked = NOW() WHERE server_id = ?`,
+          [server.id]
+        );
       }
     }
   } catch (error) {
@@ -654,8 +714,8 @@ async function checkAllServersHealth() {
   }
 }
 
-// Run server health checks every minute
-setInterval(checkAllServersHealth, 60000);
+// Make sure to call this function periodically
+setInterval(checkAllServersHealth, 60000); // Check every minute
 checkAllServersHealth(); // Initial check
 
 // Add this function near your createAlertsTable function

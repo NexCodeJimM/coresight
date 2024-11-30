@@ -64,10 +64,12 @@ export function ServerStatusList({
       );
     }
 
-    // If direct access fails, return offline status
+    // If direct access fails, return offline status with zeroed metrics
     return {
       ...server,
       status: "offline" as const,
+      cpu: 0,    // Reset CPU to 0 when offline
+      memory: 0  // Reset memory to 0 when offline
     };
   };
 
@@ -191,11 +193,23 @@ export function ServerStatusList({
                   </Badge>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Progress value={server.cpu} className="w-[60%]" />
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-16 text-sm">CPU {server.cpu}%</div>
-                    <div className="w-16 text-sm">RAM {server.memory}%</div>
-                  </div>
+                  {server.status === "online" ? (
+                    <>
+                      <Progress value={server.cpu} className="w-[60%]" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-16 text-sm">CPU {server.cpu}%</div>
+                        <div className="w-16 text-sm">RAM {server.memory}%</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Progress value={0} className="w-[60%]" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-16 text-sm text-muted-foreground">CPU --</div>
+                        <div className="w-16 text-sm text-muted-foreground">RAM --</div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
