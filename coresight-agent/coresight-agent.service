@@ -5,15 +5,15 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/coresight-1.0.0/coresight-agent
+WorkingDirectory=/root/coresight/coresight-agent
 Environment=PYTHONUNBUFFERED=1
-EnvironmentFile=/root/coresight-1.0.0/coresight-agent/.env
-ExecStart=/root/coresight-1.0.0/coresight-agent/venv/bin/python3 agent.py
+EnvironmentFile=/root/coresight/coresight-agent/.env
+ExecStart=/root/coresight/coresight-agent/venv/bin/python3 agent.py
 Restart=always
 RestartSec=10
-StandardOutput=append:/root/coresight-1.0.0/coresight-agent/logs/agent.log
-StandardError=append:/root/coresight-1.0.0/coresight-agent/logs/agent.log
-LogsDirectory=/root/coresight-1.0.0/coresight-agent/logs
+StandardOutput=append:/root/coresight/coresight-agent/logs/agent.log
+StandardError=append:/root/coresight/coresight-agent/logs/agent.log
+LogsDirectory=/root/coresight/coresight-agent/logs
 
 [Install]
 WantedBy=multi-user.target 
